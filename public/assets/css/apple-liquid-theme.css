@@ -1042,3 +1042,538 @@ input, select, textarea, .form-control {
   border-color: var(--color-orange) !important;
   box-shadow: 0 0 0 3px rgba(255, 87, 0, 0.22) !important;
 }
+
+/* ========================================================
+   9. MOTION PRIMITIVES & APPLE FLUID SPRING ENGINE
+   (Inspired by motion-primitives.com, skiper-ui.com, uiverse.io)
+   ======================================================== */
+:root {
+  --spring-snappy: cubic-bezier(0.16, 1, 0.3, 1);
+  --spring-morph: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --spring-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+  --spring-bounce: cubic-bezier(0.175, 0.885, 0.32, 1.15);
+}
+
+/* Expandable Spring Search & Filters (motion-primitives ToolbarDynamic style) */
+.dataTables_filter input {
+  width: 190px !important;
+  border-radius: var(--radius-apple-pill) !important;
+  background: #F1F5F9 !important;
+  border: 1.5px solid transparent !important;
+  padding: 6px 16px !important;
+  font-size: 0.88rem !important;
+  color: var(--color-midnight) !important;
+  transition: width 0.28s var(--spring-snappy), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+}
+
+.dataTables_filter input:focus {
+  width: 270px !important;
+  background: #FFFFFF !important;
+  border-color: var(--color-orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 87, 0, 0.22), 0 8px 24px rgba(0, 0, 0, 0.06) !important;
+  outline: none !important;
+}
+
+/* Fluid Apple Segmented Tabs (skiper-ui AnimatedTabs pattern) */
+.nav-tabs {
+  background: var(--color-silver-light) !important;
+  border-radius: var(--radius-apple-pill) !important;
+  padding: 4px !important;
+  border: 1px solid var(--color-silver) !important;
+  display: inline-flex !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.nav-tabs .nav-link {
+  border: none !important;
+  border-radius: var(--radius-apple-pill) !important;
+  color: var(--color-slate-gray) !important;
+  font-weight: 600 !important;
+  font-size: 0.84rem !important;
+  padding: 8px 18px !important;
+  background: transparent !important;
+  transition: all 0.2s var(--spring-snappy) !important;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--color-midnight) !important;
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+
+.nav-tabs .nav-link.active {
+  background: #FFFFFF !important;
+  color: var(--color-orange) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.03) !important;
+  font-weight: 700 !important;
+  transform: scale(1.02);
+}
+
+/*/* ========================================================
+   8. MOTION PRIMITIVES SPRING POPOVERS & ACTION DROPDOWNS
+   (Inspired by motion-primitives.com & skiper-ui.com)
+   ======================================================== */
+.dropdown-menu {
+  border-radius: 18px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(35px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  box-shadow: 0 16px 40px rgba(17, 24, 39, 0.14), 0 2px 6px rgba(0, 0, 0, 0.04) !important;
+  padding: 6px !important;
+  min-width: 200px !important;
+  transform-origin: top right;
+  margin-top: 6px !important;
+  z-index: 1050 !important;
+}
+
+.dropdown-menu.dropdown-menu-left {
+  transform-origin: top left !important;
+}
+
+.dropdown-menu.show,
+.open > .dropdown-menu {
+  display: block !important;
+  animation: springPopoverMorph 0.22s var(--spring-snappy) forwards !important;
+}
+
+@keyframes springPopoverMorph {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(-8px);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    filter: blur(0);
+  }
+}
+
+.dropdown-menu .dropdown-item {
+  border-radius: 12px !important;
+  padding: 8px 14px !important;
+  font-size: 0.85rem !important;
+  font-weight: 500 !important;
+  color: var(--color-midnight) !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: background-color 0.15s ease, transform 0.15s var(--spring-snappy), color 0.15s ease !important;
+}
+
+.dropdown-menu .dropdown-item i {
+  font-size: 0.95rem;
+  margin-right: 8px;
+  color: var(--color-slate-gray);
+  transition: color 0.15s ease, transform 0.15s var(--spring-snappy);
+}
+
+.dropdown-menu .dropdown-item:hover,
+.dropdown-menu .dropdown-item:focus {
+  background: rgba(255, 87, 0, 0.08) !important;
+  color: var(--color-orange) !important;
+  transform: translateX(3px) !important;
+}
+
+.dropdown-menu .dropdown-item:hover i,
+.dropdown-menu .dropdown-item:focus i {
+  color: var(--color-orange) !important;
+  transform: scale(1.1);
+}
+
+.dropdown-menu .dropdown-item.text-danger:hover {
+  background: rgba(239, 68, 68, 0.08) !important;
+  color: var(--color-rose) !important;
+}
+
+.dropdown-menu .dropdown-item.text-danger:hover i {
+  color: var(--color-rose) !important;
+}
+
+/* Spring Morphing Dialogs (motion-primitives MorphingDialog pattern) */
+.modal.fade .modal-dialog {
+  transform: scale(0.94) translateY(14px) !important;
+  opacity: 0 !important;
+  transition: transform 0.3s var(--spring-morph), opacity 0.22s ease !important;
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1) translateY(0) !important;
+  opacity: 1 !important;
+}
+
+.modal-content {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(35px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.9) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 60px rgba(17, 24, 39, 0.2) !important;
+  overflow: hidden !important;
+}
+
+/* ========================================================
+   9. UIVERSE-INSPIRED TACTILE BUTTONS & SHIMMER
+   (Inspired by uiverse.io)
+   ======================================================== */
+.btn-primary, .btn-danger {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-apple-pill) !important;
+  font-weight: 600 !important;
+  transition: transform 0.15s var(--spring-snappy), box-shadow 0.15s ease !important;
+}
+
+.btn-primary {
+  background: var(--color-orange-gradient) !important;
+  border-color: var(--color-orange) !important;
+  box-shadow: 0 4px 14px rgba(255, 87, 0, 0.28) !important;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(255, 87, 0, 0.38) !important;
+}
+
+.btn-primary::after {
+  content: "";
+  position: absolute;
+  top: -50%;
+  left: -60%;
+  width: 40%;
+  height: 200%;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 50%,
+    transparent 100%
+  );
+  transform: rotate(25deg);
+  pointer-events: none;
+  transition: transform 0.6s ease;
+}
+
+.btn-primary:hover::after {
+  transform: translateX(380%) rotate(25deg);
+}
+
+.btn-danger {
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.28) !important;
+}
+
+.btn-danger:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 22px rgba(239, 68, 68, 0.38) !important;
+}
+
+/* Apple Liquid Badges */
+.badge-primary, .badge-warning, .badge-success, .badge-info, .badge-danger {
+  border-radius: var(--radius-apple-pill) !important;
+  padding: 4px 10px !important;
+  font-weight: 600 !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.02em !important;
+  border: 1px solid transparent !important;
+  transition: transform 0.15s var(--spring-snappy), box-shadow 0.15s ease !important;
+}
+
+.badge-primary {
+  background: rgba(255, 87, 0, 0.12) !important;
+  color: var(--color-orange) !important;
+  border-color: rgba(255, 87, 0, 0.28) !important;
+}
+
+.badge-success {
+  background: rgba(16, 185, 129, 0.12) !important;
+  color: var(--color-emerald) !important;
+  border-color: rgba(16, 185, 129, 0.28) !important;
+}
+
+.badge-danger {
+  background: rgba(239, 68, 68, 0.12) !important;
+  color: var(--color-rose) !important;
+  border-color: rgba(239, 68, 68, 0.28) !important;
+}
+
+.badge-info {
+  background: rgba(99, 102, 241, 0.12) !important;
+  color: var(--color-indigo) !important;
+  border-color: rgba(99, 102, 241, 0.28) !important;
+}
+
+/* ========================================================
+   10. EXHAUSTIVE MOBILE OPTIMIZATION (< 992px & < 768px)
+   ======================================================== */
+@media (max-width: 991.98px) {
+  /* Mobile Sidebar Frosted Backdrop */
+  body.sidebar-mobile-main::after {
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(17, 24, 39, 0.45);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1035;
+    animation: fadeInDrawerScrim 0.25s ease-out forwards;
+  }
+
+  @keyframes fadeInDrawerScrim {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
+
+  /* Safe Area Bottom Padding to prevent dock overlap */
+  body, .content-wrapper {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  /* All Tables Momentum Touch Scrolling */
+  .dataTables_wrapper,
+  .table-responsive,
+  .tab-pane > table,
+  .card-body > table,
+  .card-body > form > table,
+  form > table,
+  .table.table-responsive {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 16px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
+    border: 1px solid var(--color-silver) !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .table {
+    width: 100% !important;
+    margin-bottom: 0 !important;
+  }
+
+  .table th, .table td {
+    white-space: nowrap !important;
+    padding: 10px 14px !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  /* Skiper-UI Fluid Horizontal Swipe Tabs */
+  .nav-tabs {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 4px !important;
+    border-radius: var(--radius-apple-pill) !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .nav-tabs::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .nav-tabs .nav-item {
+    flex-shrink: 0 !important;
+  }
+
+  .nav-tabs .nav-link {
+    white-space: nowrap !important;
+    padding: 7px 14px !important;
+    font-size: 0.8rem !important;
+  }
+
+  /* DataTables Controls on Mobile */
+  .dataTables_wrapper {
+    padding: 0 !important;
+  }
+
+  .dataTables_length,
+  .dataTables_filter {
+    text-align: left !important;
+    float: none !important;
+    margin-bottom: 0.85rem !important;
+    width: 100% !important;
+  }
+
+  .dataTables_length select,
+  .dataTables_filter input {
+    width: 100% !important;
+    font-size: 16px !important;
+  }
+
+  .dataTables_info,
+  .dataTables_paginate {
+    text-align: center !important;
+    float: none !important;
+    margin-top: 0.85rem !important;
+    width: 100% !important;
+  }
+
+  .dataTables_paginate .paginate_button {
+    padding: 4px 10px !important;
+    font-size: 0.78rem !important;
+    border-radius: 8px !important;
+  }
+
+  /* Form Layout on Mobile */
+  .form-group {
+    margin-bottom: 1rem !important;
+  }
+
+  .form-group .row > div {
+    margin-bottom: 0.5rem;
+  }
+
+  .form-control, select.form-control {
+    font-size: 16px !important;
+    height: 44px !important;
+  }
+
+  .btn {
+    min-height: 44px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Card headers and body spacing on phone */
+  .card-header {
+    padding: 1rem 1.15rem !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  .card-header .card-title {
+    font-size: 1.05rem !important;
+  }
+
+  .card-body {
+    padding: 1rem 1.15rem !important;
+  }
+
+  /* Stat cards 2-column compact grid */
+  .row > [class*="col-sm-6"] {
+    flex: 0 0 50% !important;
+    max-width: 50% !important;
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+
+  .apple-stat-card {
+    padding: 1rem 0.85rem !important;
+    margin-bottom: 12px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .apple-stat-card .stat-number {
+    font-size: 1.6rem !important;
+  }
+
+  .apple-stat-card .stat-label {
+    font-size: 0.7rem !important;
+  }
+
+  .stat-icon-wrapper {
+    width: 38px !important;
+    height: 38px !important;
+    font-size: 1.15rem !important;
+  }
+
+  /* Modals as iOS Native Bottom Sheet on Mobile */
+  .modal-dialog {
+    margin: 0 !important;
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    transform: translateY(100%) !important;
+  }
+
+  .modal.show .modal-dialog {
+    transform: translateY(0) !important;
+    transition: transform 0.35s var(--spring-sheet) !important;
+  }
+
+  .modal-content {
+    border-radius: 24px 24px 0 0 !important;
+    border-bottom: none !important;
+    padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px)) !important;
+    max-height: 85vh !important;
+    overflow-y: auto !important;
+  }
+
+  .modal-content::before {
+    content: "";
+    display: block;
+    width: 36px;
+    height: 4.5px;
+    border-radius: 9999px;
+    background: rgba(0, 0, 0, 0.18);
+    margin: 10px auto 4px auto;
+  }
+
+  /* FullCalendar on Phone */
+  .fc-toolbar {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+
+  .fc-toolbar .fc-left,
+  .fc-toolbar .fc-center,
+  .fc-toolbar .fc-right {
+    display: flex !important;
+    justify-content: center !important;
+    width: 100% !important;
+    float: none !important;
+  }
+
+  .fc-toolbar h2 {
+    font-size: 1.15rem !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+  }
+
+  .fc-button-group {
+    display: flex !important;
+    width: 100% !important;
+  }
+
+  .fc-button {
+    flex: 1 !important;
+    padding: 7px 8px !important;
+    font-size: 0.8rem !important;
+    border-radius: 10px !important;
+  }
+
+  .fc-view-container {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .row > [class*="col-sm-6"] {
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+  }
+  .apple-stat-card {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+}

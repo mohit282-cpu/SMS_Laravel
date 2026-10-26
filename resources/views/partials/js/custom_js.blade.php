@@ -269,7 +269,7 @@
     function scrollTo(el){
         $('html, body').animate({
             scrollTop:$(el).offset().top
-        }, 2000);
+        }, 350);
     }
 
     function hideAjaxAlert(){
@@ -281,6 +281,15 @@
         form[0].reset();
     }
 
-
+    $(document).ready(function() {
+        // Native iOS Dismissal: Close mobile navigation drawer when tapping outside or touching scrim
+        $(document).on('click touchstart', function(e) {
+            if ($('body').hasClass('sidebar-mobile-main')) {
+                if (!$(e.target).closest('.sidebar-main, .sidebar-mobile-main-toggle, .apple-mobile-dock').length) {
+                    $('body').removeClass('sidebar-mobile-main');
+                }
+            }
+        });
+    });
 
 </script>
