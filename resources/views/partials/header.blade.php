@@ -1,54 +1,27 @@
-<div id="page-header" class="page-header page-header-light">
-    <div class="page-header-content header-elements-md-inline">
-        <div class="page-title d-flex">
-            <h4><i class="icon-plus-circle2 mr-2"></i> <span class="font-weight-semibold">@yield('page_title')</span></h4>
-            <a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
+<div id="page-header" class="page-header page-header-light shadow-sm">
+    <div class="page-header-content header-elements-md-inline d-flex align-items-center justify-content-between">
+        <div class="page-title d-flex align-items-center">
+            <div class="mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255, 87, 0, 0.1); color: #FF5700; font-size: 1.25rem;">
+                <i class="icon-grid5"></i>
+            </div>
+            <div>
+                <h4 class="font-weight-bold mb-0 text-dark" style="letter-spacing: -0.025em; font-size: 1.35rem;">
+                    @yield('page_title')
+                </h4>
+                <span class="text-muted font-size-xs font-weight-medium">
+                    {{ Qs::getSystemName() }} &bull; {{ date('l, F j, Y') }}
+                </span>
+            </div>
+            <a href="#" class="header-elements-toggle text-default d-md-none ml-auto"><i class="icon-more"></i></a>
         </div>
 
-        <div class="header-elements d-none">
-            <div class="d-flex justify-content-center">
-   {{--             <a href="#" class="btn btn-link btn-float text-default"><i class="icon-bars-alt text-primary"></i><span>Statistics</span></a>
-                <a href="#" class="btn btn-link btn-float text-default"><i class="icon-calculator text-primary"></i> <span>Invoices</span></a>
-                <a href="#" class="btn btn-link btn-float text-default"><i class="icon-calendar5 text-primary"></i> <span>Schedule</span></a>--}}
-                <a href="{{ Qs::userIsSuperAdmin() ? route('settings') : '' }}" class="btn btn-link btn-float text-default"><i class="icon-arrow-down7 text-primary"></i> <span class="font-weight-semibold">{{ __('Current Session') }}: {{ Qs::formatNumber(Qs::getSetting('current_session')) }}</span></a>
+        <div class="header-elements d-none d-md-block">
+            <div class="d-flex align-items-center">
+                <a href="{{ Qs::userIsSuperAdmin() ? route('settings') : '#' }}" class="btn btn-link btn-float" style="background: #F3F4F6; border: 1px solid rgba(17,24,39,0.08); border-radius: 9999px; padding: 6px 16px; color: #111827; text-decoration: none; font-weight: 600; font-size: 0.82rem;">
+                    <i class="icon-calendar52 mr-1" style="color: #FF5700;"></i>
+                    <span>{{ __('Session') }}: <strong>{{ Qs::formatNumber(Qs::getSetting('current_session')) }}</strong></span>
+                </a>
             </div>
         </div>
     </div>
-
-    {{--Breadcrumbs--}}
-    {{--<div class="breadcrumb-line breadcrumb-line-light header-elements-md-inline">
-        <div class="d-flex">
-            <div class="breadcrumb">
-                <a href="index.html" class="breadcrumb-item"><i class="icon-home2 mr-2"></i> Home</a>
-                <a href="form_select2.html" class="breadcrumb-item">Forms</a>
-                <span class="breadcrumb-item active">Select2 selects</span>
-            </div>
-
-            <a href="#" class="header-elements-toggle text-default d-md-none"><i class="icon-more"></i></a>
-        </div>
-
-        <div class="header-elements d-none">
-            <div class="breadcrumb justify-content-center">
-                <a href="#" class="breadcrumb-elements-item">
-                    <i class="icon-comment-discussion mr-2"></i>
-                    Support
-                </a>
-
-                <div class="breadcrumb-elements-item dropdown p-0">
-                    <a href="#" class="breadcrumb-elements-item dropdown-toggle" data-toggle="dropdown">
-                        <i class="icon-gear mr-2"></i>
-                        Settings
-                    </a>
-
-                    <div class="dropdown-menu dropdown-menu-right">
-                        <a href="#" class="dropdown-item"><i class="icon-user-lock"></i> Account security</a>
-                        <a href="#" class="dropdown-item"><i class="icon-statistics"></i> Analytics</a>
-                        <a href="#" class="dropdown-item"><i class="icon-accessibility"></i> Accessibility</a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item"><i class="icon-gear"></i> All settings</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>--}}
 </div>

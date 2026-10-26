@@ -2,69 +2,91 @@
 
 @section('content')
     <div class="page-content login-cover">
-
-        <!-- Main content -->
         <div class="content-wrapper">
-
-            <!-- Content area -->
-            <div class="content d-flex justify-content-center align-items-center">
-
-                <!-- Login card -->
-                <form class="login-form " method="post" action="{{ route('login') }}">
+            <div class="content d-flex justify-content-center align-items-center py-5">
+                <form class="login-form" method="post" action="{{ route('login') }}">
                     @csrf
-                    <div class="card mb-0">
-                        <div class="card-body">
-                            <div class="text-center mb-3">
-                                <i class="icon-people icon-2x text-warning-400 border-warning-400 border-3 rounded-round p-3 mb-3 mt-1"></i>
-                                <h5 class="mb-0">{{ __('Login to your account') }}</h5>
-                                <span class="d-block text-muted">{{ __('Your credentials') }}</span>
-                            </div>
-
-                                @if ($errors->any())
-                                <div class="alert alert-danger alert-styled-left alert-dismissible">
-                                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-                                    <span class="font-weight-semibold">Oops!</span> {{ implode('<br>', $errors->all()) }}
+                    <div class="card login-card-apple mb-0">
+                        <div class="card-body p-0">
+                            <!-- Brand & Welcome Header -->
+                            <div class="text-center mb-4">
+                                <div class="login-brand-icon">
+                                    <i class="icon-shield-check"></i>
                                 </div>
-                                @endif
-
-
-                            <div class="form-group ">
-                                <input type="text" class="form-control" name="identity" value="{{ old('identity') }}" placeholder="{{ __('Login ID or Email') }}">
+                                <h3 class="font-weight-bold mb-1 text-dark" style="letter-spacing: -0.03em;">
+                                    {{ __('Welcome Back') }}
+                                </h3>
+                                <p class="text-muted font-size-sm mb-0">
+                                    {{ __('Sign in to access your school dashboard') }}
+                                </p>
                             </div>
 
-                            <div class="form-group ">
-                                <input required name="password" type="password" class="form-control" placeholder="{{ __('Password') }}">
+                            <!-- Error Feedback -->
+                            @if (isset($errors) && $errors->any())
+                                <div class="alert alert-danger border-0 alert-dismissible shadow-sm fade show mb-3" role="alert">
+                                    <i class="icon-warning2 mr-2"></i>
+                                    <span class="font-size-sm">{{ $errors->first() }}</span>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                            @endif
 
+                            <!-- Identity Field -->
+                            <div class="form-group mb-3">
+                                <label class="font-weight-semibold font-size-xs text-uppercase text-muted" for="identity">
+                                    {{ __('Login ID, Username, or Email') }}
+                                </label>
+                                <div class="position-relative">
+                                    <input type="text" id="identity" class="form-control pl-3 pr-4" name="identity" value="{{ old('identity') }}" placeholder="{{ __('e.g. admin or admin@admin.com') }}" required autofocus autocomplete="username">
+                                </div>
                             </div>
 
-                            <div class="form-group d-flex align-items-center">
-                                <div class="form-check mb-0">
-                                    <label class="form-check-label">
-                                        <input type="checkbox" name="remember" class="form-input-styled" {{ old('remember') ? 'checked' : '' }} data-fouc>
-                                        {{ __('Remember') }}
+                            <!-- Password Field -->
+                            <div class="form-group mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <label class="font-weight-semibold font-size-xs text-uppercase text-muted mb-0" for="password">
+                                        {{ __('Password') }}
+                                    </label>
+                                    @if (Route::has('password.request'))
+                                        <a href="{{ route('password.request') }}" class="font-size-xs font-weight-semibold" style="color: #FF5700;">
+                                            {{ __('Forgot password?') }}
+                                        </a>
+                                    @endif
+                                </div>
+                                <div class="position-relative">
+                                    <input required id="password" name="password" type="password" class="form-control pl-3 pr-4" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;" autocomplete="current-password">
+                                </div>
+                            </div>
+
+                            <!-- Remember Me -->
+                            <div class="form-group d-flex align-items-center mb-4">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="remember" name="remember" {{ old('remember') ? 'checked' : '' }}>
+                                    <label class="custom-control-label font-size-sm text-muted font-weight-medium" for="remember">
+                                        {{ __('Keep me signed in') }}
                                     </label>
                                 </div>
-
-                                <a href="{{ route('password.request') }}" class="ml-auto">{{ __('Forgot password?') }}</a>
                             </div>
 
-                            <div class="form-group">
-                                <button type="submit" class="btn btn-primary btn-block">{{ __('Sign in') }} <i class="icon-circle-right2 ml-2"></i></button>
+                            <!-- Submit Button -->
+                            <div class="form-group mb-2">
+                                <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold" style="font-size: 0.95rem; border-radius: 12px;">
+                                    <span>{{ __('Sign In') }}</span>
+                                    <i class="icon-arrow-right14 ml-2"></i>
+                                </button>
                             </div>
 
-                           {{-- <div class="form-group">
-                                <a href="#" class="btn btn-light btn-block"><i class="icon-home"></i> Back to Home</a>
-                            </div>--}}
-
-
+                            <!-- Portal Info Footnote -->
+                            <div class="text-center mt-4 pt-2 border-top">
+                                <span class="text-muted font-size-xs">
+                                    <i class="icon-lock2 mr-1"></i> {{ __('End-to-end encrypted school administration session') }}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </form>
-
             </div>
-
-
         </div>
-
     </div>
-    @endsection
+@endsection

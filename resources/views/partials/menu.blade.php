@@ -17,23 +17,29 @@
     <div class="sidebar-content">
 
         <!-- User menu -->
-        <div class="sidebar-user">
-            <div class="card-body">
-                <div class="media">
-                    <div class="mr-3">
-                        <a href="{{ route('my_account') }}"><img src="{{ Auth::user()->photo }}" width="38" height="38" class="rounded-circle" alt="photo"></a>
-                    </div>
+        <div class="sidebar-user" style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.02);">
+            <div class="media align-items-center">
+                <div class="mr-3 position-relative">
+                    <a href="{{ route('my_account') }}">
+                        <img src="{{ Auth::user()->photo }}" width="42" height="42" class="rounded-circle" style="object-fit: cover; border: 2px solid #FF5700; box-shadow: 0 0 10px rgba(255, 87, 0, 0.3);" alt="{{ Auth::user()->name }}">
+                    </a>
+                </div>
 
-                    <div class="media-body">
-                        <div class="media-title font-weight-semibold">{{ Auth::user()->name }}</div>
-                        <div class="font-size-xs opacity-50">
-                            <i class="icon-user font-size-sm"></i> &nbsp;{{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}
-                        </div>
+                <div class="media-body">
+                    <div class="media-title font-weight-bold text-white mb-0" style="font-size: 0.92rem; letter-spacing: -0.01em;">
+                        {{ Auth::user()->name }}
                     </div>
+                    <div class="mt-1">
+                        <span class="badge" style="background: rgba(255, 87, 0, 0.14); color: #FF5700; border: 1px solid rgba(255, 87, 0, 0.25); font-size: 0.72rem; padding: 2px 8px;">
+                            {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}
+                        </span>
+                    </div>
+                </div>
 
-                    <div class="ml-3 align-self-center">
-                        <a href="{{ route('my_account') }}" class="text-white"><i class="icon-cog3"></i></a>
-                    </div>
+                <div class="ml-2">
+                    <a href="{{ route('my_account') }}" class="text-white-50" title="{{ __('Account Settings') }}">
+                        <i class="icon-cog3" style="font-size: 1.1rem;"></i>
+                    </a>
                 </div>
             </div>
         </div>

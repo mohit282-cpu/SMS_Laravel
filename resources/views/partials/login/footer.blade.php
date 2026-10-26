@@ -1,20 +1,27 @@
-<div class="navbar navbar-expand-lg navbar-light">
+<div class="navbar navbar-expand-lg navbar-dark" style="background: rgba(17, 24, 39, 0.94); border-top: 1px solid rgba(255, 255, 255, 0.08);">
     <div class="text-center d-lg-none w-100">
         <button type="button" class="navbar-toggler dropdown-toggle" data-toggle="collapse" data-target="#navbar-footer">
             <i class="icon-unfold mr-2"></i>
-            More Links
+            {{ __('Legal & Policies') }}
         </button>
     </div>
 
     <div class="navbar-collapse collapse" id="navbar-footer">
-					<span class="navbar-text">
-						&copy; {{ date('Y') }}. <a href="#">{{ Qs::getSystemName() }}</a> by <a href="#" >SMS Academy</a>
-					</span>
+        <span class="navbar-text text-muted font-size-xs">
+            &copy; {{ date('Y') }} <strong class="text-white">{{ Qs::getSystemName() }}</strong> &bull; {{ __('Engineered by') }} <span style="color: #FF5700; font-weight: 600;">SMS Academy</span>
+        </span>
 
         <ul class="navbar-nav ml-lg-auto">
-            <li class="nav-item"><a href="{{ route('privacy_policy') }}" class="navbar-nav-link" target="_blank"><i class="icon-lifebuoy mr-2"></i> Privacy Policy</a></li>
-            <li class="nav-item"><a href="{{ route('terms_of_use') }}" class="navbar-nav-link" target="_blank"><i class="icon-file-text2 mr-2"></i> Terms of Use </a></li>
-{{--            <li class="nav-item"><a href="#" class="navbar-nav-link font-weight-semibold"><span class="text-pink-400"><i class="icon-phone mr-2"></i> Contact Us</span></a></li>--}}
+            <li class="nav-item">
+                <a href="{{ route('privacy_policy') }}" class="navbar-nav-link text-muted font-size-xs" target="_blank">
+                    <i class="icon-lifebuoy mr-1"></i> {{ __('Privacy Policy') }}
+                </a>
+            </li>
+            <li class="nav-item">
+                <a href="{{ route('terms_of_use') }}" class="navbar-nav-link text-muted font-size-xs" target="_blank">
+                    <i class="icon-file-text2 mr-1"></i> {{ __('Terms of Use') }}
+                </a>
+            </li>
         </ul>
     </div>
 </div>

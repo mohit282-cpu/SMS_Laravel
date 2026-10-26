@@ -1,0 +1,1075 @@
+/**
+ * Apple Design System & Emil Kowalski Polish Engine
+ * Tailored for SMS_Laravel
+ * 
+ * Palette:
+ * - Midnight Navy:  #111827
+ * - Sovryx Orange:  #FF5700
+ * - Pure White:     #FFFFFF
+ * - Soft Gray:      #F3F4F6
+ * - Slate Gray:     #4B5563
+ */
+
+:root {
+  /* Color Tokens */
+  --apple-midnight: #111827;
+  --apple-midnight-subtle: #1f2937;
+  --apple-orange: #FF5700;
+  --apple-orange-hover: #e64e00;
+  --apple-orange-active: #cc4500;
+  --apple-orange-alpha-subtle: rgba(255, 87, 0, 0.08);
+  --apple-orange-alpha: rgba(255, 87, 0, 0.14);
+  --apple-orange-alpha-strong: rgba(255, 87, 0, 0.22);
+  --apple-orange-glow: rgba(255, 87, 0, 0.28);
+  --apple-white: #FFFFFF;
+  --apple-soft-gray: #F3F4F6;
+  --apple-canvas: #F8F9FA;
+  --apple-slate: #4B5563;
+  --apple-slate-light: #9CA3AF;
+  --apple-slate-subtle: #E5E7EB;
+  
+  /* Semantic Colors */
+  --apple-emerald: #10B981;
+  --apple-emerald-alpha: rgba(16, 185, 129, 0.12);
+  --apple-rose: #EF4444;
+  --apple-rose-alpha: rgba(239, 68, 68, 0.12);
+  --apple-amber: #F59E0B;
+  --apple-amber-alpha: rgba(245, 158, 11, 0.12);
+  --apple-indigo: #6366F1;
+  --apple-indigo-alpha: rgba(99, 102, 241, 0.12);
+
+  /* Typography */
+  --apple-font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.04);
+  --shadow-card: 0 1px 3px rgba(17, 24, 39, 0.03), 0 8px 24px -4px rgba(17, 24, 39, 0.06);
+  --shadow-card-hover: 0 4px 6px -1px rgba(17, 24, 39, 0.04), 0 14px 28px -4px rgba(17, 24, 39, 0.09);
+  --shadow-popover: 0 12px 36px -4px rgba(17, 24, 39, 0.16), 0 4px 12px rgba(17, 24, 39, 0.05);
+  --shadow-modal: 0 24px 54px -12px rgba(17, 24, 39, 0.28);
+
+  /* Springs & Motion Curves */
+  --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+/* ========================================================
+   1. BASE APP STYLES & RESET ENHANCEMENTS
+   ======================================================== */
+body {
+  font-family: var(--apple-font) !important;
+  background-color: var(--apple-soft-gray) !important;
+  color: var(--apple-midnight) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--apple-font) !important;
+  color: var(--apple-midnight) !important;
+  font-weight: 600 !important;
+  letter-spacing: -0.02em !important;
+}
+
+a {
+  color: var(--apple-orange);
+  transition: color 0.15s var(--ease-out);
+}
+a:hover {
+  color: var(--apple-orange-hover);
+  text-decoration: none;
+}
+
+/* Selection */
+::selection {
+  background-color: var(--apple-orange-alpha-strong);
+  color: var(--apple-midnight);
+}
+
+/* Page Content Wrapper */
+.page-content {
+  background-color: var(--apple-soft-gray) !important;
+  min-height: calc(100vh - 64px);
+}
+
+.content-wrapper {
+  background-color: var(--apple-soft-gray) !important;
+}
+
+.content {
+  padding: 1.5rem !important;
+}
+
+/* ========================================================
+   2. TOP NAVIGATION (Apple Glassmorphism)
+   ======================================================== */
+.navbar-dark {
+  background: rgba(17, 24, 39, 0.94) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 0.55rem 1.25rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+.navbar-brand-wrapper h4,
+.navbar-dark .app-brand-title {
+  color: var(--apple-white) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.03em !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navbar-brand-wrapper h4::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  background-color: var(--apple-orange);
+  border-radius: 50%;
+  box-shadow: 0 0 10px var(--apple-orange);
+}
+
+.navbar-dark .navbar-nav .nav-link,
+.navbar-dark .navbar-nav-link {
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.85rem !important;
+  transition: all 0.15s var(--ease-out);
+}
+
+.navbar-dark .navbar-nav .nav-link:hover,
+.navbar-dark .navbar-nav-link:hover {
+  color: var(--apple-white) !important;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+.navbar-dark .dropdown-user .nav-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-pill);
+  padding: 4px 14px 4px 6px !important;
+}
+
+.navbar-dark .dropdown-user .nav-link img {
+  border: 2px solid var(--apple-orange);
+  box-shadow: 0 0 8px var(--apple-orange-glow);
+}
+
+/* ========================================================
+   3. SIDEBAR (Midnight Navy + Orange Pills)
+   ======================================================== */
+.sidebar-dark {
+  background: var(--apple-midnight) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.06) !important;
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.04);
+}
+
+.sidebar-user {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding: 1.25rem 1rem !important;
+}
+
+.sidebar-user .card-body {
+  padding: 0 !important;
+}
+
+.sidebar-user .media img {
+  border: 2px solid var(--apple-orange);
+  box-shadow: 0 0 12px var(--apple-orange-glow);
+}
+
+.sidebar-user .media-title {
+  color: var(--apple-white) !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem;
+}
+
+/* Sidebar Nav Items */
+.nav-sidebar {
+  padding: 0.75rem 0.5rem !important;
+}
+
+.nav-sidebar .nav-item {
+  margin-bottom: 3px;
+}
+
+.nav-sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.72) !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.65rem 0.95rem !important;
+  transition: all 0.15s var(--ease-spring) !important;
+  display: flex;
+  align-items: center;
+}
+
+.nav-sidebar .nav-link i {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 1.15rem;
+  margin-right: 12px;
+  transition: color 0.15s var(--ease-out);
+}
+
+.nav-sidebar .nav-link:hover {
+  color: var(--apple-white) !important;
+  background-color: rgba(255, 255, 255, 0.06) !important;
+  transform: translateX(2px);
+}
+
+.nav-sidebar .nav-link:hover i {
+  color: var(--apple-orange);
+}
+
+/* Active Nav Pill State */
+.nav-sidebar .nav-link.active,
+.nav-sidebar .nav-item-open > .nav-link {
+  background-color: var(--apple-orange-alpha) !important;
+  color: var(--apple-orange) !important;
+  font-weight: 600 !important;
+  border-left: 3px solid var(--apple-orange);
+}
+
+.nav-sidebar .nav-link.active i,
+.nav-sidebar .nav-item-open > .nav-link i {
+  color: var(--apple-orange) !important;
+}
+
+/* Submenu Styling */
+.nav-group-sub {
+  background-color: rgba(0, 0, 0, 0.18) !important;
+  border-radius: var(--radius-md);
+  margin: 4px 6px;
+  padding: 4px !important;
+}
+
+.nav-group-sub .nav-link {
+  padding: 0.5rem 0.85rem !important;
+  font-size: 0.84rem !important;
+}
+
+.nav-group-sub .nav-link.active {
+  background-color: var(--apple-orange) !important;
+  color: var(--apple-white) !important;
+  border-left: none !important;
+}
+
+/* ========================================================
+   4. APPLE-STYLE CARDS & SURFACES
+   ======================================================== */
+.card {
+  background-color: var(--apple-white) !important;
+  border-radius: var(--radius-lg) !important;
+  border: 1px solid rgba(17, 24, 39, 0.06) !important;
+  box-shadow: var(--shadow-card) !important;
+  transition: box-shadow 0.22s var(--ease-out), transform 0.22s var(--ease-out);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-card-hover) !important;
+}
+
+.card-header {
+  background-color: transparent !important;
+  border-bottom: 1px solid rgba(17, 24, 39, 0.05) !important;
+  padding: 1.25rem 1.5rem !important;
+}
+
+.card-header .card-title {
+  margin-bottom: 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: var(--apple-midnight);
+  letter-spacing: -0.02em;
+}
+
+.card-body {
+  padding: 1.5rem !important;
+}
+
+/* Page Header Banner */
+#page-header,
+.page-header-light {
+  background: var(--apple-white) !important;
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(17, 24, 39, 0.05);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+  padding: 1.1rem 1.5rem !important;
+}
+
+#page-header .page-title h4 {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--apple-midnight);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 0;
+}
+
+#page-header .page-title h4 i {
+  color: var(--apple-orange);
+}
+
+/* Session Pill Badge */
+.header-elements .btn-link {
+  color: var(--apple-slate) !important;
+  background: var(--apple-soft-gray);
+  border: 1px solid var(--apple-slate-subtle);
+  border-radius: var(--radius-pill);
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-elements .btn-link i {
+  color: var(--apple-orange) !important;
+}
+
+/* ========================================================
+   5. BUTTONS & TACTILE FEEDBACK (Emil Polish)
+   ======================================================== */
+.btn {
+  font-family: var(--apple-font) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  border-radius: var(--radius-md) !important;
+  padding: 0.625rem 1.25rem !important;
+  border: 1px solid transparent !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.12s var(--ease-spring), box-shadow 0.12s var(--ease-out), background-color 0.15s var(--ease-out) !important;
+  cursor: pointer;
+}
+
+/* Emil Active Tap Feedback */
+.btn:active {
+  transform: scale(0.97) !important;
+}
+
+/* Primary Button - Sovryx Orange */
+.btn-primary,
+.btn-warning {
+  background-color: var(--apple-orange) !important;
+  border-color: var(--apple-orange) !important;
+  color: var(--apple-white) !important;
+  box-shadow: 0 2px 8px var(--apple-orange-glow);
+}
+
+.btn-primary:hover,
+.btn-warning:hover {
+  background-color: var(--apple-orange-hover) !important;
+  border-color: var(--apple-orange-hover) !important;
+  box-shadow: 0 4px 14px var(--apple-orange-glow);
+  transform: translateY(-1px);
+}
+
+.btn-primary:focus,
+.btn-warning:focus {
+  box-shadow: 0 0 0 3px var(--apple-orange-glow) !important;
+}
+
+/* Outline Primary */
+.btn-outline-primary {
+  color: var(--apple-orange) !important;
+  border-color: var(--apple-orange) !important;
+  background-color: transparent !important;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--apple-orange-alpha) !important;
+  color: var(--apple-orange) !important;
+}
+
+/* Secondary & Light Buttons */
+.btn-light,
+.btn-secondary {
+  background-color: var(--apple-soft-gray) !important;
+  border-color: var(--apple-slate-subtle) !important;
+  color: var(--apple-midnight) !important;
+}
+
+.btn-light:hover,
+.btn-secondary:hover {
+  background-color: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+
+/* Success Button */
+.btn-success {
+  background-color: var(--apple-emerald) !important;
+  border-color: var(--apple-emerald) !important;
+  color: var(--apple-white) !important;
+}
+
+/* Danger Button */
+.btn-danger {
+  background-color: var(--apple-rose) !important;
+  border-color: var(--apple-rose) !important;
+  color: var(--apple-white) !important;
+}
+
+/* Small Button */
+.btn-sm {
+  padding: 0.4rem 0.85rem !important;
+  font-size: 0.8125rem !important;
+  border-radius: var(--radius-sm) !important;
+}
+
+/* ========================================================
+   6. FORMS & INPUTS (Apple HIG Focus Ring)
+   ======================================================== */
+.form-group {
+  margin-bottom: 1.25rem;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 0.84rem;
+  color: var(--apple-slate);
+  margin-bottom: 0.45rem;
+  letter-spacing: -0.01em;
+}
+
+.form-control,
+.custom-select {
+  font-family: var(--apple-font) !important;
+  font-size: 0.92rem !important;
+  border-radius: 11px !important;
+  background-color: var(--apple-soft-gray) !important;
+  border: 1.5px solid transparent !important;
+  color: var(--apple-midnight) !important;
+  padding: 0.65rem 1rem !important;
+  height: auto !important;
+  transition: all 0.18s var(--ease-out) !important;
+}
+
+.form-control::placeholder {
+  color: var(--apple-slate-light);
+  font-weight: 400;
+}
+
+.form-control:focus,
+.custom-select:focus {
+  background-color: var(--apple-white) !important;
+  border-color: var(--apple-orange) !important;
+  box-shadow: 0 0 0 3px var(--apple-orange-glow) !important;
+  outline: none !important;
+}
+
+/* Select2 Plugin Polish */
+.select2-container--default .select2-selection--single {
+  background-color: var(--apple-soft-gray) !important;
+  border: 1.5px solid transparent !important;
+  border-radius: 11px !important;
+  height: 44px !important;
+  display: flex !important;
+  align-items: center;
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+  color: var(--apple-midnight) !important;
+  padding-left: 1rem !important;
+  font-weight: 500;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--open .select2-selection--single {
+  background-color: var(--apple-white) !important;
+  border-color: var(--apple-orange) !important;
+  box-shadow: 0 0 0 3px var(--apple-orange-glow) !important;
+}
+
+/* ========================================================
+   7. TABLES & DATA VIEWS
+   ======================================================== */
+.table {
+  color: var(--apple-midnight) !important;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+}
+
+.table thead th {
+  background-color: #FAFAFA !important;
+  color: var(--apple-slate) !important;
+  font-size: 0.74rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  border-top: none !important;
+  border-bottom: 1px solid var(--apple-slate-subtle) !important;
+  padding: 0.85rem 1rem !important;
+  vertical-align: middle;
+}
+
+.table tbody tr {
+  transition: background-color 0.12s var(--ease-out);
+}
+
+.table tbody tr:hover {
+  background-color: rgba(255, 87, 0, 0.025) !important;
+}
+
+.table tbody td {
+  padding: 0.9rem 1rem !important;
+  vertical-align: middle !important;
+  border-top: 1px solid rgba(17, 24, 39, 0.04) !important;
+  font-size: 0.88rem;
+}
+
+/* DataTables Elements */
+.dataTables_wrapper .dataTables_length,
+.dataTables_wrapper .dataTables_filter {
+  margin-bottom: 1rem;
+}
+
+.dataTables_wrapper .dataTables_filter input {
+  border-radius: var(--radius-pill) !important;
+  background-color: var(--apple-soft-gray) !important;
+  border: 1px solid var(--apple-slate-subtle) !important;
+  padding: 0.45rem 1rem !important;
+  outline: none;
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+  border-color: var(--apple-orange) !important;
+  background-color: var(--apple-white) !important;
+  box-shadow: 0 0 0 3px var(--apple-orange-glow) !important;
+}
+
+/* Pagination */
+.paginate_button {
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  transition: all 0.12s var(--ease-out) !important;
+}
+
+.paginate_button.current {
+  background: var(--apple-orange) !important;
+  color: var(--apple-white) !important;
+  border-color: var(--apple-orange) !important;
+}
+
+/* ========================================================
+   8. STATUS BADGES & CAPSULES
+   ======================================================== */
+.badge {
+  font-family: var(--apple-font) !important;
+  font-weight: 600 !important;
+  font-size: 0.75rem !important;
+  border-radius: var(--radius-pill) !important;
+  padding: 0.35rem 0.85rem !important;
+  letter-spacing: 0.01em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.badge-primary,
+.badge-warning {
+  background-color: var(--apple-orange-alpha) !important;
+  color: var(--apple-orange) !important;
+  border: 1px solid rgba(255, 87, 0, 0.2);
+}
+
+.badge-success {
+  background-color: var(--apple-emerald-alpha) !important;
+  color: var(--apple-emerald) !important;
+  border: 1px solid rgba(16, 185, 129, 0.2);
+}
+
+.badge-danger {
+  background-color: var(--apple-rose-alpha) !important;
+  color: var(--apple-rose) !important;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.badge-info,
+.badge-secondary {
+  background-color: rgba(75, 85, 99, 0.1) !important;
+  color: var(--apple-slate) !important;
+  border: 1px solid rgba(75, 85, 99, 0.15);
+}
+
+/* ========================================================
+   9. APPLE SEGMENTED CONTROL TABS
+   ======================================================== */
+.nav-tabs {
+  background-color: #E5E7EB !important;
+  border-radius: var(--radius-md) !important;
+  padding: 4px !important;
+  border: none !important;
+  display: inline-flex !important;
+  margin-bottom: 1.5rem !important;
+}
+
+.nav-tabs .nav-item {
+  margin-bottom: 0 !important;
+}
+
+.nav-tabs .nav-link {
+  border: none !important;
+  border-radius: 9px !important;
+  padding: 0.5rem 1.25rem !important;
+  font-size: 0.86rem !important;
+  font-weight: 600 !important;
+  color: var(--apple-slate) !important;
+  background-color: transparent !important;
+  transition: all 0.15s var(--ease-out) !important;
+}
+
+.nav-tabs .nav-link:hover {
+  color: var(--apple-midnight) !important;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--apple-white) !important;
+  color: var(--apple-orange) !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ========================================================
+   10. MODALS & DIALOGS (Glassmorphism & Depth)
+   ======================================================== */
+.modal-backdrop {
+  background-color: rgba(17, 24, 39, 0.6) !important;
+  backdrop-filter: blur(8px) !important;
+  -webkit-backdrop-filter: blur(8px) !important;
+}
+
+.modal-content {
+  border-radius: var(--radius-xl) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: var(--shadow-modal) !important;
+  background: var(--apple-white) !important;
+  overflow: hidden;
+  transform: scale(0.96);
+  opacity: 0;
+  transition: transform 0.22s var(--ease-spring), opacity 0.18s var(--ease-out);
+}
+
+.modal.show .modal-content {
+  transform: scale(1) !important;
+  opacity: 1 !important;
+}
+
+.modal-header {
+  border-bottom: 1px solid rgba(17, 24, 39, 0.06) !important;
+  padding: 1.25rem 1.5rem !important;
+  background-color: #FAFAFA !important;
+}
+
+.modal-header.bg-primary {
+  background-color: var(--apple-midnight) !important;
+  color: var(--apple-white) !important;
+}
+
+.modal-header .close {
+  color: var(--apple-slate) !important;
+  opacity: 0.6;
+  transition: opacity 0.12s;
+}
+
+.modal-header .close:hover {
+  opacity: 1;
+}
+
+.modal-footer {
+  border-top: 1px solid rgba(17, 24, 39, 0.06) !important;
+  padding: 1rem 1.5rem !important;
+  background-color: #FAFAFA !important;
+}
+
+/* ========================================================
+   11. DROPDOWN MENUS (Glass Popovers)
+   ======================================================== */
+.dropdown-menu {
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid rgba(17, 24, 39, 0.08) !important;
+  box-shadow: var(--shadow-popover) !important;
+  padding: 6px !important;
+  min-width: 200px;
+}
+
+.dropdown-item {
+  border-radius: var(--radius-sm) !important;
+  padding: 0.55rem 0.95rem !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  color: var(--apple-midnight) !important;
+  transition: background-color 0.12s var(--ease-out), color 0.12s var(--ease-out);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--apple-orange-alpha) !important;
+  color: var(--apple-orange) !important;
+}
+
+.dropdown-divider {
+  border-top: 1px solid rgba(17, 24, 39, 0.06) !important;
+  margin: 4px 0 !important;
+}
+
+/* ========================================================
+   12. DASHBOARD STAT METRIC CARDS
+   ======================================================== */
+.apple-stat-card {
+  background: var(--apple-white);
+  border-radius: var(--radius-lg);
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: var(--shadow-card);
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-out);
+  margin-bottom: 1.5rem;
+}
+
+.apple-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+}
+
+.apple-stat-card .stat-number {
+  font-size: 2.1rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--apple-midnight);
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+
+.apple-stat-card .stat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--apple-slate);
+}
+
+.apple-stat-card .stat-icon-wrapper {
+  width: 54px;
+  height: 54px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+}
+
+.stat-icon-orange {
+  background: var(--apple-orange-alpha);
+  color: var(--apple-orange);
+}
+
+.stat-icon-navy {
+  background: rgba(17, 24, 39, 0.08);
+  color: var(--apple-midnight);
+}
+
+.stat-icon-emerald {
+  background: var(--apple-emerald-alpha);
+  color: var(--apple-emerald);
+}
+
+.stat-icon-indigo {
+  background: var(--apple-indigo-alpha);
+  color: var(--apple-indigo);
+}
+
+/* Map legacy bg-blue-400 / bg-danger-400 / etc in dashboard cards */
+.card.card-body.has-bg-image,
+.card.card-body[class*="bg-"] {
+  background: var(--apple-white) !important;
+  color: var(--apple-midnight) !important;
+  border: 1px solid rgba(17, 24, 39, 0.06) !important;
+  box-shadow: var(--shadow-card) !important;
+  border-radius: var(--radius-lg) !important;
+  padding: 1.5rem !important;
+}
+
+.card.card-body.has-bg-image h3,
+.card.card-body[class*="bg-"] h3 {
+  color: var(--apple-midnight) !important;
+  font-size: 2.1rem !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  margin-bottom: 4px !important;
+}
+
+.card.card-body.has-bg-image span,
+.card.card-body[class*="bg-"] span {
+  color: var(--apple-slate) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  font-size: 0.78rem !important;
+}
+
+.card.card-body.has-bg-image i,
+.card.card-body[class*="bg-"] i {
+  color: var(--apple-orange) !important;
+  opacity: 0.9 !important;
+}
+
+/* ========================================================
+   13. AUTHENTICATION & LOGIN SCREEN OVERHAUL
+   ======================================================== */
+.login-cover {
+  background: radial-gradient(circle at 10% 20%, #111827 0%, #1F2937 90%) !important;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 440px;
+  animation: appleCardEnter 0.35s var(--ease-spring) forwards;
+}
+
+@keyframes appleCardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-card-apple {
+  background: rgba(255, 255, 255, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.5) !important;
+  border-radius: var(--radius-xl) !important;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.35) !important;
+  padding: 2.5rem !important;
+}
+
+.login-brand-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--apple-orange-alpha);
+  border: 2px solid var(--apple-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+  color: var(--apple-orange);
+  font-size: 1.8rem;
+  box-shadow: 0 0 16px var(--apple-orange-glow);
+}
+
+/* ========================================================
+   14. ALERTS & NOTIFICATIONS
+   ======================================================== */
+.alert {
+  border-radius: var(--radius-md) !important;
+  border: none !important;
+  font-weight: 500;
+  padding: 1rem 1.25rem !important;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  align-items: center;
+}
+
+.alert-danger {
+  background-color: var(--apple-rose-alpha) !important;
+  color: #991B1B !important;
+  border-left: 4px solid var(--apple-rose) !important;
+}
+
+.alert-success {
+  background-color: var(--apple-emerald-alpha) !important;
+  color: #065F46 !important;
+  border-left: 4px solid var(--apple-emerald) !important;
+}
+
+/* ========================================================
+   15. WIZARD FORMS & MULTI-STEP CREATION
+   ======================================================== */
+.wizard > .steps {
+  margin-bottom: 2rem;
+}
+
+.wizard > .steps > ul {
+  display: flex;
+  background-color: var(--apple-soft-gray);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  list-style: none;
+}
+
+.wizard > .steps > ul > li {
+  flex: 1;
+  text-align: center;
+}
+
+.wizard > .steps > ul > li a {
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--apple-slate);
+  text-decoration: none;
+  transition: all 0.15s var(--ease-out);
+}
+
+.wizard > .steps > ul > li.current a {
+  background-color: var(--apple-white);
+  color: var(--apple-orange);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.wizard > .actions > ul {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+  margin-top: 2rem;
+}
+
+.wizard > .actions > ul > li a {
+  background-color: var(--apple-orange);
+  color: var(--apple-white);
+  border-radius: var(--radius-md);
+  padding: 8px 18px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  display: inline-block;
+  text-decoration: none;
+  transition: transform 0.12s var(--ease-spring);
+}
+
+.wizard > .actions > ul > li a:active {
+  transform: scale(0.97);
+}
+
+/* ========================================================
+   16. PROFILE CARDS & USER DETAIL SURFACES
+   ======================================================== */
+.profile-avatar-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-avatar-wrapper img {
+  border: 3px solid var(--apple-white);
+  box-shadow: 0 8px 24px rgba(17, 24, 39, 0.12);
+}
+
+.table-bordered {
+  border: 1px solid var(--apple-slate-subtle) !important;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.table-bordered td,
+.table-bordered th {
+  border: 1px solid rgba(17, 24, 39, 0.05) !important;
+}
+
+/* ========================================================
+   17. CALENDAR POLISH (Apple Calendar Grid)
+   ======================================================== */
+.fc {
+  font-family: var(--apple-font) !important;
+}
+
+.fc-toolbar {
+  margin-bottom: 1.25rem !important;
+}
+
+.fc-toolbar h2 {
+  font-size: 1.3rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+.fc-button {
+  background: var(--apple-soft-gray) !important;
+  color: var(--apple-midnight) !important;
+  border: 1px solid var(--apple-slate-subtle) !important;
+  border-radius: var(--radius-sm) !important;
+  font-weight: 600 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+  transition: all 0.12s var(--ease-out) !important;
+}
+
+.fc-button.fc-state-active {
+  background: var(--apple-orange) !important;
+  color: var(--apple-white) !important;
+  border-color: var(--apple-orange) !important;
+}
+
+.fc-event {
+  border-radius: 6px !important;
+  padding: 2px 6px !important;
+  font-weight: 500 !important;
+  font-size: 0.8rem !important;
+  border: none !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* ========================================================
+   18. REDUCED MOTION SUPPORT (Accessibility)
+   ======================================================== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .btn:active {
+    transform: none !important;
+  }
+}

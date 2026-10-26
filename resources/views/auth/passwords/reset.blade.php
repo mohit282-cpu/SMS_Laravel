@@ -2,87 +2,72 @@
 
 @section('content')
     <div class="page-content login-cover">
-
         <div class="content-wrapper">
-            <div class="content row justify-content-center">
-                <div class="col-md-6">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">Reset Password</h3>
-                            <hr>
+            <div class="content d-flex justify-content-center align-items-center py-5">
+                <form class="login-form" method="POST" action="{{ route('password.update') }}">
+                    @csrf
+                    <input type="hidden" name="token" value="{{ $token }}">
+
+                    <div class="card login-card-apple mb-0">
+                        <div class="card-body p-0">
+                            <!-- Header -->
+                            <div class="text-center mb-4">
+                                <div class="login-brand-icon">
+                                    <i class="icon-lock5"></i>
+                                </div>
+                                <h3 class="font-weight-bold mb-1 text-dark" style="letter-spacing: -0.03em;">
+                                    {{ __('Set New Password') }}
+                                </h3>
+                                <p class="text-muted font-size-sm mb-0">
+                                    {{ __('Create a strong password for your account') }}
+                                </p>
+                            </div>
+
                             @if($errors->any())
-                                <div class="alert alert-danger border-0 alert-dismissible">
-                                    <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
-
-                                    @foreach($errors->all() as $er)
-                                        <span><i class="icon-arrow-right5"></i> {{ $er }}</span> <br>
-                                    @endforeach
-
+                                <div class="alert alert-danger border-0 alert-dismissible shadow-sm fade show mb-3" role="alert">
+                                    <i class="icon-warning2 mr-2"></i>
+                                    <span class="font-size-sm">{{ $errors->first() }}</span>
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
                                 </div>
                             @endif
-                        </div>
 
-                        <div class="card-body">
-                            <form method="POST" action="{{ route('password.update') }}">
-                                @csrf
+                            <div class="form-group mb-3">
+                                <label class="font-weight-semibold font-size-xs text-uppercase text-muted" for="email">
+                                    {{ __('Email Address') }}
+                                </label>
+                                <input id="email" type="email" class="form-control" name="email" value="{{ $email ?? old('email') }}" required autofocus autocomplete="email">
+                            </div>
 
-                                <input type="hidden" name="token" value="{{ $token }}">
+                            <div class="form-group mb-3">
+                                <label class="font-weight-semibold font-size-xs text-uppercase text-muted" for="password">
+                                    {{ __('New Password') }}
+                                </label>
+                                <input id="password" type="password" class="form-control" name="password" required autocomplete="new-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+                            </div>
 
-                                <div class="form-group row">
-                                    <label for="email"
-                                           class="col-md-4 col-form-label text-md-right">{{ __('E-Mail Address') }}</label>
+                            <div class="form-group mb-4">
+                                <label class="font-weight-semibold font-size-xs text-uppercase text-muted" for="password-confirm">
+                                    {{ __('Confirm New Password') }}
+                                </label>
+                                <input id="password-confirm" type="password" class="form-control" name="password_confirmation" required autocomplete="new-password" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+                            </div>
 
-                                    <div class="col-md-6">
-                                        <input id="email" type="email"
-                                               class="form-control{{ $errors->has('email') ? ' is-invalid' : '' }}"
-                                               name="email" value="{{ $email ?? old('email') }}" required autofocus>
+                            <div class="form-group mb-2">
+                                <button type="submit" class="btn btn-primary btn-block py-2 font-weight-bold" style="font-size: 0.95rem; border-radius: 12px;">
+                                    <i class="icon-checkmark4 mr-2"></i> {{ __('Reset Password') }}
+                                </button>
+                            </div>
 
-                                        @if ($errors->has('email'))
-                                            <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $errors->first('email') }}</strong>
-                                    </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="form-group row">
-                                    <label for="password"
-                                           class="col-md-4 col-form-label text-md-right">{{ __('Password') }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="password" type="password"
-                                               class="form-control{{ $errors->has('password') ? ' is-invalid' : '' }}"
-                                               name="password" required>
-
-                                        @if ($errors->has('password'))
-                                            <span class="invalid-feedback" role="alert">
-                                        <strong>{{ $errors->first('password') }}</strong>
-                                    </span>
-                                        @endif
-                                    </div>
-                                </div>
-
-                                <div class="form-group row">
-                                    <label for="password-confirm"
-                                           class="col-md-4 col-form-label text-md-right">{{ __('Confirm Password') }}</label>
-
-                                    <div class="col-md-6">
-                                        <input id="password-confirm" type="password" class="form-control"
-                                               name="password_confirmation" required>
-                                    </div>
-                                </div>
-
-                                <div class="form-group row mb-0">
-                                    <div class="col-md-6 offset-md-4">
-                                        <button type="submit" class="btn btn-primary">
-                                            {{ __('Reset Password') }}
-                                        </button>
-                                    </div>
-                                </div>
-                            </form>
+                            <div class="text-center mt-3 pt-2 border-top">
+                                <a href="{{ route('login') }}" class="font-size-sm font-weight-semibold" style="color: #FF5700;">
+                                    <i class="icon-arrow-left7 mr-1"></i> {{ __('Back to Sign In') }}
+                                </a>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>

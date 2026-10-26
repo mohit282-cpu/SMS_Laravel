@@ -29,6 +29,7 @@
 <link href=" {{ asset('assets/css/qs.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/nepali_datepicker.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/pwa.css') }}" rel="stylesheet" type="text/css">
+<link href=" {{ asset('assets/css/apple-design-system.css') }}" rel="stylesheet" type="text/css">
 
 {{--   Core JS files --}}
     <script src="{{ asset('global_assets/js/main/jquery.min.js') }} "></script>
