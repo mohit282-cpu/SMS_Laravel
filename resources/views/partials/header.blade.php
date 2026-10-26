@@ -1,24 +1,25 @@
-<div id="page-header" class="page-header page-header-light shadow-sm">
-    <div class="page-header-content header-elements-md-inline d-flex align-items-center justify-content-between">
+<div id="page-header" class="page-header apple-page-header-glass">
+    <div class="page-header-content d-flex align-items-center justify-content-between">
         <div class="page-title d-flex align-items-center">
-            <div class="mr-3 d-flex align-items-center justify-content-center" style="width: 42px; height: 42px; border-radius: 12px; background: rgba(255, 87, 0, 0.1); color: #FF5700; font-size: 1.25rem;">
+            <div class="header-icon-disc mr-3">
                 <i class="icon-grid5"></i>
             </div>
             <div>
-                <h4 class="font-weight-bold mb-0 text-dark" style="letter-spacing: -0.025em; font-size: 1.35rem;">
+                <h4 class="page-title-heading mb-0">
                     @yield('page_title')
                 </h4>
-                <span class="text-muted font-size-xs font-weight-medium">
-                    {{ Qs::getSystemName() }} &bull; {{ date('l, F j, Y') }}
-                </span>
+                <div class="page-title-meta">
+                    <span>{{ Qs::getSystemName() }}</span>
+                    <span class="meta-dot">&bull;</span>
+                    <span>{{ date('D, M j, Y') }}</span>
+                </div>
             </div>
-            <a href="#" class="header-elements-toggle text-default d-md-none ml-auto"><i class="icon-more"></i></a>
         </div>
 
-        <div class="header-elements d-none d-md-block">
+        <div class="header-elements d-none d-sm-block">
             <div class="d-flex align-items-center">
-                <a href="{{ Qs::userIsSuperAdmin() ? route('settings') : '#' }}" class="btn btn-link btn-float" style="background: #F3F4F6; border: 1px solid rgba(17,24,39,0.08); border-radius: 9999px; padding: 6px 16px; color: #111827; text-decoration: none; font-weight: 600; font-size: 0.82rem;">
-                    <i class="icon-calendar52 mr-1" style="color: #FF5700;"></i>
+                <a href="{{ Qs::userIsSuperAdmin() ? route('settings') : '#' }}" class="apple-session-pill">
+                    <span class="session-icon-dot"></span>
                     <span>{{ __('Session') }}: <strong>{{ Qs::formatNumber(Qs::getSetting('current_session')) }}</strong></span>
                 </a>
             </div>

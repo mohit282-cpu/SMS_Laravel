@@ -1,80 +1,270 @@
 /**
- * Apple Liquid Design System & Theme Engine
- * SMS_Laravel Ultra-Polished Theme
+ * Apple Liquid Glass Design Engine
+ * SMS_Laravel Ultra-Polished Dual Desktop & Mobile Architecture
  * 
  * Palette:
- * --color-midnight:    #111827
- * --color-orange:      #FF5700
- * --color-pure-white:  #FFFFFF
- * --color-soft-gray:   #F8FAFC
- * --color-slate-gray:  #64748B
+ * --color-midnight:    #111827 (Deep Midnight Navy)
+ * --color-orange:      #FF5700 (Sovryx Orange)
+ * --color-pure-white:  #FFFFFF (Pure White)
+ * --color-soft-gray:   #F3F4F6 (Soft Gray Canvas)
+ * --color-slate-gray:  #4B5563 (Slate Gray)
+ * 
+ * Built with Apple Human Interface Guidelines & Emil Kowalski Polish Principles
  */
 
 :root {
+  /* Core Colors */
   --color-midnight: #111827;
-  --color-midnight-translucent: rgba(17, 24, 39, 0.95);
+  --color-midnight-glass: rgba(17, 24, 39, 0.85);
+  --color-midnight-dense: rgba(17, 24, 39, 0.94);
   --color-orange: #FF5700;
+  --color-orange-hover: #E04800;
   --color-orange-gradient: linear-gradient(135deg, #FF5700 0%, #E04800 100%);
+  --color-orange-glow: rgba(255, 87, 0, 0.38);
   --color-pure-white: #FFFFFF;
-  --color-soft-gray: #F8FAFC;
-  --color-slate-gray: #64748B;
+  --color-white-glass: rgba(255, 255, 255, 0.78);
+  --color-white-thick: rgba(255, 255, 255, 0.92);
+  --color-soft-gray: #F3F4F6;
+  --color-canvas: #F8FAFC;
+  --color-slate-gray: #4B5563;
+  --color-slate-light: #94A3B8;
   --color-silver: #E2E8F0;
   --color-silver-light: #F1F5F9;
-  
+
+  /* Accent Semantics */
+  --color-emerald: #10B981;
+  --color-indigo: #6366F1;
+  --color-rose: #EF4444;
+  --color-amber: #F59E0B;
+
+  /* Typography */
   --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --radius-apple-card: 18px;
+
+  /* Liquid Glass Specular Radii */
+  --radius-apple-card: 20px;
   --radius-apple-pill: 9999px;
-  --radius-apple-control: 12px;
-  
-  --shadow-liquid-card: 0 10px 30px rgba(17, 24, 39, 0.05);
-  --shadow-liquid-hover: 0 18px 40px rgba(17, 24, 39, 0.08), 0 2px 6px rgba(17, 24, 39, 0.03);
-  --shadow-orange-glow: 0 4px 15px rgba(255, 87, 0, 0.35);
-  
+  --radius-apple-control: 14px;
+  --radius-apple-sm: 10px;
+
+  /* Specular Elevation & Atmospheric Shadows */
+  --shadow-liquid-card: 0 16px 36px -10px rgba(17, 24, 39, 0.07), 0 2px 6px rgba(17, 24, 39, 0.02), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+  --shadow-liquid-hover: 0 24px 50px -12px rgba(17, 24, 39, 0.12), 0 4px 10px rgba(17, 24, 39, 0.04), inset 0 1px 1px rgba(255, 255, 255, 1);
+  --shadow-orange-glow: 0 4px 18px rgba(255, 87, 0, 0.38);
+  --shadow-dock-mobile: 0 -10px 30px rgba(0, 0, 0, 0.25), 0 -1px 0 rgba(255, 255, 255, 0.12);
+
+  /* Fluid Motion Springs */
   --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* ========================================================
-   1. MAC OS FROSTED CANVAS
+   1. GLOBAL SYSTEM RESETS & TAP OPTIMIZATIONS (mobile-native)
    ======================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   font-family: var(--font-apple) !important;
   background-color: var(--color-soft-gray) !important;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(255, 87, 0, 0.04) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(17, 24, 39, 0.04) 0px, transparent 50%) !important;
+    radial-gradient(circle at 10% 8%, rgba(255, 87, 0, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 90% 12%, rgba(99, 102, 241, 0.05) 0%, transparent 40%),
+    radial-gradient(circle at 50% 95%, rgba(16, 185, 129, 0.04) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(17, 24, 39, 0.03) 0%, transparent 40%) !important;
   background-attachment: fixed !important;
   color: var(--color-midnight) !important;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+  margin: 0;
+  padding: 0;
 }
 
-.page-content {
-  background: transparent !important;
+button, a, .btn, [role="button"], .apple-dock-item {
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
-.content-wrapper {
-  background: var(--color-soft-gray) !important;
-  background-image: 
-    radial-gradient(at 0% 0%, rgba(255, 87, 0, 0.03) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(17, 24, 39, 0.03) 0px, transparent 50%) !important;
+/* Instant tactile feedback on press (Emil Kowalski) */
+.btn:active, 
+button:active, 
+.apple-dock-item:active, 
+.nav-link:active,
+.btn-glass-icon:active {
+  transform: scale(0.96) !important;
+  transition: transform 90ms ease-out !important;
+}
+
+/* 16px minimum on inputs to prevent iOS auto-zoom */
+input, select, textarea, .form-control {
+  font-size: 16px !important;
 }
 
 /* ========================================================
-   2. SIDEBAR - DEEP MIDNIGHT NAVY GLASS (Strict Contrast Fix)
+   2. DESKTOP UI: FLOATING TRANSLUCENT MIDNIGHT NAVBAR
+   ======================================================== */
+.navbar-dark.apple-navbar-glass {
+  background: var(--color-midnight-glass) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12) !important;
+  padding: 0.65rem 1.4rem !important;
+  position: sticky;
+  top: 0;
+  z-index: 1030;
+}
+
+/* Brand Capsule */
+.brand-liquid-pill {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: var(--color-orange-gradient);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #FFFFFF;
+  font-size: 1.15rem;
+  box-shadow: var(--shadow-orange-glow);
+}
+
+.app-brand-title {
+  color: var(--color-pure-white) !important;
+  font-weight: 700 !important;
+  font-size: 1.18rem !important;
+  letter-spacing: -0.03em !important;
+}
+
+/* Role Badge */
+.apple-role-badge {
+  background: rgba(255, 255, 255, 0.08) !important;
+  backdrop-filter: blur(10px) !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-apple-pill) !important;
+  padding: 5px 12px !important;
+  font-weight: 600 !important;
+  font-size: 0.78rem !important;
+}
+
+/* Navigation Icons & Links */
+.apple-nav-icon-link {
+  width: 40px;
+  height: 40px;
+  border-radius: 50% !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  transition: all 0.15s var(--ease-spring) !important;
+}
+
+.apple-nav-icon-link:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+  color: var(--color-orange) !important;
+  transform: scale(1.05);
+}
+
+/* Language Switcher Pill */
+.apple-lang-pill {
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: var(--radius-apple-pill) !important;
+  padding: 6px 14px !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  font-size: 0.82rem !important;
+  transition: all 0.15s var(--ease-spring) !important;
+}
+
+.apple-lang-pill:hover {
+  background: rgba(255, 255, 255, 0.12) !important;
+}
+
+/* User Capsule Pill */
+.apple-user-pill {
+  background: rgba(255, 255, 255, 0.07) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-apple-pill) !important;
+  padding: 3px 14px 3px 4px !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: all 0.15s var(--ease-spring) !important;
+}
+
+.apple-user-pill img {
+  border: 2px solid var(--color-orange);
+  box-shadow: 0 0 10px var(--color-orange-glow);
+}
+
+.apple-user-pill:hover {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* Apple Liquid Dropdown Menu */
+.apple-glass-dropdown {
+  background: rgba(17, 24, 39, 0.94) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  border-radius: var(--radius-apple-control) !important;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.35) !important;
+  padding: 8px !important;
+  min-width: 210px !important;
+}
+
+.apple-glass-dropdown .dropdown-item {
+  color: #E2E8F0 !important;
+  font-weight: 500 !important;
+  font-size: 0.88rem !important;
+  border-radius: 9px !important;
+  padding: 8px 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  transition: all 0.12s var(--ease-spring) !important;
+}
+
+.apple-glass-dropdown .dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: #FFFFFF !important;
+  transform: translateX(2px);
+}
+
+.apple-glass-dropdown .dropdown-item.active {
+  background: var(--color-orange-gradient) !important;
+  color: #FFFFFF !important;
+}
+
+.apple-glass-dropdown .dropdown-divider {
+  border-top-color: rgba(255, 255, 255, 0.08) !important;
+  margin: 6px 0 !important;
+}
+
+/* ========================================================
+   3. DESKTOP UI: FLOATING MIDNIGHT GLASS SIDEBAR
    ======================================================== */
 .sidebar,
 .sidebar-main,
 .sidebar-dark {
-  background: rgba(17, 24, 39, 0.95) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+  background: var(--color-midnight-dense) !important;
+  backdrop-filter: blur(30px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(30px) saturate(200%) !important;
   border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.15) !important;
+  box-shadow: 6px 0 28px rgba(0, 0, 0, 0.18) !important;
   color: var(--color-pure-white) !important;
 }
 
-/* Under NO circumstances should sidebar backgrounds or text containers be white */
 .sidebar .card,
 .sidebar .card-body,
 .sidebar .card-sidebar-mobile,
@@ -87,16 +277,6 @@ body {
   box-shadow: none !important;
 }
 
-/* Sidebar mobile toggler */
-.sidebar .sidebar-mobile-toggler {
-  background: rgba(0, 0, 0, 0.25) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  color: var(--color-pure-white) !important;
-}
-.sidebar .sidebar-mobile-toggler a {
-  color: var(--color-pure-white) !important;
-}
-
 /* Sidebar User Header */
 .sidebar-user {
   background: rgba(255, 255, 255, 0.03) !important;
@@ -104,29 +284,20 @@ body {
   padding: 1.25rem 1.15rem !important;
 }
 
-.sidebar-user .media-title,
-.sidebar-user div,
-.sidebar-user span,
-.sidebar-user h6 {
+.sidebar-user .media-title {
   color: var(--color-pure-white) !important;
   font-weight: 700 !important;
+  font-size: 0.96rem !important;
   letter-spacing: -0.015em;
 }
 
-.sidebar-user .badge {
-  background: rgba(255, 87, 0, 0.15) !important;
-  color: var(--color-orange) !important;
-  border: 1px solid rgba(255, 87, 0, 0.3) !important;
-}
-
-/* Sidebar Navigation Items - Crisp White / Silver Text */
+/* Sidebar Navigation Items */
 .sidebar .nav-sidebar {
   padding: 0.85rem 0.65rem !important;
 }
 
 .sidebar .nav-sidebar .nav-item {
   margin-bottom: 4px !important;
-  background: transparent !important;
 }
 
 .sidebar .nav-sidebar .nav-link {
@@ -166,14 +337,14 @@ body {
   color: var(--color-orange) !important;
 }
 
-/* Active Navigation Item - Apple-style rounded pill with vibrant Sovryx Orange gradient */
+/* Active Navigation Item - Apple Sovryx Orange Pill */
 .sidebar .nav-sidebar .nav-link.active,
 .sidebar .nav-sidebar .nav-item-open > .nav-link {
-  background: linear-gradient(135deg, #FF5700 0%, #E04800 100%) !important;
+  background: var(--color-orange-gradient) !important;
   color: #FFFFFF !important;
   font-weight: 600 !important;
-  border-radius: 12px !important;
-  box-shadow: 0 4px 15px rgba(255, 87, 0, 0.35) !important;
+  border-radius: var(--radius-apple-control) !important;
+  box-shadow: var(--shadow-orange-glow) !important;
   border-left: none !important;
 }
 
@@ -184,21 +355,9 @@ body {
   color: #FFFFFF !important;
 }
 
-/* Chevron indicator for submenus */
-.sidebar .nav-item-submenu > .nav-link:after {
-  color: #94A3B8 !important;
-  transition: transform 0.2s var(--ease-spring), color 0.15s ease !important;
-}
-
-.sidebar .nav-item-submenu > .nav-link:hover:after,
-.sidebar .nav-item-submenu > .nav-link.active:after,
-.sidebar .nav-item-open > .nav-link:after {
-  color: #FFFFFF !important;
-}
-
-/* Submenu Groups */
+/* Submenu Accordion Groups */
 .sidebar .nav-group-sub {
-  background: rgba(0, 0, 0, 0.32) !important;
+  background: rgba(0, 0, 0, 0.35) !important;
   border-radius: var(--radius-apple-control) !important;
   margin: 4px 6px !important;
   padding: 6px !important;
@@ -212,17 +371,9 @@ body {
   border-radius: 8px !important;
 }
 
-.sidebar .nav-group-sub .nav-link span {
-  color: var(--color-silver) !important;
-}
-
 .sidebar .nav-group-sub .nav-link:hover {
   color: var(--color-pure-white) !important;
   background: rgba(255, 255, 255, 0.08) !important;
-}
-
-.sidebar .nav-group-sub .nav-link:hover span {
-  color: var(--color-pure-white) !important;
 }
 
 .sidebar .nav-group-sub .nav-link.active {
@@ -232,88 +383,19 @@ body {
   font-weight: 600 !important;
 }
 
-.sidebar .nav-group-sub .nav-link.active span {
-  color: var(--color-pure-white) !important;
-}
-
-/* Sidebar Section Headers */
-.sidebar .nav-item-header {
-  color: #94A3B8 !important;
-  font-size: 0.72rem !important;
-  font-weight: 700 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.07em !important;
-  padding: 14px 14px 6px !important;
-}
-
-.sidebar .nav-item-header div,
-.sidebar .nav-item-header span {
-  color: #94A3B8 !important;
-}
-
 /* ========================================================
-   3. TOP NAVBAR - TRANSLUCENT MIDNIGHT NAVY GLASS
-   ======================================================== */
-.navbar-dark {
-  background: rgba(17, 24, 39, 0.92) !important;
-  backdrop-filter: blur(25px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1) !important;
-}
-
-.navbar-dark .navbar-nav-link,
-.navbar-dark .navbar-nav .nav-link,
-.navbar-dark .navbar-toggler {
-  color: var(--color-pure-white) !important;
-}
-
-.navbar-dark .navbar-nav-link i,
-.navbar-dark .navbar-nav .nav-link i,
-.navbar-dark .navbar-toggler i {
-  color: var(--color-pure-white) !important;
-  transition: color 0.15s ease, transform 0.15s var(--ease-spring) !important;
-}
-
-.navbar-dark .navbar-nav-link:hover i,
-.navbar-dark .navbar-nav .nav-link:hover i {
-  color: var(--color-orange) !important;
-  transform: scale(1.08) !important;
-}
-
-.navbar-brand-wrapper h4,
-.app-brand-title {
-  color: var(--color-pure-white) !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.03em !important;
-  display: flex !important;
-  align-items: center !important;
-  gap: 8px !important;
-}
-
-.navbar-brand-wrapper h4::before,
-.app-brand-title::before {
-  content: "" !important;
-  display: inline-block !important;
-  width: 9px !important;
-  height: 9px !important;
-  background-color: var(--color-orange) !important;
-  border-radius: 50% !important;
-  box-shadow: 0 0 10px rgba(255, 87, 0, 0.6) !important;
-}
-
-/* ========================================================
-   4. APPLE LIQUID GLASS CARDS (.card, .card-body)
+   4. LIQUID GLASS CARDS & SURFACES (Emil Kowalski Craft)
    ======================================================== */
 .card:not(.sidebar .card):not(.card-sidebar-mobile),
 .card-body.card:not(.sidebar .card) {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.7) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05) !important;
-  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-out) !important;
+  background: var(--color-white-glass) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border-radius: var(--radius-apple-card) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 1) !important;
+  box-shadow: var(--shadow-liquid-card) !important;
+  transition: transform 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-out) !important;
   margin-bottom: 1.5rem;
 }
 
@@ -323,7 +405,6 @@ body {
 
 .card:not(.sidebar .card) > .card-body {
   background: transparent !important;
-  background-color: transparent !important;
   border: none !important;
 }
 
@@ -336,36 +417,110 @@ body {
 .card-header .card-title {
   color: var(--color-midnight) !important;
   font-weight: 700 !important;
-  letter-spacing: -0.02em !important;
-  font-size: 1.12rem !important;
+  letter-spacing: -0.025em !important;
+  font-size: 1.15rem !important;
 }
 
-/* Stat Cards */
+/* Liquid Page Header Banner */
+.apple-page-header-glass {
+  background: var(--color-white-glass) !important;
+  backdrop-filter: blur(25px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(25px) saturate(190%) !important;
+  border-radius: var(--radius-apple-card) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 1) !important;
+  box-shadow: var(--shadow-liquid-card) !important;
+  margin-bottom: 1.5rem !important;
+  padding: 1.1rem 1.5rem !important;
+}
+
+.header-icon-disc {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-apple-control);
+  background: linear-gradient(135deg, rgba(255, 87, 0, 0.16) 0%, rgba(255, 87, 0, 0.06) 100%);
+  border: 1px solid rgba(255, 87, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-orange);
+  font-size: 1.3rem;
+  box-shadow: 0 4px 15px rgba(255, 87, 0, 0.15);
+}
+
+.page-title-heading {
+  color: var(--color-midnight) !important;
+  font-weight: 800 !important;
+  font-size: 1.38rem !important;
+  letter-spacing: -0.03em !important;
+}
+
+.page-title-meta {
+  color: var(--color-slate-gray);
+  font-size: 0.82rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.meta-dot {
+  opacity: 0.4;
+}
+
+.apple-session-pill {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: var(--radius-apple-pill);
+  padding: 7px 16px;
+  color: var(--color-midnight);
+  font-size: 0.84rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+}
+
+.session-icon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  box-shadow: 0 0 8px var(--color-orange);
+}
+
+/* Liquid Stat Cards */
 .apple-stat-card {
-  background: rgba(255, 255, 255, 0.85) !important;
-  backdrop-filter: blur(20px) saturate(180%) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.7) !important;
-  border-radius: 18px !important;
-  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05) !important;
+  background: var(--color-white-glass) !important;
+  backdrop-filter: blur(28px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(200%) !important;
+  border-radius: var(--radius-apple-card) !important;
+  border: 1px solid rgba(255, 255, 255, 0.85) !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 1) !important;
+  box-shadow: var(--shadow-liquid-card) !important;
   padding: 1.5rem !important;
   display: flex !important;
   align-items: center !important;
   justify-content: space-between !important;
   margin-bottom: 1.5rem !important;
-  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-out) !important;
+  transition: transform 0.22s var(--ease-spring), box-shadow 0.22s var(--ease-out) !important;
 }
 
 .apple-stat-card:hover {
-  transform: translateY(-3px) !important;
+  transform: translateY(-4px) !important;
   box-shadow: var(--shadow-liquid-hover) !important;
 }
 
 .apple-stat-card .stat-number {
   color: var(--color-midnight) !important;
-  font-size: 2.1rem !important;
+  font-size: 2.25rem !important;
   font-weight: 800 !important;
-  letter-spacing: -0.035em !important;
+  letter-spacing: -0.04em !important;
+  line-height: 1.1;
 }
 
 .apple-stat-card .stat-label {
@@ -373,7 +528,46 @@ body {
   font-weight: 700 !important;
   font-size: 0.78rem !important;
   text-transform: uppercase !important;
-  letter-spacing: 0.04em !important;
+  letter-spacing: 0.05em !important;
+  margin-top: 4px;
+}
+
+.stat-icon-wrapper {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-apple-control);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+}
+
+.stat-icon-orange {
+  background: linear-gradient(135deg, rgba(255, 87, 0, 0.18) 0%, rgba(255, 87, 0, 0.06) 100%);
+  border: 1px solid rgba(255, 87, 0, 0.28);
+  color: var(--color-orange);
+  box-shadow: 0 4px 15px rgba(255, 87, 0, 0.18);
+}
+
+.stat-icon-navy {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.15) 0%, rgba(17, 24, 39, 0.05) 100%);
+  border: 1px solid rgba(17, 24, 39, 0.22);
+  color: var(--color-midnight);
+  box-shadow: 0 4px 15px rgba(17, 24, 39, 0.1);
+}
+
+.stat-icon-emerald {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18) 0%, rgba(16, 185, 129, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  color: var(--color-emerald);
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.18);
+}
+
+.stat-icon-indigo {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.06) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.28);
+  color: var(--color-indigo);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.18);
 }
 
 /* ========================================================
@@ -384,7 +578,6 @@ body {
   font-family: var(--font-apple) !important;
 }
 
-/* Calendar Toolbar Layout */
 .fc-toolbar {
   display: flex !important;
   align-items: center !important;
@@ -398,13 +591,13 @@ body {
 
 .fc-toolbar h2 {
   font-size: 1.35rem !important;
-  font-weight: 700 !important;
-  letter-spacing: -0.025em !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
   color: var(--color-midnight) !important;
   margin: 0 !important;
 }
 
-/* Apple Segmented Pill Control for View Toggles */
+/* Apple Segmented Pill View Toggles */
 .fc-button-group {
   background: var(--color-silver-light) !important;
   border-radius: var(--radius-apple-pill) !important;
@@ -447,9 +640,9 @@ body {
 
 /* Today Button */
 .fc-today-button {
-  background: rgba(255, 87, 0, 0.1) !important;
+  background: rgba(255, 87, 0, 0.12) !important;
   color: var(--color-orange) !important;
-  border: 1px solid rgba(255, 87, 0, 0.25) !important;
+  border: 1px solid rgba(255, 87, 0, 0.28) !important;
   border-radius: var(--radius-apple-pill) !important;
   font-weight: 700 !important;
   padding: 6px 16px !important;
@@ -463,7 +656,7 @@ body {
   box-shadow: var(--shadow-orange-glow) !important;
 }
 
-/* Navigation prev/next buttons */
+/* Prev / Next Circular Controls */
 .fc-prev-button,
 .fc-next-button {
   background: var(--color-silver-light) !important;
@@ -485,7 +678,7 @@ body {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Calendar Grid & Headers - Crisp & Subtle Borders (#E2E8F0) */
+/* Grid & Cell Lines */
 .fc table {
   border-collapse: collapse !important;
 }
@@ -529,7 +722,6 @@ body {
   background-color: rgba(255, 87, 0, 0.02) !important;
 }
 
-/* Today's Cell */
 .fc-today {
   background: rgba(255, 87, 0, 0.04) !important;
   position: relative !important;
@@ -547,7 +739,7 @@ body {
   font-weight: 800 !important;
 }
 
-/* Liquid Orange / Slate Pill Badges for Events */
+/* Liquid Pill Badges for Events */
 .fc-event,
 .fc-day-grid-event,
 .fc-time-grid-event {
@@ -568,7 +760,237 @@ body {
 }
 
 /* ========================================================
-   6. BUTTONS & CONTROLS (Emil Kowalski Tactile Feedback)
+   6. MOBILE APP UI: DEDICATED iOS APP EXPERIENCE (< 992px)
+   ======================================================== */
+@media (max-width: 991.98px) {
+  /* Prevent content overlap with bottom dock */
+  .content-wrapper {
+    padding-bottom: calc(85px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .content {
+    padding: 1rem 0.85rem !important;
+  }
+
+  /* Compact iOS Top Bar */
+  .navbar-dark.apple-navbar-glass {
+    padding: 0.55rem 0.95rem !important;
+  }
+
+  .btn-glass-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    text-decoration: none;
+  }
+
+  .mobile-notification-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background: var(--color-orange);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--color-orange);
+    border: 1.5px solid #111827;
+  }
+
+  /* Compact Page Header Banner on Phone */
+  .apple-page-header-glass {
+    padding: 0.9rem 1rem !important;
+    border-radius: 16px !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .header-icon-disc {
+    width: 38px;
+    height: 38px;
+    font-size: 1.15rem;
+  }
+
+  .page-title-heading {
+    font-size: 1.18rem !important;
+  }
+
+  /* Mobile Stat Cards (2x2 Grid or Stack) */
+  .apple-stat-card {
+    padding: 1.15rem !important;
+    border-radius: 16px !important;
+    margin-bottom: 0.85rem !important;
+  }
+
+  .apple-stat-card .stat-number {
+    font-size: 1.75rem !important;
+  }
+
+  .stat-icon-wrapper {
+    width: 44px;
+    height: 44px;
+    font-size: 1.25rem;
+  }
+
+  /* Mobile Sidebar as iOS Sheet */
+  .sidebar-mobile-main .sidebar-main {
+    box-shadow: 10px 0 40px rgba(0, 0, 0, 0.35) !important;
+    border-radius: 0 24px 24px 0 !important;
+    overflow: hidden !important;
+    background: var(--color-midnight-dense) !important;
+    backdrop-filter: blur(35px) saturate(200%) !important;
+    -webkit-backdrop-filter: blur(35px) saturate(200%) !important;
+  }
+
+  .btn-close-sheet {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    text-decoration: none;
+  }
+
+  /* FullCalendar on Phone */
+  .fc-toolbar {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .fc-toolbar h2 {
+    text-align: center !important;
+    font-size: 1.15rem !important;
+  }
+
+  .fc-button-group {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  .fc-button {
+    flex: 1 !important;
+    padding: 5px 8px !important;
+    font-size: 0.78rem !important;
+    text-align: center !important;
+  }
+
+  /* Mobile Tables with smooth touch scroll */
+  .table-responsive {
+    border-radius: 16px !important;
+    -webkit-overflow-scrolling: touch !important;
+    border: 1px solid var(--color-silver) !important;
+  }
+}
+
+/* ========================================================
+   7. APPLE iOS MOBILE FLOATING NAVIGATION DOCK
+   ======================================================== */
+.apple-mobile-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1040;
+  padding: 0 10px calc(8px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.apple-mobile-dock-inner {
+  pointer-events: auto;
+  background: var(--color-midnight-dense);
+  backdrop-filter: blur(30px) saturate(200%);
+  -webkit-backdrop-filter: blur(30px) saturate(200%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1.5px solid rgba(255, 255, 255, 0.22);
+  border-radius: 28px;
+  box-shadow: var(--shadow-dock-mobile);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 6px 8px;
+  max-width: 520px;
+  margin: 0 auto;
+}
+
+.apple-dock-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  outline: none;
+  text-decoration: none !important;
+  padding: 6px 0 4px;
+  cursor: pointer;
+  position: relative;
+  transition: transform 0.12s var(--ease-spring);
+}
+
+.dock-icon-wrapper {
+  position: relative;
+  width: 32px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-slate-light);
+  font-size: 1.25rem;
+  transition: color 0.15s ease, transform 0.15s var(--ease-spring);
+}
+
+.dock-label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--color-slate-light);
+  letter-spacing: -0.01em;
+  margin-top: 2px;
+  transition: color 0.15s ease;
+}
+
+/* Active State in iOS Dock */
+.apple-dock-item.active .dock-icon-wrapper {
+  color: var(--color-orange);
+  transform: translateY(-2px);
+}
+
+.apple-dock-item.active .dock-label {
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+.apple-dock-item.active::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  width: 18px;
+  height: 3px;
+  border-radius: var(--radius-apple-pill);
+  background: var(--color-orange-gradient);
+  box-shadow: 0 0 10px var(--color-orange);
+}
+
+.dock-badge-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  box-shadow: 0 0 6px var(--color-orange);
+}
+
+/* ========================================================
+   8. BUTTONS & FORM INPUTS (Tactile & Apple Styled)
    ======================================================== */
 .btn-primary,
 .btn-warning {
@@ -577,18 +999,41 @@ body {
   box-shadow: var(--shadow-orange-glow) !important;
   color: var(--color-pure-white) !important;
   border-radius: var(--radius-apple-control) !important;
+  font-weight: 600 !important;
+  padding: 0.65rem 1.35rem !important;
+  transition: transform 0.15s var(--ease-spring), box-shadow 0.15s var(--ease-out) !important;
 }
 
-.btn:active {
-  transform: scale(0.97) !important;
-  transition: transform 100ms ease-out !important;
+.btn-primary:hover,
+.btn-warning:hover {
+  box-shadow: 0 6px 24px rgba(255, 87, 0, 0.48) !important;
+  transform: translateY(-1px) !important;
+  color: #FFFFFF !important;
 }
 
-/* Input Fields */
+.btn-light,
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.8) !important;
+  backdrop-filter: blur(10px) !important;
+  border: 1px solid var(--color-silver) !important;
+  color: var(--color-midnight) !important;
+  border-radius: var(--radius-apple-control) !important;
+  font-weight: 600 !important;
+}
+
+.btn-light:hover,
+.btn-secondary:hover {
+  background: var(--color-pure-white) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Apple Rounded Inputs */
 .form-control {
   border-radius: var(--radius-apple-control) !important;
   background: #F1F5F9 !important;
   border: 1.5px solid transparent !important;
+  padding: 0.72rem 1rem !important;
+  color: var(--color-midnight) !important;
   transition: all 0.15s var(--ease-out) !important;
 }
 
