@@ -15,40 +15,100 @@ class AddForeignKeysToEventsTable extends Migration
     public function up()
     {
         if (Schema::hasTable('events')) {
-            // Step 1: Clean/nullify any orphaned references prior to adding constraints
-            if (Schema::hasTable('exams')) {
-                DB::table('events')
-                    ->whereNotNull('exam_id')
-                    ->whereNotIn('exam_id', DB::table('exams')->pluck('id'))
-                    ->update(['exam_id' => null]);
-            }
+            // Step 1: Detect orphaned references. Do NOT silently nullify or delete historical data.
+            $orphanErrors = [];
 
             if (Schema::hasTable('academic_years')) {
-                DB::table('events')
+                $orphanAcademicYears = DB::table('events')
                     ->whereNotNull('academic_year_id')
                     ->whereNotIn('academic_year_id', DB::table('academic_years')->pluck('id'))
-                    ->update(['academic_year_id' => null]);
+                    ->pluck('academic_year_id')
+                    ->unique()
+                    ->toArray();
+
+                if (!empty($orphanAcademicYears)) {
+                    $orphanErrors[] = sprintf(
+                        "academic_year_id: %d invalid reference(s) to non-existent academic_years (IDs: %s)",
+                        count($orphanAcademicYears),
+                        implode(', ', array_slice($orphanAcademicYears, 0, 10))
+                    );
+                }
+            }
+
+            if (Schema::hasTable('exams')) {
+                $orphanExams = DB::table('events')
+                    ->whereNotNull('exam_id')
+                    ->whereNotIn('exam_id', DB::table('exams')->pluck('id'))
+                    ->pluck('exam_id')
+                    ->unique()
+                    ->toArray();
+
+                if (!empty($orphanExams)) {
+                    $orphanErrors[] = sprintf(
+                        "exam_id: %d invalid reference(s) to non-existent exams (IDs: %s)",
+                        count($orphanExams),
+                        implode(', ', array_slice($orphanExams, 0, 10))
+                    );
+                }
             }
 
             if (Schema::hasTable('my_classes')) {
-                DB::table('events')
+                $orphanClasses = DB::table('events')
                     ->whereNotNull('my_class_id')
                     ->whereNotIn('my_class_id', DB::table('my_classes')->pluck('id'))
-                    ->update(['my_class_id' => null]);
+                    ->pluck('my_class_id')
+                    ->unique()
+                    ->toArray();
+
+                if (!empty($orphanClasses)) {
+                    $orphanErrors[] = sprintf(
+                        "my_class_id: %d invalid reference(s) to non-existent my_classes (IDs: %s)",
+                        count($orphanClasses),
+                        implode(', ', array_slice($orphanClasses, 0, 10))
+                    );
+                }
             }
 
             if (Schema::hasTable('sections')) {
-                DB::table('events')
+                $orphanSections = DB::table('events')
                     ->whereNotNull('section_id')
                     ->whereNotIn('section_id', DB::table('sections')->pluck('id'))
-                    ->update(['section_id' => null]);
+                    ->pluck('section_id')
+                    ->unique()
+                    ->toArray();
+
+                if (!empty($orphanSections)) {
+                    $orphanErrors[] = sprintf(
+                        "section_id: %d invalid reference(s) to non-existent sections (IDs: %s)",
+                        count($orphanSections),
+                        implode(', ', array_slice($orphanSections, 0, 10))
+                    );
+                }
             }
 
             if (Schema::hasTable('users')) {
-                DB::table('events')
+                $orphanUsers = DB::table('events')
                     ->whereNotNull('created_by')
                     ->whereNotIn('created_by', DB::table('users')->pluck('id'))
-                    ->update(['created_by' => null]);
+                    ->pluck('created_by')
+                    ->unique()
+                    ->toArray();
+
+                if (!empty($orphanUsers)) {
+                    $orphanErrors[] = sprintf(
+                        "created_by: %d invalid reference(s) to non-existent users (IDs: %s)",
+                        count($orphanUsers),
+                        implode(', ', array_slice($orphanUsers, 0, 10))
+                    );
+                }
+            }
+
+            if (!empty($orphanErrors)) {
+                throw new \RuntimeException(
+                    "Cannot add foreign keys to 'events' table because unresolved orphaned references exist:\n- "
+                    . implode("\n- ", $orphanErrors)
+                    . "\nAutomatic nullification was prevented to protect historical records. Please audit, reassign, or resolve these orphaned records before running this migration."
+                );
             }
 
             // Step 2: Establish relational constraints
@@ -99,14 +159,23 @@ class AddForeignKeysToEventsTable extends Migration
     public function down()
     {
         if (Schema::hasTable('events')) {
-            Schema::table('events', function (Blueprint $table) {
-                // Drop foreign keys safely
-                $table->dropForeign(['academic_year_id']);
-                $table->dropForeign(['exam_id']);
-                $table->dropForeign(['my_class_id']);
-                $table->dropForeign(['section_id']);
-                $table->dropForeign(['created_by']);
-            });
+            $foreignKeys = [
+                'academic_year_id',
+                'exam_id',
+                'my_class_id',
+                'section_id',
+                'created_by',
+            ];
+
+            foreach ($foreignKeys as $fk) {
+                try {
+                    Schema::table('events', function (Blueprint $table) use ($fk) {
+                        $table->dropForeign([$fk]);
+                    });
+                } catch (\Throwable $e) {
+                    // Ignore if FK was not created or already dropped
+                }
+            }
         }
     }
 }

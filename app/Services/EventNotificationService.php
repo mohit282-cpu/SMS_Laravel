@@ -69,26 +69,35 @@ class EventNotificationService
                 $parentUserIds = $studentRecords->pluck('my_parent_id')->filter()->toArray();
 
                 // Teachers assigned to this class or section
-                $sectionTeacherIds = Section::where('my_class_id', $event->my_class_id)
-                    ->when($event->section_id, function ($q) use ($event) {
-                        $q->where('id', $event->section_id);
-                    })
-                    ->pluck('teacher_id')
-                    ->filter()
-                    ->toArray();
+                if ($event->section_id) {
+                    // Section-specific events: strictly include ONLY teachers assigned to this specific section
+                    $teacherIds = Section::where('id', $event->section_id)
+                        ->whereNotNull('teacher_id')
+                        ->pluck('teacher_id')
+                        ->filter()
+                        ->toArray();
+                } else {
+                    // Class-wide events: include section teachers of this class + subject teachers of this class
+                    $sectionTeacherIds = Section::where('my_class_id', $event->my_class_id)
+                        ->whereNotNull('teacher_id')
+                        ->pluck('teacher_id')
+                        ->filter()
+                        ->toArray();
 
-                $subjectTeacherIds = Subject::where('my_class_id', $event->my_class_id)
-                    ->pluck('teacher_id')
-                    ->filter()
-                    ->toArray();
+                    $subjectTeacherIds = Subject::where('my_class_id', $event->my_class_id)
+                        ->whereNotNull('teacher_id')
+                        ->pluck('teacher_id')
+                        ->filter()
+                        ->toArray();
 
-                $teacherIds = array_unique(array_merge($sectionTeacherIds, $subjectTeacherIds));
+                    $teacherIds = array_unique(array_merge($sectionTeacherIds, $subjectTeacherIds));
+                }
 
                 $eligible = array_merge($adminIds, $studentUserIds, $parentUserIds, $teacherIds);
-                return array_values(array_unique($eligible));
+                return array_values(array_unique(array_map('intval', $eligible)));
 
             default:
-                return array_values(array_unique($adminIds));
+                return array_values(array_unique(array_map('intval', $adminIds)));
         }
     }
 
@@ -110,6 +119,7 @@ class EventNotificationService
             ->pluck('user_id')
             ->unique()
             ->values()
+            ->map(fn($id) => (int) $id)
             ->toArray();
     }
 }

@@ -141,8 +141,8 @@ class EventController extends Controller
             'end_date_bs' => 'nullable|regex:/^\d{4}-\d{2}-\d{2}$/',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
-            'target_audience' => 'required|in:all,teachers,students,parents,classes',
-            'my_class_id' => 'nullable|required_if:target_audience,classes|exists:my_classes,id',
+            'target_audience' => 'required|in:all,teachers,students,parents,classes,class_section',
+            'my_class_id' => 'nullable|required_if:target_audience,classes,class_section|exists:my_classes,id',
             'section_id' => 'nullable|exists:sections,id',
             'academic_year_id' => 'nullable|exists:academic_years,id',
             'location' => 'nullable|string|max:191',
@@ -185,7 +185,7 @@ class EventController extends Controller
         $classId = null;
         $sectionId = null;
 
-        if ($targetAudience === 'classes') {
+        if (in_array($targetAudience, ['classes', 'class_section'], true)) {
             if (!$request->filled('my_class_id')) {
                 return back()->withInput()->with('flash_danger', __('Please select a class for class-targeted events.'));
             }
@@ -309,8 +309,8 @@ class EventController extends Controller
             'end_date_bs' => 'nullable|regex:/^\d{4}-\d{2}-\d{2}$/',
             'start_time' => 'nullable|date_format:H:i',
             'end_time' => 'nullable|date_format:H:i',
-            'target_audience' => 'required|in:all,teachers,students,parents,classes',
-            'my_class_id' => 'nullable|required_if:target_audience,classes|exists:my_classes,id',
+            'target_audience' => 'required|in:all,teachers,students,parents,classes,class_section',
+            'my_class_id' => 'nullable|required_if:target_audience,classes,class_section|exists:my_classes,id',
             'section_id' => 'nullable|exists:sections,id',
             'academic_year_id' => 'nullable|exists:academic_years,id',
             'location' => 'nullable|string|max:191',
@@ -351,7 +351,7 @@ class EventController extends Controller
         $classId = null;
         $sectionId = null;
 
-        if ($targetAudience === 'classes') {
+        if (in_array($targetAudience, ['classes', 'class_section'], true)) {
             if (!$request->filled('my_class_id')) {
                 return back()->withInput()->with('flash_danger', __('Please select a class for class-targeted events.'));
             }
@@ -607,10 +607,9 @@ class EventController extends Controller
                 ->with(['tt_record.exam', 'tt_record.my_class', 'subject', 'time_slot']);
 
             if (!$isAdmin) {
-                // Non-admins must only see published / non-draft exams
+                // Non-admins must strictly only see published examinations (never draft or unpublished)
                 $ttQuery->whereHas('tt_record.exam', function ($q) {
-                    $q->whereIn('status', ['published', 'scheduled', 'ongoing', 'completed'])
-                      ->where('status', '!=', 'draft');
+                    $q->where('status', 'published');
                 });
 
                 if ($user->user_type === 'student') {
@@ -692,6 +691,10 @@ class EventController extends Controller
                         'is_all_day' => empty($timeStr),
                         'is_published' => true,
                         'is_closure' => false,
+                        'exam_name' => $examName,
+                        'subject_name' => $subName,
+                        'class_name' => $className,
+                        'section_name' => null,
                         'description' => "Subject: {$subName}\nExamination: {$examName}\nClass: {$className}\nTime: {$timeStr}",
                         'type' => 'timetable_exam',
                         'can_edit' => false,
