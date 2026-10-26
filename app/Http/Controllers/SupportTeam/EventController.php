@@ -53,22 +53,46 @@ class EventController extends Controller
             $query->where('is_published', (bool) $request->is_published);
         }
 
-        // Filter by BS date range
+        // Filter by BS date range with interval overlap check: start_date <= toDate AND end_date >= fromDate
+        $fromDateAd = null;
+        $toDateAd = null;
+
         if ($request->filled('date_from_bs')) {
+            if (!$this->bsService->isValidBsDate($request->date_from_bs)) {
+                return back()->withInput()->with('flash_danger', __('Invalid from Bikram Sambat (BS) date filter.'));
+            }
             try {
                 $convFrom = $this->bsService->bsToAd($request->date_from_bs);
-                $query->where('start_date', '>=', $convFrom['ad_date']);
+                $fromDateAd = $convFrom['ad_date'];
             } catch (\Exception $e) {
-                // Ignore invalid filter
+                return back()->withInput()->with('flash_danger', __('Invalid from Bikram Sambat (BS) date filter: ') . $e->getMessage());
             }
         }
+
         if ($request->filled('date_to_bs')) {
+            if (!$this->bsService->isValidBsDate($request->date_to_bs)) {
+                return back()->withInput()->with('flash_danger', __('Invalid to Bikram Sambat (BS) date filter.'));
+            }
             try {
                 $convTo = $this->bsService->bsToAd($request->date_to_bs);
-                $query->where('end_date', '<=', $convTo['ad_date']);
+                $toDateAd = $convTo['ad_date'];
             } catch (\Exception $e) {
-                // Ignore invalid filter
+                return back()->withInput()->with('flash_danger', __('Invalid to Bikram Sambat (BS) date filter: ') . $e->getMessage());
             }
+        }
+
+        if ($fromDateAd && $toDateAd) {
+            if ($toDateAd < $fromDateAd) {
+                return back()->withInput()->with('flash_danger', __('Filter end date cannot be earlier than start date.'));
+            }
+            $query->where(function ($q) use ($fromDateAd, $toDateAd) {
+                $q->where('start_date', '<=', $toDateAd)
+                  ->where('end_date', '>=', $fromDateAd);
+            });
+        } elseif ($fromDateAd) {
+            $query->where('end_date', '>=', $fromDateAd);
+        } elseif ($toDateAd) {
+            $query->where('start_date', '<=', $toDateAd);
         }
 
         $events = $query->orderBy('start_date', 'desc')->paginate(20)->appends($request->query());
@@ -76,7 +100,7 @@ class EventController extends Controller
         $data = [
             'events' => $events,
             'categories' => Event::CATEGORIES,
-            'academic_years' => AcademicYear::orderBy('year_start_bs', 'desc')->get(),
+            'academic_years' => AcademicYear::orderBy('year_bs', 'desc')->get(),
             'active_year' => AcademicYear::current(),
             'my_classes' => MyClass::orderBy('name')->get(),
             'sections' => Section::orderBy('name')->get(),
@@ -94,7 +118,7 @@ class EventController extends Controller
     {
         $data = [
             'categories' => Event::CATEGORIES,
-            'academic_years' => AcademicYear::orderBy('year_start_bs', 'desc')->get(),
+            'academic_years' => AcademicYear::orderBy('year_bs', 'desc')->get(),
             'active_year' => AcademicYear::current(),
             'my_classes' => MyClass::orderBy('name')->get(),
             'sections' => Section::orderBy('name')->get(),
@@ -156,6 +180,25 @@ class EventController extends Controller
             }
         }
 
+        // Validate target audience and class/section relationship
+        $targetAudience = $request->target_audience;
+        $classId = null;
+        $sectionId = null;
+
+        if ($targetAudience === 'classes') {
+            if (!$request->filled('my_class_id')) {
+                return back()->withInput()->with('flash_danger', __('Please select a class for class-targeted events.'));
+            }
+            $classId = $request->my_class_id;
+            if ($request->filled('section_id')) {
+                $section = Section::where('id', $request->section_id)->where('my_class_id', $classId)->first();
+                if (!$section) {
+                    return back()->withInput()->with('flash_danger', __('The selected section does not belong to the selected class.'));
+                }
+                $sectionId = $section->id;
+            }
+        }
+
         // Academic session assignment
         $academicYear = null;
         if ($request->filled('academic_year_id')) {
@@ -185,9 +228,9 @@ class EventController extends Controller
             'is_closure' => $isClosure,
             'academic_year_id' => $academicYear ? $academicYear->id : null,
             'session' => $session,
-            'target_audience' => $request->target_audience,
-            'my_class_id' => ($request->target_audience === 'classes') ? $request->my_class_id : null,
-            'section_id' => ($request->target_audience === 'classes') ? $request->section_id : null,
+            'target_audience' => $targetAudience,
+            'my_class_id' => $classId,
+            'section_id' => $sectionId,
             'location' => $request->location,
             'instructions' => $request->instructions,
             'created_by' => Auth::id(),
@@ -241,7 +284,7 @@ class EventController extends Controller
         $data = [
             'event' => $event,
             'categories' => Event::CATEGORIES,
-            'academic_years' => AcademicYear::orderBy('year_start_bs', 'desc')->get(),
+            'academic_years' => AcademicYear::orderBy('year_bs', 'desc')->get(),
             'active_year' => AcademicYear::current(),
             'my_classes' => MyClass::orderBy('name')->get(),
             'sections' => Section::orderBy('name')->get(),
@@ -303,6 +346,25 @@ class EventController extends Controller
             }
         }
 
+        // Validate target audience and class/section relationship
+        $targetAudience = $request->target_audience;
+        $classId = null;
+        $sectionId = null;
+
+        if ($targetAudience === 'classes') {
+            if (!$request->filled('my_class_id')) {
+                return back()->withInput()->with('flash_danger', __('Please select a class for class-targeted events.'));
+            }
+            $classId = $request->my_class_id;
+            if ($request->filled('section_id')) {
+                $section = Section::where('id', $request->section_id)->where('my_class_id', $classId)->first();
+                if (!$section) {
+                    return back()->withInput()->with('flash_danger', __('The selected section does not belong to the selected class.'));
+                }
+                $sectionId = $section->id;
+            }
+        }
+
         $academicYear = null;
         if ($request->filled('academic_year_id')) {
             $academicYear = AcademicYear::find($request->academic_year_id);
@@ -332,9 +394,9 @@ class EventController extends Controller
             'is_closure' => $isClosure,
             'academic_year_id' => $academicYear ? $academicYear->id : null,
             'session' => $session,
-            'target_audience' => $request->target_audience,
-            'my_class_id' => ($request->target_audience === 'classes') ? $request->my_class_id : null,
-            'section_id' => ($request->target_audience === 'classes') ? $request->section_id : null,
+            'target_audience' => $targetAudience,
+            'my_class_id' => $classId,
+            'section_id' => $sectionId,
             'location' => $request->location,
             'instructions' => $request->instructions,
             'updated_by' => Auth::id(),
@@ -427,7 +489,10 @@ class EventController extends Controller
         if ($request->filled('year_bs') && $request->filled('month_bs')) {
             $y = (int) $request->year_bs;
             $m = (int) $request->month_bs;
-            $mPad = str_pad($m, 2, '0', STR_PAD_LEFT);
+
+            if ($y < 2000 || $y > 2090 || $m < 1 || $m > 12) {
+                return response()->json(['error' => 'Invalid year_bs or month_bs parameter.'], 422);
+            }
 
             // Compute month start and end AD boundaries
             try {
@@ -436,27 +501,26 @@ class EventController extends Controller
                 $adEnd = $this->bsService->bsToAd(sprintf('%04d-%02d-%02d', $y, $m, $daysInMonth))['ad_date'];
 
                 $eventsQuery->where(function ($q) use ($adStart, $adEnd) {
-                    $q->whereBetween('start_date', [$adStart, $adEnd])
-                      ->orWhereBetween('end_date', [$adStart, $adEnd])
-                      ->orWhere(function ($sub) use ($adStart, $adEnd) {
-                          $sub->where('start_date', '<=', $adStart)
-                              ->where('end_date', '>=', $adEnd);
-                      });
+                    $q->where('start_date', '<=', $adEnd)
+                      ->where('end_date', '>=', $adStart);
                 });
             } catch (\Exception $e) {
                 Log::warning('BS calendar events month boundary conversion failed: ' . $e->getMessage());
+                return response()->json(['error' => 'Calendar date conversion failed.'], 422);
             }
         } elseif ($request->filled('start') && $request->filled('end')) {
             // Gregorian range fallback (FullCalendar)
             $adStart = substr($request->start, 0, 10);
             $adEnd = substr($request->end, 0, 10);
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $adStart) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $adEnd)) {
+                return response()->json(['error' => 'Invalid start or end date parameter.'], 422);
+            }
+            if ($adEnd < $adStart) {
+                return response()->json(['error' => 'End date cannot be earlier than start date.'], 422);
+            }
             $eventsQuery->where(function ($q) use ($adStart, $adEnd) {
-                $q->whereBetween('start_date', [$adStart, $adEnd])
-                  ->orWhereBetween('end_date', [$adStart, $adEnd])
-                  ->orWhere(function ($sub) use ($adStart, $adEnd) {
-                      $sub->where('start_date', '<=', $adStart)
-                          ->where('end_date', '>=', $adEnd);
-                  });
+                $q->where('start_date', '<=', $adEnd)
+                  ->where('end_date', '>=', $adStart);
             });
         }
 
@@ -542,18 +606,59 @@ class EventController extends Controller
                 })
                 ->with(['tt_record.exam', 'tt_record.my_class', 'subject', 'time_slot']);
 
-            if ($user->user_type === 'student') {
-                $sr = \App\Models\StudentRecord::where('user_id', $user->id)->first();
-                if ($sr) {
-                    $ttQuery->whereHas('tt_record', function ($q) use ($sr) {
-                        $q->where('my_class_id', $sr->my_class_id);
-                    });
-                }
-            } elseif ($user->user_type === 'parent') {
-                $childClassIds = \App\Models\StudentRecord::where('my_parent_id', $user->id)->pluck('my_class_id')->unique()->toArray();
-                $ttQuery->whereHas('tt_record', function ($q) use ($childClassIds) {
-                    $q->whereIn('my_class_id', $childClassIds);
+            if (!$isAdmin) {
+                // Non-admins must only see published / non-draft exams
+                $ttQuery->whereHas('tt_record.exam', function ($q) {
+                    $q->whereIn('status', ['published', 'scheduled', 'ongoing', 'completed'])
+                      ->where('status', '!=', 'draft');
                 });
+
+                if ($user->user_type === 'student') {
+                    $sr = \App\Models\StudentRecord::where('user_id', $user->id)->first();
+                    if ($sr && $sr->my_class_id) {
+                        $ttQuery->whereHas('tt_record', function ($q) use ($sr) {
+                            $q->where('my_class_id', $sr->my_class_id);
+                        });
+                    } else {
+                        // Student without enrolled class cannot see any timetables
+                        $ttQuery->whereRaw('0 = 1');
+                    }
+                } elseif ($user->user_type === 'parent') {
+                    $childClassIds = \App\Models\StudentRecord::where('my_parent_id', $user->id)
+                        ->whereNotNull('my_class_id')
+                        ->pluck('my_class_id')
+                        ->unique()
+                        ->toArray();
+                    if (!empty($childClassIds)) {
+                        $ttQuery->whereHas('tt_record', function ($q) use ($childClassIds) {
+                            $q->whereIn('my_class_id', $childClassIds);
+                        });
+                    } else {
+                        // Parent without children with classes cannot see any timetables
+                        $ttQuery->whereRaw('0 = 1');
+                    }
+                } elseif ($user->user_type === 'teacher') {
+                    $teacherSubjectIds = \App\Models\Subject::where('teacher_id', $user->id)->pluck('id')->toArray();
+                    $teacherClassIds = \App\Models\Section::where('teacher_id', $user->id)->pluck('my_class_id')->unique()->toArray();
+                    if (!empty($teacherSubjectIds) || !empty($teacherClassIds)) {
+                        $ttQuery->where(function ($q) use ($teacherSubjectIds, $teacherClassIds) {
+                            if (!empty($teacherSubjectIds)) {
+                                $q->whereIn('subject_id', $teacherSubjectIds);
+                            }
+                            if (!empty($teacherClassIds)) {
+                                $q->orWhereHas('tt_record', function ($sub) use ($teacherClassIds) {
+                                    $sub->whereIn('my_class_id', $teacherClassIds);
+                                });
+                            }
+                        });
+                    } else {
+                        // Teacher without assigned classes or subjects
+                        $ttQuery->whereRaw('0 = 1');
+                    }
+                } else {
+                    // Non-teaching staff (accountant, etc.) cannot view student examination timetables
+                    $ttQuery->whereRaw('0 = 1');
+                }
             }
 
             if (!empty($adStart) && !empty($adEnd)) {
@@ -602,21 +707,31 @@ class EventController extends Controller
     }
 
     /**
-     * Dispatch web push notifications for an event.
+     * Dispatch web push notifications for an event to eligible subscribed recipients.
      */
     protected function dispatchNotification(Event $event): void
     {
+        if (!$event->is_published) {
+            return;
+        }
+
         try {
-            $subscriberIds = \App\Models\PushSubscription::pluck('user_id')->unique()->toArray();
+            $notificationService = app(\App\Services\EventNotificationService::class);
+            $subscriberIds = $notificationService->getSubscribedRecipientIds($event);
+
             if (!empty($subscriberIds)) {
                 $isNe = app()->getLocale() === 'ne';
                 $eventTitle = ($isNe && $event->title_ne) ? $event->title_ne : $event->title;
-                \App\Jobs\SendWebPushNotification::dispatch(
-                    $subscriberIds,
-                    __('School Calendar Event'),
-                    $eventTitle . " ({$event->start_date_bs} BS)",
-                    route('events.index')
-                );
+                $targetUrl = route('events.index');
+
+                \Illuminate\Support\Facades\DB::afterCommit(function () use ($subscriberIds, $eventTitle, $event, $targetUrl) {
+                    \App\Jobs\SendWebPushNotification::dispatch(
+                        $subscriberIds,
+                        __('School Calendar Event'),
+                        $eventTitle . " ({$event->start_date_bs} BS)",
+                        $targetUrl
+                    );
+                });
             }
         } catch (\Throwable $e) {
             Log::warning('WebPush notification dispatch failed for event: ' . $e->getMessage());

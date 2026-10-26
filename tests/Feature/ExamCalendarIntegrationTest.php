@@ -211,4 +211,242 @@ class ExamCalendarIntegrationTest extends TestCase
         $this->assertDatabaseMissing('exams', ['id' => $exam->id]);
         $this->assertDatabaseMissing('events', ['id' => $event->id]);
     }
+
+    /**
+     * Test exam creation and editing reject invalid BS dates.
+     */
+    public function test_exam_create_and_update_rejects_invalid_bs_dates()
+    {
+        $admin = $this->getAdmin();
+
+        // 1. Create with invalid BS date (month 13 or impossible day)
+        $resCreate = $this->actingAs($admin)->post(route('exams.store'), [
+            'name' => 'Invalid BS Exam ' . uniqid(),
+            'term' => 1,
+            'start_date_bs' => '2083-13-01',
+            'end_date_bs' => '2083-13-05',
+        ]);
+        $resCreate->assertSessionHasErrors(['start_date_bs']);
+
+        // 2. Create valid exam then attempt update with impossible day (e.g. Kartik 31 in 2083)
+        $validName = 'Valid BS Exam ' . uniqid();
+        $this->actingAs($admin)->post(route('exams.store'), [
+            'name' => $validName,
+            'term' => 1,
+            'start_date_bs' => '2083-07-10',
+            'end_date_bs' => '2083-07-20',
+            'status' => 'scheduled',
+        ]);
+        $exam = Exam::where('name', $validName)->first();
+        $this->assertNotNull($exam);
+
+        $resUpdate = $this->actingAs($admin)->put(route('exams.update', $exam->id), [
+            'name' => $validName,
+            'term' => 1,
+            'start_date_bs' => '2083-07-31', // Kartik 2083 has only 30 days
+            'end_date_bs' => '2083-07-31',
+        ]);
+        $resUpdate->assertSessionHasErrors(['start_date_bs']);
+    }
+
+    /**
+     * Test exam rejects chronologically reversed BS date ranges.
+     */
+    public function test_exam_rejects_chronologically_invalid_bs_dates()
+    {
+        $admin = $this->getAdmin();
+
+        $response = $this->actingAs($admin)->post(route('exams.store'), [
+            'name' => 'Reversed BS Exam ' . uniqid(),
+            'term' => 1,
+            'start_date_bs' => '2083-08-20',
+            'end_date_bs' => '2083-08-10', // Earlier than start
+        ]);
+        $response->assertSessionHasErrors(['end_date_bs']);
+    }
+
+    /**
+     * Test timetable exam calendar feed strictly hides draft exams and restricts to authorized classes.
+     */
+    public function test_timetable_exam_calendar_hides_draft_and_respects_class_scoping()
+    {
+        $admin = $this->getAdmin();
+        $classes = MyClass::all();
+        $this->assertGreaterThanOrEqual(2, $classes->count());
+
+        $classA = $classes[0];
+        $classB = $classes[1];
+
+        $srA = \App\Models\StudentRecord::where('my_class_id', $classA->id)->first();
+        if (!$srA) {
+            $this->markTestSkipped('Need student in class A');
+        }
+        $studentA = $srA->user;
+
+        // 1. Create a draft exam with timetable entry for Class A
+        $draftExam = Exam::create([
+            'name' => 'Draft Secret Exam ' . uniqid(),
+            'term' => 1,
+            'year' => \App\Helpers\Qs::getCurrentSession(),
+            'start_date' => '2026-11-25',
+            'end_date' => '2026-11-25',
+            'start_date_bs' => '2083-08-09',
+            'end_date_bs' => '2083-08-09',
+            'status' => 'draft', // DRAFT
+        ]);
+
+        $ttrA = TimeTableRecord::create([
+            'name' => 'Draft TTR ' . uniqid(),
+            'my_class_id' => $classA->id,
+            'exam_id' => $draftExam->id,
+            'year' => \App\Helpers\Qs::getCurrentSession(),
+        ]);
+
+        $sub = Subject::where('my_class_id', $classA->id)->first() ?? Subject::first();
+        $ts = TimeSlot::first();
+        $ttA = TimeTable::create([
+            'ttr_id' => $ttrA->id,
+            'ts_id' => $ts ? $ts->id : 1,
+            'timestamp_from' => $ts ? $ts->timestamp_from : '1792984500',
+            'timestamp_to' => $ts ? $ts->timestamp_to : '1792988100',
+            'subject_id' => $sub->id,
+            'exam_date' => '2026-11-25',
+            'day' => 'Wednesday',
+        ]);
+
+        // Student A queries calendar: draft exam timetable MUST be hidden
+        $resA = $this->actingAs($studentA)->getJson(route('calendar.events'));
+        $dataA = $resA->json();
+        $ttIds = array_column($dataA, 'id');
+        $this->assertNotContains('tt_' . $ttA->id, $ttIds, 'Draft exam timetable must not be exposed to student.');
+
+        // 2. Now publish the exam, and test cross-class access
+        $draftExam->update(['status' => 'published']);
+
+        // Student A should see it
+        $resA2 = $this->actingAs($studentA)->getJson(route('calendar.events'));
+        $ttIds2 = array_column($resA2->json(), 'id');
+        $this->assertContains('tt_' . $ttA->id, $ttIds2, 'Published exam timetable for Class A should be visible to Class A student.');
+
+        // Student in Class B should NOT see Class A timetable
+        $srB = \App\Models\StudentRecord::where('my_class_id', $classB->id)->first();
+        if ($srB) {
+            $studentB = $srB->user;
+            $resB = $this->actingAs($studentB)->getJson(route('calendar.events'));
+            $ttIdsB = array_column($resB->json(), 'id');
+            $this->assertNotContains('tt_' . $ttA->id, $ttIdsB, 'Class B student must not see Class A timetable entry.');
+        }
+
+        // Clean up
+        $ttA->delete();
+        $ttrA->delete();
+        $draftExam->delete();
+    }
+
+    /**
+     * Test unpublishing examination preserves marks and lifecycle history without destruction.
+     */
+    public function test_unpublish_exam_preserves_lifecycle_and_does_not_delete_marks()
+    {
+        $admin = $this->getAdmin();
+
+        $exam = Exam::create([
+            'name' => 'Exam With Marks Preserved ' . uniqid(),
+            'term' => 1,
+            'year' => \App\Helpers\Qs::getCurrentSession(),
+            'start_date' => '2026-11-01',
+            'end_date' => '2026-11-10',
+            'start_date_bs' => '2083-07-15',
+            'end_date_bs' => '2083-07-24',
+            'status' => 'published',
+            'published_at' => now(),
+            'published_by' => $admin->id,
+        ]);
+
+        $student = $this->getStudent();
+        $sr = \App\Models\StudentRecord::where('user_id', $student->id)->first();
+        $secId = $sr && $sr->section_id ? $sr->section_id : (\App\Models\Section::first()->id ?? 1);
+        $classId = $sr && $sr->my_class_id ? $sr->my_class_id : (\App\Models\MyClass::first()->id ?? 1);
+        $sub = Subject::where('my_class_id', $classId)->first() ?? Subject::first();
+        $mark = \App\Models\Mark::create([
+            'exam_id' => $exam->id,
+            'student_id' => $student->id,
+            'subject_id' => $sub->id,
+            'my_class_id' => $classId,
+            'section_id' => $secId,
+            'year' => $exam->year,
+            'theory_mark' => 45.0,
+            'practical_mark' => 20.0,
+            'total_mark' => 65.0,
+            'grade_name' => 'B+',
+            'gpa_point' => 3.2,
+        ]);
+
+        // Unpublish the exam
+        $unpubRes = $this->actingAs($admin)->put(route('exams.unpublish', $exam->id));
+        $unpubRes->assertSessionHas('flash_success');
+
+        $exam->refresh();
+        $this->assertNull($exam->published_by);
+        $this->assertNull($exam->published_at);
+        $this->assertNotEquals('published', $exam->status);
+
+        // Marks MUST be completely intact
+        $this->assertDatabaseHas('marks', [
+            'id' => $mark->id,
+            'exam_id' => $exam->id,
+            'total_mark' => 65.0,
+        ]);
+
+        // Clean up mark before exam teardown
+        $mark->delete();
+        $exam->delete();
+    }
+
+    /**
+     * Test cannot delete examination when student marks are already recorded.
+     */
+    public function test_cannot_delete_exam_with_existing_marks()
+    {
+        $admin = $this->getAdmin();
+
+        $exam = Exam::create([
+            'name' => 'Exam Cannot Delete With Marks ' . uniqid(),
+            'term' => 2,
+            'year' => \App\Helpers\Qs::getCurrentSession(),
+            'start_date' => '2026-12-01',
+            'end_date' => '2026-12-10',
+            'start_date_bs' => '2083-08-15',
+            'end_date_bs' => '2083-08-24',
+            'status' => 'completed',
+        ]);
+
+        $student = $this->getStudent();
+        $sr = \App\Models\StudentRecord::where('user_id', $student->id)->first();
+        $secId = $sr && $sr->section_id ? $sr->section_id : (\App\Models\Section::first()->id ?? 1);
+        $classId = $sr && $sr->my_class_id ? $sr->my_class_id : (\App\Models\MyClass::first()->id ?? 1);
+        $sub = Subject::where('my_class_id', $classId)->first() ?? Subject::first();
+        $mark = \App\Models\Mark::create([
+            'exam_id' => $exam->id,
+            'student_id' => $student->id,
+            'subject_id' => $sub->id,
+            'my_class_id' => $classId,
+            'section_id' => $secId,
+            'year' => $exam->year,
+            'theory_mark' => 50.0,
+            'practical_mark' => 25.0,
+            'total_mark' => 75.0,
+            'grade_name' => 'A',
+            'gpa_point' => 3.6,
+        ]);
+
+        // Attempt deletion: must be blocked by integrity check
+        $resDelete = $this->actingAs($admin)->delete(route('exams.destroy', $exam->id));
+        $resDelete->assertSessionHas('flash_danger');
+        $this->assertDatabaseHas('exams', ['id' => $exam->id]);
+
+        // Clean up
+        $mark->delete();
+        $exam->delete();
+    }
 }

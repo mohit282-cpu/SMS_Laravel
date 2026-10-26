@@ -136,6 +136,7 @@ class CompleteFeatureImplementationTest extends TestCase
         $class = MyClass::first();
         $section = Section::where('my_class_id', $class->id)->first();
         $section->update(['teacher_id' => $teacher->id]);
+        StudyMaterial::where('title', 'Unit 1 Lecture Notes')->delete();
 
         // 1. Teacher uploads a valid PDF study material
         $file = UploadedFile::fake()->create('lecture_notes.pdf', 500, 'application/pdf');

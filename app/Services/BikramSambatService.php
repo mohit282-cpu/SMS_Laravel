@@ -411,7 +411,11 @@ class BikramSambatService
             throw new InvalidArgumentException("Invalid BS Year or Month: {$year}-{$month}");
         }
 
-        return (int) (self::BS_CALENDAR_DATA[$year][$month - 1] ?? 30);
+        if (!isset(self::BS_CALENDAR_DATA[$year][$month - 1])) {
+            throw new InvalidArgumentException("Calendar data for BS {$year}-{$month} is unavailable.");
+        }
+
+        return (int) self::BS_CALENDAR_DATA[$year][$month - 1];
     }
 
     /**

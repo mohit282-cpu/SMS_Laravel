@@ -55,52 +55,36 @@ class AcademicYear extends Model
 
     /**
      * Get the single authoritative active academic session.
-     * Automatically repairs state if no session is currently marked active.
+     * Pure read-only query that never mutates session states or auto-activates historical sessions.
      *
      * @return AcademicYear|null
      */
     public static function current(): ?self
     {
-        $active = self::where('is_active', true)->first();
-        if ($active) {
-            return $active;
-        }
-
-        // Auto-heal: find matching Setting or fallback to latest open session
-        $settingSession = \App\Models\Setting::where('type', 'current_session')->value('description');
-        $candidate = null;
-
-        if ($settingSession) {
-            $candidate = self::where('name', $settingSession)->first();
-        }
-
-        if (!$candidate) {
-            $candidate = self::orderBy('year_bs', 'desc')->first();
-        }
-
-        if ($candidate) {
-            self::activateSession($candidate->id);
-            return $candidate->fresh();
-        }
-
-        return null;
+        return self::where('is_active', true)->where('is_closed', false)->first();
     }
 
     /**
-     * Atomically activate a specific session and deactivate all others.
+     * Atomically activate a specific open session and deactivate all others.
+     * Closed sessions cannot be activated without an explicit reopen operation first.
      *
      * @param int $id
      * @return AcademicYear
+     * @throws \InvalidArgumentException
      */
     public static function activateSession(int $id): self
     {
         return \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            $ay = self::findOrFail($id);
+
+            if ($ay->is_closed) {
+                throw new \InvalidArgumentException(__('Cannot activate a closed academic session. Please reopen it first.'));
+            }
+
             self::where('id', '<>', $id)->where('is_active', true)->update(['is_active' => false]);
 
-            $ay = self::findOrFail($id);
             $ay->update([
                 'is_active' => true,
-                'is_closed' => false,
             ]);
 
             \App\Models\Setting::where('type', 'current_session')->update(['description' => $ay->name]);

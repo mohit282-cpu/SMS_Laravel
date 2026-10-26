@@ -191,9 +191,9 @@ class Event extends Model
         if ($user->user_type === 'teacher') {
             $assignedClassIds = Section::where('teacher_id', $user->id)->pluck('my_class_id')->unique()->toArray();
             return $query->where(function ($q) use ($assignedClassIds) {
-                $q->whereIn('target_audience', ['all', 'teachers', 'students'])
+                $q->whereIn('target_audience', ['all', 'teachers'])
                   ->orWhere(function ($sub) use ($assignedClassIds) {
-                      $sub->where('target_audience', 'classes')
+                      $sub->whereIn('target_audience', ['classes', 'class_section'])
                           ->whereIn('my_class_id', $assignedClassIds);
                   });
             });
@@ -207,7 +207,7 @@ class Event extends Model
             return $query->where(function ($q) use ($myClassId, $mySectionId) {
                 $q->whereIn('target_audience', ['all', 'students'])
                   ->orWhere(function ($sub) use ($myClassId, $mySectionId) {
-                      $sub->where('target_audience', 'classes')
+                      $sub->whereIn('target_audience', ['classes', 'class_section'])
                           ->where('my_class_id', $myClassId)
                           ->where(function ($s) use ($mySectionId) {
                               $s->whereNull('section_id')->orWhere('section_id', $mySectionId);
@@ -221,7 +221,7 @@ class Event extends Model
             return $query->where(function ($q) use ($childClassIds) {
                 $q->whereIn('target_audience', ['all', 'parents'])
                   ->orWhere(function ($sub) use ($childClassIds) {
-                      $sub->where('target_audience', 'classes')
+                      $sub->whereIn('target_audience', ['classes', 'class_section'])
                           ->whereIn('my_class_id', $childClassIds);
                   });
             });
@@ -229,5 +229,15 @@ class Event extends Model
 
         // Other staff (accountant, librarian)
         return $query->whereIn('target_audience', ['all', 'teachers']);
+    }
+
+    /**
+     * Get eligible recipient user IDs for notifications based on audience targeting.
+     *
+     * @return array<int>
+     */
+    public function getEligibleRecipientUserIds(): array
+    {
+        return app(\App\Services\EventNotificationService::class)->getEligibleUserIds($this);
     }
 }
