@@ -1,0 +1,94 @@
+/* Nepali Bikram Sambat Date Picker Styling */
+.nepali-datepicker-popup {
+    position: absolute;
+    background: #ffffff;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    z-index: 99999;
+    width: 290px;
+    padding: 12px;
+    font-family: inherit;
+    display: none;
+}
+
+.nepali-datepicker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    gap: 6px;
+}
+
+.nepali-datepicker-header select {
+    padding: 4px 6px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    font-size: 13px;
+    background-color: #f8f9fa;
+    color: #333;
+    cursor: pointer;
+}
+
+.nepali-datepicker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-weight: 600;
+    font-size: 12px;
+    color: #6c757d;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #dee2e6;
+    margin-bottom: 6px;
+}
+
+.nepali-datepicker-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.nepali-datepicker-day {
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 13px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+    color: #212529;
+}
+
+.nepali-datepicker-day:hover {
+    background: #e9ecef;
+}
+
+.nepali-datepicker-day.selected {
+    background: #007bff;
+    color: #ffffff !important;
+    font-weight: bold;
+}
+
+.nepali-datepicker-day.saturday {
+    color: #dc3545;
+}
+
+.nepali-datepicker-day.empty {
+    visibility: hidden;
+    cursor: default;
+}
+
+.nepali-datepicker-footer {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid #dee2e6;
+    font-size: 11px;
+    color: #6c757d;
+}
+
+.nepali-datepicker-today-btn {
+    color: #007bff;
+    cursor: pointer;
+    font-weight: 600;
+}
