@@ -241,18 +241,22 @@ a:hover {
   color: var(--apple-orange);
 }
 
-/* Active Nav Pill State */
+/* Active Nav Pill State - Apple Sovryx Orange Pill */
 .nav-sidebar .nav-link.active,
 .nav-sidebar .nav-item-open > .nav-link {
-  background-color: var(--apple-orange-alpha) !important;
-  color: var(--apple-orange) !important;
+  background: linear-gradient(135deg, #FF5700 0%, #E04800 100%) !important;
+  color: #FFFFFF !important;
   font-weight: 600 !important;
-  border-left: 3px solid var(--apple-orange);
+  border-radius: 12px !important;
+  box-shadow: 0 4px 15px rgba(255, 87, 0, 0.35) !important;
+  border-left: none !important;
 }
 
 .nav-sidebar .nav-link.active i,
-.nav-sidebar .nav-item-open > .nav-link i {
-  color: var(--apple-orange) !important;
+.nav-sidebar .nav-item-open > .nav-link i,
+.nav-sidebar .nav-link.active span,
+.nav-sidebar .nav-item-open > .nav-link span {
+  color: #FFFFFF !important;
 }
 
 /* Submenu Styling */
@@ -277,11 +281,22 @@ a:hover {
 /* ========================================================
    4. APPLE-STYLE CARDS & SURFACES
    ======================================================== */
-.card {
-  background-color: var(--apple-white) !important;
-  border-radius: var(--radius-lg) !important;
-  border: 1px solid rgba(17, 24, 39, 0.06) !important;
-  box-shadow: var(--shadow-card) !important;
+.sidebar .card,
+.sidebar .card-body,
+.card-sidebar-mobile {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.card:not(.sidebar .card):not(.card-sidebar-mobile) {
+  background: rgba(255, 255, 255, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border-radius: 18px !important;
+  border: 1px solid rgba(255, 255, 255, 0.7) !important;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.05) !important;
   transition: box-shadow 0.22s var(--ease-out), transform 0.22s var(--ease-out);
   margin-bottom: 1.5rem;
   overflow: hidden;

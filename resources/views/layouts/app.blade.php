@@ -19,6 +19,7 @@
     <!-- Styles -->
     <link href="{{ asset('css/app.css') }}" rel="stylesheet">
     <link href="{{ asset('assets/css/apple-design-system.css') }}" rel="stylesheet">
+    <link href="{{ asset('assets/css/apple-liquid-theme.css') }}" rel="stylesheet">
 </head>
 <body>
     <div id="app">

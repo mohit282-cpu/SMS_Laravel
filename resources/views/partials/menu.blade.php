@@ -1,4 +1,4 @@
-<div class="sidebar sidebar-dark sidebar-main sidebar-expand-md">
+<div class="sidebar sidebar-dark sidebar-main sidebar-expand-md" style="background: rgba(17, 24, 39, 0.95) !important; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-right: 1px solid rgba(255, 255, 255, 0.08);">
 
     <!-- Sidebar mobile toggler -->
     <div class="sidebar-mobile-toggler text-center">
@@ -46,7 +46,7 @@
         <!-- /user menu -->
 
         <!-- Main navigation -->
-        <div class="card card-sidebar-mobile">
+        <div class="sidebar-nav-container card-sidebar-mobile">
             <ul class="nav nav-sidebar" data-nav-type="accordion">
 
                 <!-- Main -->

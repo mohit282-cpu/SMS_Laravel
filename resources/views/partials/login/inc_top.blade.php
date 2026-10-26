@@ -21,6 +21,7 @@
 <link href=" {{ asset('assets/css/qs.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/pwa.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/apple-design-system.css') }}" rel="stylesheet" type="text/css">
+<link href=" {{ asset('assets/css/apple-liquid-theme.css') }}" rel="stylesheet" type="text/css">
 <!-- /global stylesheets -->
 
 <!-- Core JS files -->
