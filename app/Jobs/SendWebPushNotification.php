@@ -51,10 +51,32 @@ class SendWebPushNotification implements ShouldQueue
     {
         $result = $pwaService->sendToUsers($this->userIds, $this->title, $this->body, $this->targetUrl);
 
-        // Terminate immediately without retrying on permanent server configuration errors
-        if (in_array($result['status'], ['vapid_keys_missing', 'vapid_keys_invalid', 'dependency_missing'], true)) {
-            Log::info('SendWebPushNotification stopped: permanent configuration status encountered (' . $result['status'] . '). Retries cancelled.');
+        // Permanent outcomes that must never trigger retries:
+        $permanentStatuses = [
+            'success',
+            'no_recipients',
+            'no_subscriptions',
+            'vapid_keys_missing',
+            'vapid_keys_invalid',
+            'dependency_missing',
+            'invalid_role',
+            'partial', // Never retry partial deliveries to avoid sending duplicate notifications
+        ];
+
+        if (in_array($result['status'], $permanentStatuses, true)) {
+            if ($result['status'] !== 'success' && $result['status'] !== 'partial') {
+                Log::info('SendWebPushNotification stopped: permanent non-retryable status (' . $result['status'] . ').');
+            }
             return $result;
+        }
+
+        // Retryable failure (e.g. provider network timeout or transient error):
+        if ($result['status'] === 'failed') {
+            if ($this->attempts() < $this->tries) {
+                $seconds = $this->backoff[$this->attempts() - 1] ?? 30;
+                $this->release($seconds);
+                return $result;
+            }
         }
 
         return $result;

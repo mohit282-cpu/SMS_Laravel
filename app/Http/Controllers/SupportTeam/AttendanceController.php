@@ -389,9 +389,21 @@ class AttendanceController extends Controller
      */
     public function studentHistory(Request $request, $student_id)
     {
-        $sr = StudentRecord::with(['user', 'my_class', 'section'])->findOrFail($student_id);
+        $user = Auth::user();
+        if (!$user) {
+            return redirect()->route('login');
+        }
 
-        if (!$this->attendanceService->canUserViewStudentAttendance(Auth::user(), $sr->id)) {
+        $sr = StudentRecord::with(['user', 'my_class', 'section'])
+            ->where('id', $student_id)
+            ->orWhere('user_id', $student_id)
+            ->first();
+
+        if (!$sr) {
+            abort(404, __('Student record not found.'));
+        }
+
+        if (!$this->attendanceService->canUserViewStudentAttendance($user, $sr->id)) {
             abort(403, __('Access Denied: You do not have permission to view this student\'s attendance.'));
         }
 

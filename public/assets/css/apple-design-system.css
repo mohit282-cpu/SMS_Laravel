@@ -1088,3 +1088,107 @@ a:hover {
     transform: none !important;
   }
 }
+
+/* ========================================================
+   19. PRINT & PDF HARDENING (Invoices, Receipts, Marksheets)
+   ======================================================== */
+@media print {
+  *,
+  *::before,
+  *::after {
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.3 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Hide app navigation, sidebars, headers, action buttons, alert banners */
+  .navbar,
+  .sidebar,
+  .page-header,
+  .alert,
+  .btn,
+  .d-print-none,
+  .footer,
+  .header-elements,
+  .sidebar-mobile-toggler,
+  .breadcrumb-line {
+    display: none !important;
+  }
+
+  .page-content,
+  .content-wrapper,
+  .content {
+    background: #ffffff !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    position: static !important;
+  }
+
+  .card {
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .card-header,
+  .card-body,
+  .card-footer {
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Tables in print: crisp thin borders, no rounded corners cutting rows */
+  table {
+    border-collapse: collapse !important;
+    width: 100% !important;
+  }
+
+  .table-bordered {
+    border: 1px solid #333333 !important;
+    border-radius: 0 !important;
+  }
+
+  .table-bordered td,
+  .table-bordered th {
+    border: 1px solid #444444 !important;
+    padding: 4px 8px !important;
+    color: #000000 !important;
+  }
+
+  /* Prevent awkward page splits */
+  tr, img, .apple-stat-card, .invoice-header, .receipt-header {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    color: #000000 !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Preserve links without printing messy URL destinations */
+  a[href]:after {
+    content: "" !important;
+  }
+}

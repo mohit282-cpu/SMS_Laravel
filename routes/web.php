@@ -1,6 +1,6 @@
 <?php
 Route::group(['middleware' => 'no_store'], function () {
-    Auth::routes();
+    Auth::routes(['register' => false]);
 });
 
 //Route::get('/test', 'TestController@index')->name('test');

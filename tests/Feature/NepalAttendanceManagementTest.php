@@ -392,13 +392,15 @@ class NepalAttendanceManagementTest extends TestCase
         $response->assertViewHas('has_assignment', false);
         $response->assertViewHas('can_manage', false);
 
+        $anyClass = MyClass::first();
+
         // Attempting to bypass by passing class parameter gives 403 Forbidden
-        $resBypass = $this->actingAs($teacher)->get(route('attendance.index', ['my_class_id' => 1]));
+        $resBypass = $this->actingAs($teacher)->get(route('attendance.index', ['my_class_id' => $anyClass->id]));
         $resBypass->assertStatus(403);
 
         // Attempting to POST attendance gives 403 Forbidden
         $resPost = $this->actingAs($teacher)->post(route('attendance.store'), [
-            'my_class_id' => 1,
+            'my_class_id' => $anyClass->id,
             'attendance_date_bs' => '2083-07-08',
             'students' => [1 => ['status' => 'present']],
         ]);

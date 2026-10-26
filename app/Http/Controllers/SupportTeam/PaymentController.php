@@ -181,12 +181,30 @@ class PaymentController extends Controller
     public function pay_now(Request $req, $pr_id)
     {
         $this->validate($req, [
-            'amt_paid' => 'required|numeric|gt:0'
+            'amt_paid' => ['required', 'numeric', 'gt:0', 'max:1000000000']
         ], [], ['amt_paid' => 'Amount Paid']);
 
         $pr_id = Qs::decodeHash($pr_id) ?: $pr_id;
 
-        return \Illuminate\Support\Facades\DB::transaction(function() use ($req, $pr_id) {
+        $rawAmt = $req->input('amt_paid');
+        if (!is_numeric($rawAmt) || !is_finite((float)$rawAmt) || (float)$rawAmt <= 0) {
+            return response()->json(['msg' => __('Payment amount must be a valid positive number.')], 422);
+        }
+
+        $idempotencyKey = $req->input('idempotency_key') ?: $req->header('X-Idempotency-Key');
+        $cacheKey = null;
+        if (!empty($idempotencyKey)) {
+            $cacheKey = 'pay_idem_' . md5($pr_id . '_' . $idempotencyKey);
+            if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+                return response()->json([
+                    'ok' => true,
+                    'msg' => __('Payment already processed.'),
+                    'duplicate' => true,
+                ], 200);
+            }
+        }
+
+        return \Illuminate\Support\Facades\DB::transaction(function() use ($req, $pr_id, $rawAmt, $cacheKey) {
             $pr = \App\Models\PaymentRecord::where('id', $pr_id)->lockForUpdate()->first();
             if(!$pr) {
                 return response()->json(['msg' => __('msg.rnf')], 404);
@@ -196,12 +214,12 @@ class PaymentController extends Controller
                 return response()->json(['msg' => __('This invoice has already been fully paid.')], 422);
             }
 
-            $payment = $this->pay->find($pr->payment_id);
+            $payment = \App\Models\Payment::where('id', $pr->payment_id)->lockForUpdate()->first();
             if(!$payment) {
                 return response()->json(['msg' => __('msg.rnf')], 404);
             }
 
-            $payAmt = (float)$req->amt_paid;
+            $payAmt = (float)$rawAmt;
             if ($payAmt <= 0 || !is_finite($payAmt)) {
                 return response()->json(['msg' => __('Payment amount must be a positive number.')], 422);
             }
@@ -229,8 +247,14 @@ class PaymentController extends Controller
             }
 
             $newAmtPaid = round($currentPaid + $payAmt, 2);
-            $newBalance = max(0, round($totalInvoiceAmount - $newAmtPaid, 2));
-            $isPaid = $newBalance <= 0.001 ? 1 : 0;
+            if ($newAmtPaid >= $totalInvoiceAmount) {
+                $newAmtPaid = $totalInvoiceAmount;
+                $newBalance = 0.0;
+                $isPaid = 1;
+            } else {
+                $newBalance = max(0, round($totalInvoiceAmount - $newAmtPaid, 2));
+                $isPaid = $newBalance <= 0.001 ? 1 : 0;
+            }
 
             $d['amt_paid'] = $newAmtPaid;
             $d['balance'] = $newBalance;
@@ -241,9 +265,17 @@ class PaymentController extends Controller
             $d2['amt_paid'] = $payAmt;
             $d2['balance'] = $newBalance;
             $d2['pr_id'] = $pr_id;
-            $d2['year'] = $pr->year ?: $payment->year ?: $this->year;
+            $d2['year'] = $pr->year ?: ($payment->year ?: $this->year);
 
-            $this->pay->createReceipt($d2);
+            $receipt = $this->pay->createReceipt($d2);
+            if (!$receipt) {
+                throw new \RuntimeException('Failed to create receipt record.');
+            }
+
+            if ($cacheKey) {
+                \Illuminate\Support\Facades\Cache::put($cacheKey, true, now()->addMinutes(10));
+            }
+
             return Qs::jsonUpdateOk();
         });
     }

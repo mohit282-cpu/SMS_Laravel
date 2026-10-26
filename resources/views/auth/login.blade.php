@@ -17,7 +17,7 @@
                                     {{ __('Welcome Back') }}
                                 </h3>
                                 <p class="text-muted font-size-sm mb-0">
-                                    {{ __('Sign in to access your school dashboard') }}
+                                    {{ __('Login to your account') }}
                                 </p>
                             </div>
 

@@ -64,4 +64,18 @@ class StudentRecordCreate extends FormRequest
 
         return parent::getValidatorInstance();
     }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->filled('my_class_id') && $this->filled('section_id')) {
+                $exists = \App\Models\Section::where('id', $this->section_id)
+                    ->where('my_class_id', $this->my_class_id)
+                    ->exists();
+                if (!$exists) {
+                    $validator->errors()->add('section_id', __('The selected section does not belong to the selected class.'));
+                }
+            }
+        });
+    }
 }

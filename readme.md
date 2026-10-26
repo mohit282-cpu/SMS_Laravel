@@ -39,10 +39,11 @@ Administrators (Super Admin & Admin)
 Check Laravel 8 Requirements https://laravel.com/docs/8.x
 
 **Installation**
-- Install dependencies (composer install)
-- Set Database Credentials & App Settings in dotenv file (.env)
-- Migrate Database (php artisan migrate)
-- Database seed (php artisan db:seed)
+- Install dependencies (`composer install`)
+- Configure database credentials & app settings in environment file (`.env`)
+- (Optional helper) Create MySQL database: `php artisan db:create`
+- Run database migrations: `php artisan migrate`
+- Seed database records: `php artisan db:seed`
 
 **Login Credentials**
 After seeding. Login details as follows:

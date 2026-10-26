@@ -62,35 +62,39 @@ class PaymentNepalYearTest extends TestCase
 
     public function test_payments_resource_edit_route_still_works()
     {
-        $payment = Payment::first();
-        if ($payment) {
-            $response = $this->actingAs($this->admin)->get(route('payments.edit', $payment->id));
-            $response->assertStatus(200);
-            $response->assertViewIs('pages.support_team.payments.edit');
-        }
+        $payment = Payment::first() ?: Payment::create([
+            'title' => 'Tuition Test Fee',
+            'amount' => 1000,
+            'year' => '2083/84 BS',
+            'ref_no' => 'PAY_TEST_' . rand(1000, 9999),
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('payments.edit', $payment->id));
+        $response->assertStatus(200);
+        $response->assertViewIs('pages.support_team.payments.edit');
     }
 
     public function test_payments_invoice_loads_with_hashed_student_id()
     {
-        $student = \App\Models\StudentRecord::where('user_id', 55)->first();
-        if ($student) {
-            $hashedId = \App\Helpers\Qs::hash($student->user_id);
-            $response = $this->actingAs($this->admin)->get('/payments/invoice/' . $hashedId);
-            $response->assertStatus(200);
-            $response->assertViewIs('pages.support_team.payments.invoice');
-            $response->assertSee('Mohit Shrestha');
-        }
+        $student = \App\Models\StudentRecord::with('user')->first();
+        $this->assertNotNull($student, 'Student record must exist');
+
+        $hashedId = \App\Helpers\Qs::hash($student->user_id);
+        $response = $this->actingAs($this->admin)->get('/payments/invoice/' . $hashedId);
+        $response->assertStatus(200);
+        $response->assertViewIs('pages.support_team.payments.invoice');
+        $response->assertSee(e($student->user->name));
     }
 
     public function test_payments_invoice_loads_with_bs_year()
     {
-        $student = \App\Models\StudentRecord::where('user_id', 55)->first();
-        if ($student) {
-            $hashedId = \App\Helpers\Qs::hash($student->user_id);
-            $response = $this->actingAs($this->admin)->get('/payments/invoice/' . $hashedId . '/2083/84%20BS');
-            $response->assertStatus(200);
-            $response->assertViewIs('pages.support_team.payments.invoice');
-            $response->assertSee('Mohit Shrestha');
-        }
+        $student = \App\Models\StudentRecord::with('user')->first();
+        $this->assertNotNull($student, 'Student record must exist');
+
+        $hashedId = \App\Helpers\Qs::hash($student->user_id);
+        $response = $this->actingAs($this->admin)->get('/payments/invoice/' . $hashedId . '/2083/84%20BS');
+        $response->assertStatus(200);
+        $response->assertViewIs('pages.support_team.payments.invoice');
+        $response->assertSee(e($student->user->name));
     }
 }

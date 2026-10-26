@@ -1010,18 +1010,11 @@
         }
     };
 
-    function purgeAllAttendanceDrafts() {
-        PwaAttendanceStore.clearAll(function () {
-            console.log('[PWA Attendance] Session drafts purged for shared-device isolation.');
-        });
-    }
-
     function enforceUserSessionIsolation() {
         var currentUserId = window.PWA_USER_ID ? String(window.PWA_USER_ID) : null;
         var lastKnownUser = localStorage.getItem('lav_sms_active_uid');
 
         if (lastKnownUser !== currentUserId) {
-            purgeAllAttendanceDrafts();
             if (currentUserId) {
                 localStorage.setItem('lav_sms_active_uid', currentUserId);
             } else {
@@ -1029,20 +1022,6 @@
             }
         }
     }
-
-    // Purge drafts on explicit logout click or logout form submission
-    document.addEventListener('click', function (e) {
-        var target = e.target && e.target.closest ? e.target.closest('a[href*="logout"]') : null;
-        if (target) {
-            purgeAllAttendanceDrafts();
-        }
-    });
-
-    document.addEventListener('submit', function (e) {
-        if (e.target && (e.target.id === 'logout-form' || (e.target.action && e.target.action.indexOf('logout') !== -1))) {
-            purgeAllAttendanceDrafts();
-        }
-    });
 
     /**
      * Public PwaAttendance API
@@ -1116,7 +1095,17 @@
         },
 
         getDrafts: function (callback) {
-            PwaAttendanceStore.getAll(callback);
+            var userId = window.PWA_USER_ID;
+            PwaAttendanceStore.getAll(function (err, drafts) {
+                if (err) return callback && callback(err, null);
+                if (!userId) {
+                    return callback && callback(null, []);
+                }
+                var userDrafts = (drafts || []).filter(function (d) {
+                    return String(d.user_id) === String(userId);
+                });
+                return callback && callback(null, userDrafts);
+            });
         },
 
         deleteDraft: function (clientUuid, callback) {

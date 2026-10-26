@@ -75,6 +75,9 @@ class StudyMaterialController extends Controller
         if ($request->filled('section_id')) {
             $section = Section::where('id', $request->section_id)->where('my_class_id', $request->my_class_id)->first();
             if (!$section) {
+                if ($request->expectsJson()) {
+                    return response()->json(['msg' => __('The selected section does not belong to the selected class.')], 422);
+                }
                 return back()->withInput()->with('flash_danger', __('The selected section does not belong to the selected class.'));
             }
         }
@@ -82,6 +85,9 @@ class StudyMaterialController extends Controller
         if ($request->filled('subject_id')) {
             $subject = Subject::where('id', $request->subject_id)->where('my_class_id', $request->my_class_id)->first();
             if (!$subject) {
+                if ($request->expectsJson()) {
+                    return response()->json(['msg' => __('The selected subject does not belong to the selected class.')], 422);
+                }
                 return back()->withInput()->with('flash_danger', __('The selected subject does not belong to the selected class.'));
             }
         }
@@ -96,6 +102,9 @@ class StudyMaterialController extends Controller
                     ->exists();
 
                 if (!$teachesSubject) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['msg' => __('You are not assigned to teach the selected subject in this class.')], 422);
+                    }
                     return back()->withInput()->with('flash_danger', __('You are not assigned to teach the selected subject in this class.'));
                 }
             } else {
@@ -104,6 +113,9 @@ class StudyMaterialController extends Controller
                     || Subject::where('my_class_id', $request->my_class_id)->where('teacher_id', $user->id)->exists();
 
                 if (!$teachesClass) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['msg' => __('You are not assigned to this class.')], 422);
+                    }
                     return back()->withInput()->with('flash_danger', __('You are not assigned to this class.'));
                 }
             }
@@ -115,25 +127,35 @@ class StudyMaterialController extends Controller
                     : Subject::where('my_class_id', $request->my_class_id)->where('teacher_id', $user->id)->exists();
 
                 if (!$isSectionTeacher && !$teachesSubjectInClass) {
+                    if ($request->expectsJson()) {
+                        return response()->json(['msg' => __('You are not assigned to this section.')], 422);
+                    }
                     return back()->withInput()->with('flash_danger', __('You are not assigned to this section.'));
                 }
             }
         }
 
         $file = $request->file('material_file');
-        $originalName = $file->getClientOriginalName();
+        $originalName = basename($file->getClientOriginalName());
         $safeOriginalName = preg_replace('/[^a-zA-Z0-9_\-\.]/', '_', $originalName);
         $extension = $file->getClientOriginalExtension();
         $fileSize = $file->getSize();
 
+        if (empty($safeOriginalName) || $safeOriginalName === '.' || $safeOriginalName === '..') {
+            $safeOriginalName = 'study_material_' . time() . '.' . $extension;
+        }
+
         // Extra check against dangerous extensions
         $dangerousExtensions = ['php', 'phtml', 'phar', 'exe', 'sh', 'bat', 'cmd', 'js', 'vbs', 'ps1', 'cgi', 'pl', 'py', 'htm', 'html'];
         if (in_array(strtolower($extension), $dangerousExtensions, true)) {
+            if ($request->expectsJson()) {
+                return response()->json(['msg' => __('Executable and script files are strictly prohibited.')], 422);
+            }
             return back()->withInput()->with('flash_danger', __('Executable and script files are strictly prohibited.'));
         }
 
-        // Store privately
-        $storedPath = $file->store('study_materials');
+        // Store privately on local disk
+        $storedPath = $file->store('study_materials', 'local');
 
         try {
             StudyMaterial::create([
@@ -149,10 +171,17 @@ class StudyMaterialController extends Controller
                 'teacher_id' => $user->id,
             ]);
         } catch (\Throwable $e) {
-            if (Storage::exists($storedPath)) {
-                Storage::delete($storedPath);
+            if (Storage::disk('local')->exists($storedPath)) {
+                Storage::disk('local')->delete($storedPath);
+            }
+            if ($request->expectsJson()) {
+                return response()->json(['msg' => __('An error occurred while saving the study material. Please try again.')], 500);
             }
             return back()->withInput()->with('flash_danger', __('An error occurred while saving the study material. Please try again.'));
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'msg' => __('Study material uploaded successfully.')]);
         }
 
         return redirect()->route('study_materials.index')->with('flash_success', __('Study material uploaded successfully.'));
@@ -161,18 +190,37 @@ class StudyMaterialController extends Controller
     public function download($id)
     {
         $user = Auth::user();
-        $material = StudyMaterial::visibleTo($user)->findOrFail($id);
-
-        if (!Storage::exists($material->file_path)) {
-            return back()->with('flash_danger', __('File not found on storage server.'));
+        if (!$user) {
+            abort(403);
         }
 
-        return Storage::download($material->file_path, $material->file_name);
+        $material = StudyMaterial::visibleTo($user)->find($id);
+        if (!$material) {
+            abort(403, __('You are not authorized to download this study material.'));
+        }
+
+        $disk = Storage::disk('local');
+        $filePath = $material->file_path;
+
+        if ($disk->exists($filePath)) {
+            return $disk->download($filePath, $material->file_name);
+        }
+
+        // Fallback for legacy files
+        if (Storage::exists($filePath)) {
+            return Storage::download($filePath, $material->file_name);
+        }
+
+        return back()->with('flash_danger', __('File not found on storage server.'));
     }
 
     public function destroy($id)
     {
         $user = Auth::user();
+        if (!$user) {
+            abort(403);
+        }
+
         $material = StudyMaterial::findOrFail($id);
 
         // Allowed only for Super Admin, Admin, or the uploading teacher
@@ -181,11 +229,18 @@ class StudyMaterialController extends Controller
         }
 
         \Illuminate\Support\Facades\DB::transaction(function() use ($material) {
-            if (Storage::exists($material->file_path)) {
+            $disk = Storage::disk('local');
+            if ($disk->exists($material->file_path)) {
+                $disk->delete($material->file_path);
+            } elseif (Storage::exists($material->file_path)) {
                 Storage::delete($material->file_path);
             }
             $material->delete();
         });
+
+        if (request()->expectsJson()) {
+            return response()->json(['ok' => true, 'msg' => __('Study material deleted successfully.')]);
+        }
 
         return redirect()->route('study_materials.index')->with('flash_success', __('Study material deleted successfully.'));
     }

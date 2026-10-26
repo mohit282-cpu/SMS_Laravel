@@ -9,6 +9,8 @@ use App\Repositories\MyClassRepo;
 use App\Repositories\StudentRepo;
 use Illuminate\Http\Request;
 
+use Illuminate\Support\Facades\DB;
+
 class PromotionController extends Controller
 {
     protected $my_class, $student;
@@ -52,7 +54,7 @@ class PromotionController extends Controller
 
     public function promote(Request $req, $fc, $fs, $tc, $ts)
     {
-        $oy = Qs::getCurrentSession(); $d = [];
+        $oy = Qs::getCurrentSession();
         $ny = Qs::getNextSession($oy);
         $students = $this->student->getRecord(['my_class_id' => $fc, 'section_id' => $fs, 'session' => $oy ])->get()->sortBy('user.name');
 
@@ -60,41 +62,50 @@ class PromotionController extends Controller
             return redirect()->route('students.promotion')->with('flash_danger', __('msg.srnf'));
         }
 
-        foreach($students as $st){
-            $p = 'p-'.$st->id;
-            $p = $req->$p;
-            if($p === 'P'){ // Promote
-                $d['my_class_id'] = $tc;
-                $d['section_id'] = $ts;
-                $d['session'] = $ny;
-            }
-            if($p === 'D'){ // Don't Promote
-                $d['my_class_id'] = $fc;
-                $d['section_id'] = $fs;
-                $d['session'] = $ny;
-            }
-            if($p === 'G'){ // Graduated
-                $d['my_class_id'] = $fc;
-                $d['section_id'] = $fs;
-                $d['grad'] = 1;
-                $d['grad_date'] = $oy;
-            }
+        DB::transaction(function () use ($students, $req, $fc, $fs, $tc, $ts, $oy, $ny) {
+            foreach($students as $st){
+                $pKey = 'p-'.$st->id;
+                $p = $req->$pKey;
+                if(!in_array($p, ['P', 'D', 'G'], true)){
+                    continue;
+                }
 
-            $this->student->updateRecord($st->id, $d);
+                $d = [];
+                if($p === 'P'){ // Promote
+                    $d['my_class_id'] = $tc;
+                    $d['section_id'] = $ts;
+                    $d['session'] = $ny;
+                }
+                if($p === 'D'){ // Don't Promote
+                    $d['my_class_id'] = $fc;
+                    $d['section_id'] = $fs;
+                    $d['session'] = $ny;
+                }
+                if($p === 'G'){ // Graduated
+                    $d['my_class_id'] = $fc;
+                    $d['section_id'] = $fs;
+                    $d['grad'] = 1;
+                    $d['grad_date'] = $oy;
+                }
 
-//            Insert New Promotion Data
-            $promote['from_class'] = $fc;
-            $promote['from_section'] = $fs;
-            $promote['grad'] = ($p === 'G') ? 1 : 0;
-            $promote['to_class'] = in_array($p, ['D', 'G']) ? $fc : $tc;
-            $promote['to_section'] = in_array($p, ['D', 'G']) ? $fs : $ts;
-            $promote['student_id'] = $st->user_id;
-            $promote['from_session'] = $oy;
-            $promote['to_session'] = $ny;
-            $promote['status'] = $p;
+                $this->student->updateRecord($st->id, $d);
 
-            $this->student->createPromotion($promote);
-        }
+                // Insert New Promotion Data
+                $promote = [];
+                $promote['from_class'] = $fc;
+                $promote['from_section'] = $fs;
+                $promote['grad'] = ($p === 'G') ? 1 : 0;
+                $promote['to_class'] = in_array($p, ['D', 'G']) ? $fc : $tc;
+                $promote['to_section'] = in_array($p, ['D', 'G']) ? $fs : $ts;
+                $promote['student_id'] = $st->user_id;
+                $promote['from_session'] = $oy;
+                $promote['to_session'] = $ny;
+                $promote['status'] = $p;
+
+                $this->student->createPromotion($promote);
+            }
+        });
+
         return redirect()->route('students.promotion')->with('flash_success', __('msg.update_ok'));
     }
 

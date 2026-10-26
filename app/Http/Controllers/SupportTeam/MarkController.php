@@ -27,7 +27,7 @@ class MarkController extends Controller
         $this->my_class =  $my_class;
         $this->year =  Qs::getCurrentSession();
 
-       // $this->middleware('teamSAT', ['except' => ['show', 'year_selected', 'year_selector', 'print_view'] ]);
+        $this->middleware('teamSAT', ['except' => ['show', 'year_selected', 'year_selector', 'print_view', 'pdf_download'] ]);
     }
 
     public function index()
@@ -49,8 +49,8 @@ class MarkController extends Controller
     {
         $st_id = $this->decodeStudentId($student_id);
 
-        /* Prevent Other Students/Parents from viewing Result of others */
-        if(Auth::user()->id != $st_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($st_id, Auth::user()->id)){
+        /* Prevent unauthorized access */
+        if(!$this->canAccessStudentRecord($st_id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -61,8 +61,8 @@ class MarkController extends Controller
     {
         $st_id = $this->decodeStudentId($student_id);
 
-        /* Prevent Other Students/Parents from viewing Result of others */
-        if(Auth::user()->id != $st_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($st_id, Auth::user()->id)){
+        /* Prevent unauthorized access */
+        if(!$this->canAccessStudentRecord($st_id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -77,22 +77,9 @@ class MarkController extends Controller
     {
         $st_id = $this->decodeStudentId($student_id);
 
-        /* Prevent Other Students/Parents from viewing Result of others */
-        if(Auth::user()->id != $st_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($st_id, Auth::user()->id)){
+        /* Prevent unauthorized access */
+        if(!$this->canAccessStudentRecord($st_id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
-        }
-
-        /* If teacher, verify they teach this student's class or section */
-        if(Qs::userIsTeacher()){
-            $srCheck = $this->student->getRecord(['user_id' => $st_id])->first();
-            if(!$srCheck){
-                return $this->noStudentRecord();
-            }
-            $teachesClass = \App\Models\Subject::where('my_class_id', $srCheck->my_class_id)->where('teacher_id', Auth::id())->exists();
-            $teachesSection = \App\Models\Section::where('id', $srCheck->section_id)->where('teacher_id', Auth::id())->exists();
-            if(!$teachesClass && !$teachesSection){
-                return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
-            }
         }
 
         if(Mk::examIsLocked() && !Qs::userIsTeamSA()){
@@ -143,8 +130,8 @@ class MarkController extends Controller
     {
         $st_id = $this->decodeStudentId($student_id);
 
-        /* Prevent Other Students/Parents from viewing Result of others */
-        if(Auth::user()->id != $st_id && !Qs::userIsTeamSA() && !Qs::userIsMyChild($st_id, Auth::user()->id)){
+        /* Prevent unauthorized access */
+        if(!$this->canAccessStudentRecord($st_id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -202,8 +189,8 @@ class MarkController extends Controller
     {
         $st_id = $this->decodeStudentId($student_id);
 
-        /* Prevent Other Students/Parents from downloading Result of others */
-        if(Auth::user()->id != $st_id && !Qs::userIsTeamSA() && !Qs::userIsMyChild($st_id, Auth::user()->id)){
+        /* Prevent unauthorized access */
+        if(!$this->canAccessStudentRecord($st_id)){
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -770,4 +757,46 @@ class MarkController extends Controller
         return Session::has('pin_verified') && Session::get('pin_verified') == $st_id;
     }
 
+    /**
+     * Determine whether the authenticated user is authorized to access a given student's marks.
+     */
+    protected function canAccessStudentRecord($st_id): bool
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return false;
+        }
+
+        // Super Admin & Admin can access all student records
+        if (Qs::userIsTeamSA()) {
+            return true;
+        }
+
+        // Student can only access their own record
+        if (Qs::userIsStudent()) {
+            return (int)$user->id === (int)$st_id;
+        }
+
+        // Parent can only access their linked children's records
+        if (Qs::userIsParent()) {
+            return Qs::userIsMyChild($st_id, $user->id);
+        }
+
+        // Teacher can only access students in classes/sections/subjects they are assigned to
+        if (Qs::userIsTeacher()) {
+            $srCheck = $this->student->getRecord(['user_id' => $st_id])->first();
+            if (!$srCheck) {
+                return false;
+            }
+            $teachesClass = \App\Models\Subject::where('my_class_id', $srCheck->my_class_id)
+                ->where('teacher_id', $user->id)
+                ->exists();
+            $teachesSection = \App\Models\Section::where('id', $srCheck->section_id)
+                ->where('teacher_id', $user->id)
+                ->exists();
+            return $teachesClass || $teachesSection;
+        }
+
+        return false;
+    }
 }
