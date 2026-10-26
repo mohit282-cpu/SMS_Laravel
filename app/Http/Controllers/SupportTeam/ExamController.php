@@ -42,7 +42,15 @@ class ExamController extends Controller
             $data['published_at'] = now();
         }
 
-        $this->exam->create($data);
+        // Duplicate schedule prevention within active session
+        $exists = $this->exam->getExam(['name' => $data['name'], 'year' => $data['year']])->first();
+        if ($exists) {
+            return back()->withInput()->with('flash_danger', __('An examination with this title already exists in the current academic session.'));
+        }
+
+        $created = $this->exam->create($data);
+        $this->syncExamCalendarEvent($created);
+
         return back()->with('flash_success', __('msg.store_ok'));
     }
 
@@ -63,6 +71,10 @@ class ExamController extends Controller
             $data['end_date'] = \App\Helpers\NepaliHelper::bsToAd($data['end_date_bs']);
         }
 
+        if (!empty($data['start_date']) && !empty($data['end_date']) && $data['end_date'] < $data['start_date']) {
+            return back()->withInput()->with('flash_danger', __('Examination end date cannot be earlier than start date.'));
+        }
+
         $currentExam = $this->exam->find($id);
         if (($data['status'] ?? 'draft') === 'published' && $currentExam->status !== 'published') {
             $data['published_by'] = \Illuminate\Support\Facades\Auth::id();
@@ -70,6 +82,9 @@ class ExamController extends Controller
         }
 
         $this->exam->update($id, $data);
+        $updatedExam = $this->exam->find($id);
+        $this->syncExamCalendarEvent($updatedExam);
+
         return back()->with('flash_success', __('msg.update_ok'));
     }
 
@@ -87,6 +102,8 @@ class ExamController extends Controller
             'published_at' => now(),
         ]);
 
+        \App\Models\Event::where('exam_id', $examId)->update(['is_published' => true]);
+
         return back()->with('flash_success', __('Exam results published successfully.'));
     }
 
@@ -101,12 +118,59 @@ class ExamController extends Controller
             'status' => 'completed',
         ]);
 
+        \App\Models\Event::where('exam_id', $id)->update(['is_published' => false]);
+
         return back()->with('flash_success', __('Exam results unpublished successfully.'));
     }
 
     public function destroy($id)
     {
+        // Safe deletion behavior: Remove linked calendar event, preserving marks and audit records
+        \App\Models\Event::where('exam_id', $id)->delete();
         $this->exam->delete($id);
         return back()->with('flash_success', __('msg.del_ok'));
+    }
+
+    /**
+     * Synchronize examination schedule to calendar event.
+     */
+    protected function syncExamCalendarEvent($exam): void
+    {
+        if (!$exam || empty($exam->start_date_bs)) {
+            return;
+        }
+
+        try {
+            $bsService = app(\App\Services\BikramSambatService::class);
+            $startDateBs = $exam->start_date_bs;
+            $endDateBs = $exam->end_date_bs ?: $startDateBs;
+
+            $convStart = $bsService->bsToAd($startDateBs);
+            $convEnd = $bsService->bsToAd($endDateBs);
+
+            \App\Models\Event::updateOrCreate(
+                ['exam_id' => $exam->id],
+                [
+                    'title' => $exam->name,
+                    'title_ne' => $exam->name,
+                    'category' => 'examination',
+                    'start_date' => $convStart['ad_date'],
+                    'end_date' => $convEnd['ad_date'],
+                    'start_date_bs' => $startDateBs,
+                    'end_date_bs' => $endDateBs,
+                    'is_all_day' => true,
+                    'is_published' => in_array($exam->status, ['published', 'ongoing', 'scheduled'], true),
+                    'is_closure' => false,
+                    'session' => $exam->year ?: Qs::getCurrentSession(),
+                    'target_audience' => 'all',
+                    'description' => $exam->description ?: "Examination: {$exam->name} (Term: {$exam->term})",
+                    'instructions' => 'Students must bring their admit card, stationery, and arrive 15 minutes before exam commencement.',
+                    'created_by' => \Illuminate\Support\Facades\Auth::id(),
+                    'updated_by' => \Illuminate\Support\Facades\Auth::id(),
+                ]
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to sync calendar event for exam: ' . $e->getMessage());
+        }
     }
 }

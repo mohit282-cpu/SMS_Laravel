@@ -286,26 +286,27 @@
         </div>
     @endif
 
-    {{-- Events Calendar Card --}}
+    {{-- Events Calendar Card (Bikram Sambat BS) --}}
     <div class="card shadow-sm">
         <div class="card-header d-flex align-items-center justify-content-between">
             <h5 class="card-title font-weight-bold mb-0">
-                <i class="icon-calendar3 mr-2" style="color: #FF5700;"></i>{{ __('School Calendar & Notices') }}
+                <i class="icon-calendar3 mr-2" style="color: #FF5700;"></i>{{ __('School Calendar & Notices (Bikram Sambat BS)') }}
             </h5>
-            {!! Qs::getPanelOptions() !!}
+            <div class="d-flex align-items-center">
+                @if(Qs::userIsSuperAdmin() || Qs::userIsAdmin())
+                    <a href="{{ route('events.create') }}" class="btn btn-sm text-white mr-2" style="background: #FF5700; border-radius: 8px;">
+                        <i class="icon-plus2 mr-1"></i>{{ __('Add Event') }}
+                    </a>
+                    <a href="{{ route('events.index') }}" class="btn btn-sm btn-outline-secondary mr-2" style="border-radius: 8px;">
+                        <i class="icon-calendar52 mr-1"></i>{{ __('Manage Events') }}
+                    </a>
+                @endif
+                {!! Qs::getPanelOptions() !!}
+            </div>
         </div>
 
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-12 d-flex flex-wrap gap-2">
-                    <span class="badge badge-danger mr-2 mb-1"><i class="icon-primitive-dot"></i> {{ __('Public / School Holiday') }}</span>
-                    <span class="badge badge-warning mr-2 mb-1"><i class="icon-primitive-dot"></i> {{ __('Examination Period') }}</span>
-                    <span class="badge badge-primary mr-2 mb-1"><i class="icon-primitive-dot"></i> {{ __('Academic Event') }}</span>
-                    <span class="badge mr-2 mb-1" style="background: rgba(99, 102, 241, 0.12); color: #6366F1; border: 1px solid rgba(99, 102, 241, 0.2);"><i class="icon-primitive-dot"></i> {{ __('School Notice') }}</span>
-                    <span class="badge badge-success mr-2 mb-1"><i class="icon-primitive-dot"></i> {{ __('Working Day') }}</span>
-                </div>
-            </div>
-            <div id="dashboard-events-calendar"></div>
+        <div class="card-body p-3">
+            <div id="dashboard-bs-calendar"></div>
         </div>
     </div>
 
@@ -327,7 +328,7 @@
                     <p class="text-dark mb-0" id="eventModalDesc" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;"></p>
                 </div>
                 <div class="modal-footer bg-light p-3">
-                    <a href="#" id="eventModalLink" class="btn btn-outline-primary btn-sm font-weight-semibold" style="display: none;">{{ __('View Full Notice') }}</a>
+                    <a href="#" id="eventModalLink" class="btn btn-outline-primary btn-sm font-weight-semibold" style="display: none;">{{ __('View Full Details') }}</a>
                     <button type="button" class="btn btn-secondary btn-sm font-weight-semibold" data-dismiss="modal">{{ __('Close') }}</button>
                 </div>
             </div>
@@ -339,35 +340,12 @@
 @section('scripts')
 <script>
     $(document).ready(function() {
-        if ($('#dashboard-events-calendar').length) {
-            $('#dashboard-events-calendar').fullCalendar({
-                header: {
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: 'month,agendaWeek,agendaDay'
-                },
-                events: '{{ route("calendar.events") }}',
-                editable: false,
-                eventLimit: true,
-                eventClick: function(event) {
-                    var dateStr = moment(event.start).format('YYYY-MM-DD');
-                    if (event.end) {
-                        var actualEnd = moment(event.end).subtract(1, 'days').format('YYYY-MM-DD');
-                        if (actualEnd !== dateStr) {
-                            dateStr += ' to ' + actualEnd;
-                        }
-                    }
-                    $('#eventModalTitle').text(event.title);
-                    $('#eventModalDate').text(dateStr);
-                    $('#eventModalType').text(event.type ? event.type.toUpperCase() : 'EVENT');
-                    $('#eventModalDesc').text(event.description || '{{ __("No additional details provided.") }}');
-                    if (event.notice_id) {
-                        $('#eventModalLink').attr('href', '{{ url("/notices") }}/' + event.notice_id).show();
-                    } else {
-                        $('#eventModalLink').hide();
-                    }
-                    $('#eventDetailsModal').modal('show');
-                }
+        if ($('#dashboard-bs-calendar').length) {
+            new NepaliBsCalendar('#dashboard-bs-calendar', {
+                feedUrl: '{{ route("calendar.events") }}',
+                createEventUrl: '{{ route("events.create") }}',
+                canCreateEvent: {{ (Qs::userIsSuperAdmin() || Qs::userIsAdmin()) ? 'true' : 'false' }},
+                initialView: 'month'
             });
         }
     });

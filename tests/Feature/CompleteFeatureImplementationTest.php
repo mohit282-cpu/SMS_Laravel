@@ -184,11 +184,13 @@ class CompleteFeatureImplementationTest extends TestCase
         $subject = Subject::first();
         $subject->update(['teacher_id' => $teacher->id]);
 
-        $ttr = TimeTableRecord::firstOrCreate([
-            'name' => 'Regular Class Timetable',
-            'my_class_id' => $class->id,
-            'year' => Qs::getCurrentSession(),
-        ]);
+        $ttr = TimeTableRecord::firstOrCreate(
+            ['name' => 'Regular Class Timetable'],
+            [
+                'my_class_id' => $class->id,
+                'year' => Qs::getCurrentSession(),
+            ]
+        );
 
         $ts = TimeSlot::firstOrCreate([
             'ttr_id' => $ttr->id,
@@ -236,11 +238,13 @@ class CompleteFeatureImplementationTest extends TestCase
         $class = MyClass::first();
         StudentRecord::where('user_id', $student->id)->update(['my_class_id' => $class->id]);
 
-        $ttr = TimeTableRecord::firstOrCreate([
-            'name' => 'Class Timetable',
-            'my_class_id' => $class->id,
-            'year' => Qs::getCurrentSession(),
-        ]);
+        $ttr = TimeTableRecord::firstOrCreate(
+            ['name' => 'Class Timetable'],
+            [
+                'my_class_id' => $class->id,
+                'year' => Qs::getCurrentSession(),
+            ]
+        );
 
         // Student accessing own class timetable redirects to ttr.show
         $resStudent = $this->actingAs($student)->get(route('tt.my_timetable'));

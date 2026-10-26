@@ -43,6 +43,7 @@
 
 <script src=" {{ asset('assets/js/custom.js') }} "></script>
 <script src=" {{ asset('assets/js/nepali_datepicker.js') }} "></script>
+<script src=" {{ asset('assets/js/nepali_bs_calendar.js') }} "></script>
 
 {{-- PWA Scripts and Configuration --}}
 <script>

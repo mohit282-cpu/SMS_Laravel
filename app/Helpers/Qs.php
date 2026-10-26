@@ -284,7 +284,7 @@ class Qs
     public static function getCurrentSession()
     {
         try {
-            $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
+            $activeYear = \App\Models\AcademicYear::current();
             if ($activeYear) {
                 return $activeYear->name;
             }
@@ -301,31 +301,32 @@ class Qs
 
         // 1. Try to find the next active or configured AcademicYear in the database
         try {
-            $activeYear = \App\Models\AcademicYear::where('is_active', true)->first();
-            if ($activeYear) {
-                $baseYearBs = null;
-                if ($session) {
-                    $yearRec = \App\Models\AcademicYear::where('name', $session)->first();
-                    if ($yearRec) {
-                        $baseYearBs = $yearRec->year_bs;
+            if ($session) {
+                $yearRec = \App\Models\AcademicYear::where('name', $session)->first();
+                if ($yearRec) {
+                    $nextYear = \App\Models\AcademicYear::where('year_bs', '>', $yearRec->year_bs)
+                        ->orderBy('year_bs', 'asc')
+                        ->first();
+                    if ($nextYear) {
+                        return $nextYear->name;
                     }
                 }
-                if (!$baseYearBs) {
-                    $baseYearBs = $activeYear->year_bs;
-                }
+            } else {
+                $activeYear = \App\Models\AcademicYear::current();
+                if ($activeYear) {
+                    $nextYear = \App\Models\AcademicYear::where('year_bs', '>', $activeYear->year_bs)
+                        ->orderBy('year_bs', 'asc')
+                        ->first();
 
-                $nextYear = \App\Models\AcademicYear::where('year_bs', '>', $baseYearBs)
-                    ->orderBy('year_bs', 'asc')
-                    ->first();
+                    if ($nextYear) {
+                        return $nextYear->name;
+                    }
 
-                if ($nextYear) {
-                    return $nextYear->name;
-                }
-
-                $nextYearBs = $baseYearBs + 1;
-                $nextShort = ($nextYearBs + 1) % 100;
-                if (stripos($current, 'BS') !== false || stripos($activeYear->name, 'BS') !== false) {
-                    return sprintf('%04d/%02d BS', $nextYearBs, $nextShort);
+                    $nextYearBs = $activeYear->year_bs + 1;
+                    $nextShort = ($nextYearBs + 1) % 100;
+                    if (stripos($current, 'BS') !== false || stripos($activeYear->name, 'BS') !== false) {
+                        return sprintf('%04d/%02d BS', $nextYearBs, $nextShort);
+                    }
                 }
             }
         } catch (\Exception $e) {

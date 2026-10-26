@@ -211,7 +211,45 @@ class BikramSambatService
         $converted = $this->nepaliCalendar->convertEnglishToNepali($year, $month, $day);
 
         if (empty($converted) || !isset($converted['year'])) {
-            throw new InvalidArgumentException("AD date {$year}-{$month}-{$day} is out of supported conversion range (BS 2000-2090).");
+            // High-precision fallback using verified BS calendar data matrix (1943-04-14 AD = 2000-01-01 BS)
+            $anchor = Carbon::createFromDate(1943, 4, 14, 'UTC')->startOfDay();
+            $target = Carbon::createFromDate($year, $month, $day, 'UTC')->startOfDay();
+            $diffDays = $anchor->diffInDays($target, false);
+
+            if ($diffDays < 0) {
+                throw new InvalidArgumentException("AD date {$year}-{$month}-{$day} is out of supported conversion range (BS 2000-2090).");
+            }
+
+            $y = 2000;
+            while ($y <= self::MAX_BS_YEAR && isset(self::BS_CALENDAR_DATA[$y])) {
+                $daysInYear = array_sum(self::BS_CALENDAR_DATA[$y]);
+                if ($diffDays < $daysInYear) {
+                    break;
+                }
+                $diffDays -= $daysInYear;
+                $y++;
+            }
+
+            if ($y > self::MAX_BS_YEAR || !isset(self::BS_CALENDAR_DATA[$y])) {
+                throw new InvalidArgumentException("AD date {$year}-{$month}-{$day} is out of supported conversion range (BS 2000-2090).");
+            }
+
+            $m = 1;
+            foreach (self::BS_CALENDAR_DATA[$y] as $idx => $dim) {
+                if ($diffDays < $dim) {
+                    $m = $idx + 1;
+                    break;
+                }
+                $diffDays -= $dim;
+            }
+            $d = $diffDays + 1;
+
+            $converted = [
+                'year' => $y,
+                'month' => $m,
+                'day' => $d,
+                'weekday' => $target->dayOfWeek + 1, // Carbon 0=Sun..6=Sat => 1=Sun..7=Sat
+            ];
         }
 
         $bsYear = (int) $converted['year'];
@@ -289,15 +327,31 @@ class BikramSambatService
 
     /**
      * Validate whether a BS date is within valid bounds and has a valid day count for that month.
+     * Throws InvalidArgumentException on invalid date.
      *
-     * @param int $year
-     * @param int $month
-     * @param int $day
+     * @param int|string $bsYearOrString 'YYYY-MM-DD' or int year
+     * @param int|null $month
+     * @param int|null $day
      * @return bool
      * @throws InvalidArgumentException
      */
-    public function validateBsDate(int $year, int $month, int $day): bool
+    public function validateBsDate($bsYearOrString, ?int $month = null, ?int $day = null): bool
     {
+        if ($month === null && $day === null) {
+            $cleanDate = substr(trim((string)$bsYearOrString), 0, 10);
+            $parts = explode('-', str_replace(['/', '.'], '-', $cleanDate));
+            if (count($parts) !== 3) {
+                throw new InvalidArgumentException("Invalid BS date format: {$bsYearOrString}. Expected YYYY-MM-DD.");
+            }
+            $year = (int) $parts[0];
+            $month = (int) $parts[1];
+            $day = (int) $parts[2];
+        } else {
+            $year = (int) $bsYearOrString;
+            $month = (int) $month;
+            $day = (int) $day;
+        }
+
         if ($year < self::MIN_BS_YEAR || $year > self::MAX_BS_YEAR) {
             throw new InvalidArgumentException("BS Year {$year} is out of supported range (" . self::MIN_BS_YEAR . "-" . self::MAX_BS_YEAR . " BS).");
         }
@@ -317,11 +371,31 @@ class BikramSambatService
         }
 
         if ($day < 1 || $day > $daysInMonth) {
-            $monthName = self::MONTHS_NE[$month] . ' (' . self::MONTHS_EN[$month] . ')';
+            $monthName = (self::MONTHS_NE[$month] ?? '') . ' (' . (self::MONTHS_EN[$month] ?? '') . ')';
             throw new InvalidArgumentException("Invalid day {$day} for {$monthName} {$year} BS. This month has {$daysInMonth} days.");
         }
 
         return true;
+    }
+
+    /**
+     * Check if a BS date string or parts is valid without throwing exception.
+     *
+     * @param int|string $bsYearOrString
+     * @param int|null $month
+     * @param int|null $day
+     * @return bool
+     */
+    public function isValidBsDate($bsYearOrString, ?int $month = null, ?int $day = null): bool
+    {
+        try {
+            if (empty($bsYearOrString)) {
+                return false;
+            }
+            return $this->validateBsDate($bsYearOrString, $month, $day);
+        } catch (\Throwable $e) {
+            return false;
+        }
     }
 
     /**
@@ -338,6 +412,14 @@ class BikramSambatService
         }
 
         return (int) (self::BS_CALENDAR_DATA[$year][$month - 1] ?? 30);
+    }
+
+    /**
+     * Alias for getDaysInBsMonth.
+     */
+    public function getDaysInMonth(int $year, int $month): int
+    {
+        return $this->getDaysInBsMonth($year, $month);
     }
 
     /**
@@ -458,4 +540,15 @@ class BikramSambatService
 
         return [$fromAd, $toAd];
     }
+
+    /**
+     * Get current BS date details.
+     *
+     * @return array
+     */
+    public function today(): array
+    {
+        return $this->adToBs(Carbon::today());
+    }
 }
+

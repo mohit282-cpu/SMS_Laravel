@@ -22,6 +22,7 @@ class AcademicYearController extends Controller
     public function index()
     {
         $data['academic_years'] = AcademicYear::orderBy('year_bs', 'desc')->get();
+        $data['current_session'] = AcademicYear::current();
         return view('pages.support_team.academic_years.index', $data);
     }
 
@@ -30,8 +31,8 @@ class AcademicYearController extends Controller
         $request->validate([
             'name' => 'required|string|max:50',
             'year_bs' => 'required|integer|min:2000|max:2090',
-            'start_date_bs' => 'required|string',
-            'end_date_bs' => 'required|string',
+            'start_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
+            'end_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
         ]);
 
         try {
@@ -45,27 +46,25 @@ class AcademicYearController extends Controller
             return back()->with('flash_danger', __('End date must be greater than start date.'));
         }
 
-        $is_active = $request->has('is_active') ? true : false;
+        $shouldActivate = $request->has('is_active') || (AcademicYear::where('is_active', true)->count() === 0);
 
-        if ($is_active) {
-            // Only one active year allowed at a time
-            AcademicYear::where('is_active', true)->update(['is_active' => false]);
-            \App\Models\Setting::where('type', 'current_session')->update(['description' => $request->name]);
-        }
-
-        AcademicYear::create([
-            'name' => $request->name,
+        $ay = AcademicYear::create([
+            'name' => trim($request->name),
             'year_bs' => $request->year_bs,
             'start_date' => $convStart['ad_date'],
             'end_date' => $convEnd['ad_date'],
             'start_date_bs' => $request->start_date_bs,
             'end_date_bs' => $request->end_date_bs,
-            'is_active' => $is_active,
+            'is_active' => false, // Will be set by activateSession if applicable
             'is_closed' => false,
             'description' => $request->description,
         ]);
 
-        return back()->with('flash_success', __('Academic year created successfully.'));
+        if ($shouldActivate) {
+            AcademicYear::activateSession($ay->id);
+        }
+
+        return back()->with('flash_success', __('Academic session created successfully.'));
     }
 
     public function edit($id)
@@ -79,8 +78,8 @@ class AcademicYearController extends Controller
         $request->validate([
             'name' => 'required|string|max:50',
             'year_bs' => 'required|integer|min:2000|max:2090',
-            'start_date_bs' => 'required|string',
-            'end_date_bs' => 'required|string',
+            'start_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
+            'end_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
         ]);
 
         try {
@@ -95,45 +94,50 @@ class AcademicYearController extends Controller
         }
 
         $ay = AcademicYear::findOrFail($id);
-        $is_active = $request->has('is_active') ? true : false;
-
-        if ($is_active) {
-            AcademicYear::where('id', '!=', $id)->where('is_active', true)->update(['is_active' => false]);
-            \App\Models\Setting::where('type', 'current_session')->update(['description' => $request->name]);
-        }
+        $wasActive = $ay->is_active;
+        $shouldActivate = $request->has('is_active');
 
         $ay->update([
-            'name' => $request->name,
+            'name' => trim($request->name),
             'year_bs' => $request->year_bs,
             'start_date' => $convStart['ad_date'],
             'end_date' => $convEnd['ad_date'],
             'start_date_bs' => $request->start_date_bs,
             'end_date_bs' => $request->end_date_bs,
-            'is_active' => $is_active,
             'description' => $request->description,
         ]);
+
+        if ($shouldActivate || ($wasActive && !$ay->is_closed)) {
+            AcademicYear::activateSession($ay->id);
+        }
 
         return redirect()->route('academic_years.index')->with('flash_success', __('msg.update_ok'));
     }
 
     public function activate($id)
     {
-        AcademicYear::where('is_active', true)->update(['is_active' => false]);
-        $ay = AcademicYear::findOrFail($id);
-        $ay->update(['is_active' => true, 'is_closed' => false]);
+        AcademicYear::activateSession($id);
 
-        // Keep system current_session setting in sync
-        \App\Models\Setting::where('type', 'current_session')->update(['description' => $ay->name]);
-
-        return back()->with('flash_success', __('Academic year activated successfully.'));
+        return back()->with('flash_success', __('Academic session activated successfully.'));
     }
 
     public function close($id)
     {
         $ay = AcademicYear::findOrFail($id);
+        $wasActive = $ay->is_active;
+
         $ay->update(['is_active' => false, 'is_closed' => true]);
 
-        return back()->with('flash_success', __('Academic year closed and archived successfully.'));
+        if ($wasActive) {
+            // If active session closed, activate the next open session or fallback
+            $nextOpen = AcademicYear::where('is_closed', false)->orderBy('year_bs', 'desc')->first();
+            if ($nextOpen) {
+                AcademicYear::activateSession($nextOpen->id);
+                return back()->with('flash_success', __('Session closed. Active session automatically switched to :name.', ['name' => $nextOpen->name]));
+            }
+        }
+
+        return back()->with('flash_success', __('Academic session closed and archived successfully.'));
     }
 
     public function reopen($id)
@@ -141,17 +145,28 @@ class AcademicYearController extends Controller
         $ay = AcademicYear::findOrFail($id);
         $ay->update(['is_closed' => false]);
 
-        return back()->with('flash_success', __('Academic year reopened successfully.'));
+        return back()->with('flash_success', __('Academic session reopened successfully.'));
     }
 
     public function destroy($id)
     {
         $ay = AcademicYear::findOrFail($id);
+
         if ($ay->is_active) {
-            return back()->with('flash_danger', __('Cannot delete an active academic year.'));
+            return back()->with('flash_danger', __('Cannot delete an active academic session.'));
         }
+
+        // Integrity check: prevent deletion if historical records reference this session
+        $hasStudents = \App\Models\StudentRecord::where('session', $ay->name)->exists();
+        $hasExams = \App\Models\Exam::where('year', $ay->name)->exists();
+        $hasPayments = \App\Models\Payment::where('year', $ay->name)->exists();
+
+        if ($hasStudents || $hasExams || $hasPayments) {
+            return back()->with('flash_danger', __('Cannot delete session: Historical student, payment, or examination records are associated with this academic session.'));
+        }
+
         $ay->delete();
 
-        return back()->with('flash_success', __('Academic year deleted successfully.'));
+        return back()->with('flash_success', __('Academic session deleted successfully.'));
     }
 }

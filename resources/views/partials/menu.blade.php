@@ -222,6 +222,11 @@
                         <a href="{{ route('academic_years.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['academic_years.index', 'academic_years.edit']) ? 'active' : '' }}"><i class="icon-calendar52"></i> <span>{{ __('Academic Years (BS)') }}</span></a>
                     </li>
 
+                    {{--Events & Calendar (Nepal BS)--}}
+                    <li class="nav-item">
+                        <a href="{{ route('events.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['events.index', 'events.create', 'events.edit', 'events.show']) ? 'active' : '' }}"><i class="icon-calendar3"></i> <span>{{ __('Events & Calendar (BS)') }}</span></a>
+                    </li>
+
                     {{--Holiday Calendar (Nepal BS)--}}
                     <li class="nav-item">
                         <a href="{{ route('holidays.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['holidays.index', 'holidays.edit']) ? 'active' : '' }}"><i class="icon-calendar"></i> <span>{{ __('Holiday Calendar') }}</span></a>
@@ -270,6 +275,15 @@
                                 </li>
                             @endif
                         </ul>
+                    </li>
+                @endif
+
+                @if(!Qs::userIsTeamSA())
+                    {{--School Calendar (Nepal BS)--}}
+                    <li class="nav-item">
+                        <a href="{{ route('events.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['events.index', 'events.show']) ? 'active' : '' }}">
+                            <i class="icon-calendar3"></i> <span>{{ __('School Calendar') }}</span>
+                        </a>
                     </li>
                 @endif
 

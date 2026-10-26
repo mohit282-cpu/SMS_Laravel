@@ -1,0 +1,205 @@
+/**
+ * Nepali Bikram Sambat (BS) Calendar Component Styles
+ * Approved Brand Palette:
+ * - Midnight Navy:  #111827
+ * - Sovryx Orange:  #FF5700
+ * - Pure White:     #FFFFFF
+ * - Soft Gray:      #F3F4F6
+ * - Slate Gray:     #4B5563
+ */
+
+.nepali-calendar-wrapper {
+  position: relative;
+  background: #FFFFFF;
+  border-radius: 16px;
+  padding: 1.25rem;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0 1px 3px rgba(17, 24, 39, 0.04);
+}
+
+.nepali-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-bottom: 1.25rem;
+  border-bottom: 1px solid #E5E7EB;
+  margin-bottom: 1.25rem;
+}
+
+.nepali-calendar-nav-left {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.nepali-calendar-heading {
+  color: #111827;
+  font-size: 1.35rem;
+  letter-spacing: -0.02em;
+}
+
+.nepali-calendar-weekdays-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  background: #F3F4F6;
+  border-radius: 8px;
+  padding: 0.6rem 0;
+  text-align: center;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.nepali-calendar-weekday-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #111827;
+}
+
+.nepali-calendar-weekday-col.is-saturday {
+  color: #EF4444;
+}
+
+.nepali-calendar-days-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.nepali-calendar-day-cell {
+  min-height: 110px;
+  background: #FFFFFF;
+  border: 1px solid #E5E7EB;
+  border-radius: 10px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  transition: all 0.15s ease-in-out;
+  cursor: pointer;
+  outline: none;
+}
+
+.nepali-calendar-day-cell:hover,
+.nepali-calendar-day-cell:focus-visible {
+  border-color: #FF5700;
+  box-shadow: 0 0 0 2px rgba(255, 87, 0, 0.2);
+}
+
+.nepali-calendar-day-cell.is-empty {
+  background: #F8F9FA;
+  border: 1px dashed #E5E7EB;
+  cursor: default;
+  opacity: 0.55;
+}
+
+.nepali-calendar-day-cell.is-saturday {
+  background: rgba(239, 68, 68, 0.02);
+}
+
+.nepali-calendar-day-cell.is-saturday .day-num-ne {
+  color: #EF4444;
+  font-weight: 700;
+}
+
+.nepali-calendar-day-cell.is-today {
+  border-color: #FF5700 !important;
+  background: rgba(255, 87, 0, 0.04) !important;
+  box-shadow: inset 0 0 0 1px #FF5700;
+}
+
+.nepali-calendar-day-cell.is-today .day-num-ne {
+  background: #FF5700;
+  color: #FFFFFF !important;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+}
+
+.nepali-day-cell-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.day-num-ne {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.day-num-en {
+  font-size: 0.72rem;
+  color: #9CA3AF;
+}
+
+.nepali-day-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.nepali-event-pill {
+  border-left: 3px solid #1e88e5;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-size: 0.74rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: transform 0.1s ease, filter 0.1s ease;
+}
+
+.nepali-event-pill:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.nepali-calendar-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  border-radius: 16px;
+}
+
+@media (max-width: 768px) {
+  .nepali-calendar-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .nepali-calendar-nav-left,
+  .nepali-calendar-nav-right,
+  .nepali-calendar-title-center {
+    justify-content: center;
+  }
+  .nepali-calendar-day-cell {
+    min-height: 70px;
+    padding: 4px;
+  }
+  .nepali-event-pill {
+    padding: 2px 4px;
+    font-size: 0.65rem;
+  }
+  .nepali-calendar-heading {
+    font-size: 1.15rem;
+  }
+}

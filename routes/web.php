@@ -176,8 +176,13 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         Route::put('academic_years/close/{academic_year}', 'AcademicYearController@close')->name('academic_years.close');
         Route::put('academic_years/reopen/{academic_year}', 'AcademicYearController@reopen')->name('academic_years.reopen');
 
+        /*************** Events & Calendar (Nepal BS) *****************/
+        Route::resource('events', 'EventController');
+        Route::post('events/{id}/publish', 'EventController@publish')->name('events.publish');
+        Route::post('events/{id}/unpublish', 'EventController@unpublish')->name('events.unpublish');
+        Route::get('calendar/events', 'EventController@calendarEvents')->name('calendar.events');
+
         Route::resource('holidays', 'HolidayController');
-        Route::get('calendar/events', 'HolidayController@events')->name('calendar.events');
 
         /*************** Nepal Attendance Management (BS) *****************/
         Route::group(['middleware' => 'teamSAT'], function(){

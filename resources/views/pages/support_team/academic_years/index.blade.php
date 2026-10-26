@@ -9,6 +9,33 @@
         </div>
 
         <div class="card-body">
+            @if($current_session)
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="p-3 bg-light rounded border border-success d-flex align-items-center justify-content-between flex-wrap" style="background: rgba(16, 185, 129, 0.05) !important;">
+                            <div class="d-flex align-items-center mb-2 mb-md-0">
+                                <div class="mr-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px; background: #10B981; color: #FFFFFF; font-size: 1.5rem;">
+                                    <i class="icon-calendar52"></i>
+                                </div>
+                                <div>
+                                    <div class="text-uppercase font-size-xs text-muted font-weight-bold">{{ __('Current Active Academic Session') }}</div>
+                                    <h5 class="font-weight-bold mb-0 text-dark">{{ $current_session->name }} <span class="badge badge-success ml-2">{{ __('Active') }}</span></h5>
+                                    <div class="text-muted font-size-xs mt-1">
+                                        <strong>BS Range:</strong> {{ $current_session->start_date_bs }} to {{ $current_session->end_date_bs }} BS
+                                        &bull; <strong>AD Equivalent:</strong> {{ $current_session->start_date ? $current_session->start_date->format('d M Y') : '-' }} to {{ $current_session->end_date ? $current_session->end_date->format('d M Y') : '-' }}
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <a href="{{ route('academic_years.edit', $current_session->id) }}" class="btn btn-sm btn-outline-success font-weight-semibold">
+                                    <i class="icon-pencil mr-1"></i> {{ __('Edit Active Session') }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#all-academic-years" class="nav-link active" data-toggle="tab">{{ __('All Academic Years') }}</a></li>
                 <li class="nav-item"><a href="#new-academic-year" class="nav-link" data-toggle="tab"><i class="icon-plus2"></i> {{ __('Create Academic Year') }}</a></li>

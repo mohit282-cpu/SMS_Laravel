@@ -139,6 +139,43 @@
         return (3 + (totalDays % 7)) % 7;
     }
 
+    function getTodayBs() {
+        var now = new Date();
+        var anchor = new Date(Date.UTC(1943, 3, 14)); // 1943-04-14 AD = 2000-01-01 BS
+        var current = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+        var diffDays = Math.round((current - anchor) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) return '2000-01-01';
+
+        var y = 2000;
+        while (y <= 2090 && bsCalendarData[y]) {
+            var daysInYear = 0;
+            for (var m = 0; m < 12; m++) {
+                daysInYear += bsCalendarData[y][m];
+            }
+            if (diffDays < daysInYear) {
+                break;
+            }
+            diffDays -= daysInYear;
+            y++;
+        }
+
+        var m = 1;
+        if (bsCalendarData[y]) {
+            for (var idx = 0; idx < 12; idx++) {
+                var dim = bsCalendarData[y][idx];
+                if (diffDays < dim) {
+                    m = idx + 1;
+                    break;
+                }
+                diffDays -= dim;
+            }
+        }
+        var d = diffDays + 1;
+        var mm = m < 10 ? '0' + m : m;
+        var dd = d < 10 ? '0' + d : d;
+        return y + '-' + mm + '-' + dd;
+    }
+
     var popup = null;
     var activeInput = null;
 
@@ -186,8 +223,7 @@
 
         popup.querySelector('.nepali-datepicker-today-btn').addEventListener('click', function() {
             if (activeInput) {
-                // Today default
-                activeInput.value = '2083-07-07';
+                activeInput.value = getTodayBs();
                 triggerChange(activeInput);
                 hidePopup();
             }
@@ -233,10 +269,20 @@
             }
         }
 
+        var todayBs = getTodayBs();
+        var todayParts = todayBs.split('-');
+        var todayYear = parseInt(todayParts[0]);
+        var todayMonth = parseInt(todayParts[1]);
+        var todayDay = parseInt(todayParts[2]);
+
         for (var d = 1; d <= daysInMonth; d++) {
             var dayCell = document.createElement('div');
             var dayOfWeek = (startDay + (d - 1)) % 7;
-            dayCell.className = 'nepali-datepicker-day' + (dayOfWeek === 6 ? ' saturday' : '') + (d === selectedDay ? ' selected' : '');
+            var isSat = (dayOfWeek === 6);
+            var isSel = (d === selectedDay);
+            var isToday = (year === todayYear && month === todayMonth && d === todayDay);
+
+            dayCell.className = 'nepali-datepicker-day' + (isSat ? ' saturday' : '') + (isSel ? ' selected' : '') + (isToday ? ' today' : '');
             dayCell.textContent = toDevanagari(d);
             dayCell.setAttribute('data-day', d);
 
@@ -266,8 +312,10 @@
         createPopup();
         activeInput = input;
 
-        var defaultYear = 2083;
-        var defaultMonth = 7;
+        var todayBs = getTodayBs();
+        var defaultParts = todayBs.split('-');
+        var defaultYear = parseInt(defaultParts[0]);
+        var defaultMonth = parseInt(defaultParts[1]);
 
         if (input.value) {
             var p = input.value.split('-');
@@ -295,7 +343,7 @@
     }
 
     function initNepaliDatePicker() {
-        var inputs = document.querySelectorAll('.nepali-date, input[data-nepali-date]');
+        var inputs = document.querySelectorAll('.nepali-date, .nepali-datepicker, input[data-nepali-date]');
         inputs.forEach(function(input) {
             if (!input.dataset.nepaliInitialized) {
                 input.dataset.nepaliInitialized = 'true';
@@ -313,8 +361,18 @@
     }
 
     window.initNepaliDatePicker = initNepaliDatePicker;
+    window.NepaliCalendarHelper = {
+        bsCalendarData: bsCalendarData,
+        monthsNe: monthsNe,
+        monthsEn: monthsEn,
+        devanagariDigits: devanagariDigits,
+        toDevanagari: toDevanagari,
+        getBsFirstDayOfWeek: getBsFirstDayOfWeek,
+        getTodayBs: getTodayBs
+    };
 
     document.addEventListener('DOMContentLoaded', function() {
         initNepaliDatePicker();
     });
 })();
+

@@ -28,6 +28,7 @@
 {{-- Custom App CSS--}}
 <link href=" {{ asset('assets/css/qs.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/nepali_datepicker.css') }}" rel="stylesheet" type="text/css">
+<link href=" {{ asset('assets/css/nepali_bs_calendar.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/pwa.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/apple-design-system.css') }}" rel="stylesheet" type="text/css">
 <link href=" {{ asset('assets/css/apple-liquid-theme.css') }}" rel="stylesheet" type="text/css">
