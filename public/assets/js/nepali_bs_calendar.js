@@ -293,16 +293,39 @@
         }
     };
 
+    var ALLOWED_HEX_PATTERN = /^#[0-9a-fA-F]{6}$/;
+    function sanitizeHexColor(color, defaultColor) {
+        if (typeof color === 'string' && ALLOWED_HEX_PATTERN.test(color)) {
+            return color;
+        }
+        return defaultColor || '#111827';
+    }
+
+    function hexToRgba(hex, alpha) {
+        var safeHex = sanitizeHexColor(hex, '#111827');
+        var r = parseInt(safeHex.slice(1, 3), 16);
+        var g = parseInt(safeHex.slice(3, 5), 16);
+        var b = parseInt(safeHex.slice(5, 7), 16);
+        return 'rgba(' + r + ', ' + g + ', ' + b + ', ' + alpha + ')';
+    }
+
     NepaliBsCalendar.prototype.renderWeekdayHeaders = function() {
         var weekdaysGrid = this.container.querySelector('.nepali-calendar-weekdays-grid');
         weekdaysGrid.innerHTML = '';
         for (var i = 0; i < 7; i++) {
             var col = document.createElement('div');
             col.className = 'nepali-calendar-weekday-col' + (i === 6 ? ' is-saturday' : '');
-            col.innerHTML = `
-                <span class="weekday-name-ne">${WEEKDAYS_SHORT_NE[i]}</span>
-                <span class="weekday-name-en text-muted font-size-xs">${WEEKDAYS_SHORT_EN[i]}</span>
-            `;
+
+            var spanNe = document.createElement('span');
+            spanNe.className = 'weekday-name-ne';
+            spanNe.textContent = WEEKDAYS_SHORT_NE[i];
+
+            var spanEn = document.createElement('span');
+            spanEn.className = 'weekday-name-en text-muted font-size-xs';
+            spanEn.textContent = WEEKDAYS_SHORT_EN[i];
+
+            col.appendChild(spanNe);
+            col.appendChild(spanEn);
             weekdaysGrid.appendChild(col);
         }
     };
@@ -462,7 +485,11 @@
         var daysGrid = this.container.querySelector('.nepali-calendar-days-grid');
         daysGrid.innerHTML = '';
 
-        var daysInMonth = (BS_CALENDAR_DATA[this.currentYear] && BS_CALENDAR_DATA[this.currentYear][this.currentMonth - 1]) || 30;
+        if (!BS_CALENDAR_DATA[this.currentYear] || !BS_CALENDAR_DATA[this.currentYear][this.currentMonth - 1]) {
+            console.error('Unsupported BS year or month: ' + this.currentYear + '-' + this.currentMonth);
+            return;
+        }
+        var daysInMonth = BS_CALENDAR_DATA[this.currentYear][this.currentMonth - 1];
         var startDay = getBsFirstDayOfWeek(this.currentYear, this.currentMonth);
         var filteredEvents = this.getFilteredEvents();
 
@@ -497,40 +524,62 @@
             var hasHoliday = dayEvents.some(function(ev) { return ev.is_closure; });
             if (hasHoliday) cell.classList.add('has-holiday');
 
-            var eventsHtml = '';
+            var cellHeader = document.createElement('div');
+            cellHeader.className = 'nepali-day-cell-header';
+
+            var dayNumNe = document.createElement('span');
+            dayNumNe.className = 'day-num-ne';
+            dayNumNe.textContent = toDevanagari(d);
+
+            var dayNumEn = document.createElement('span');
+            dayNumEn.className = 'day-num-en text-muted font-size-xs';
+            dayNumEn.textContent = String(d);
+
+            cellHeader.appendChild(dayNumNe);
+            cellHeader.appendChild(dayNumEn);
+            cell.appendChild(cellHeader);
+
+            var eventsList = document.createElement('div');
+            eventsList.className = 'nepali-day-events-list';
+
             var maxPills = 3;
             var renderedCount = Math.min(dayEvents.length, maxPills);
 
             for (var idx = 0; idx < renderedCount; idx++) {
                 var ev = dayEvents[idx];
-                var color = ev.color || '#1e88e5';
-                var title = ev.title;
-                var timeStr = ev.is_all_day ? '' : (ev.start_time ? '<small class="mr-1">' + ev.start_time + '</small>' : '');
+                var safeColor = sanitizeHexColor(ev.color, '#1e88e5');
 
-                eventsHtml += `
-                    <div class="nepali-event-pill" style="border-left-color: ${color}; background: ${color}15;" data-event-id="${ev.event_id || ev.id}" title="${title}">
-                        ${timeStr}<span class="event-pill-title" style="color: #111827;">${title}</span>
-                    </div>
-                `;
+                var pill = document.createElement('div');
+                pill.className = 'nepali-event-pill';
+                pill.style.borderLeftColor = safeColor;
+                pill.style.backgroundColor = hexToRgba(safeColor, 0.12);
+                pill.setAttribute('data-event-id', String(ev.event_id || ev.id || ''));
+                pill.setAttribute('title', String(ev.title || ''));
+
+                if (!ev.is_all_day && ev.start_time) {
+                    var timeEl = document.createElement('small');
+                    timeEl.className = 'mr-1';
+                    timeEl.textContent = String(ev.start_time);
+                    pill.appendChild(timeEl);
+                }
+
+                var titleSpan = document.createElement('span');
+                titleSpan.className = 'event-pill-title';
+                titleSpan.style.color = '#111827';
+                titleSpan.textContent = String(ev.title || '');
+                pill.appendChild(titleSpan);
+
+                eventsList.appendChild(pill);
             }
 
             if (dayEvents.length > maxPills) {
-                eventsHtml += `
-                    <div class="nepali-event-more text-muted font-size-xs font-weight-semibold">
-                        +${dayEvents.length - maxPills} थप (more)
-                    </div>
-                `;
+                var moreDiv = document.createElement('div');
+                moreDiv.className = 'nepali-event-more text-muted font-size-xs font-weight-semibold';
+                moreDiv.textContent = '+' + (dayEvents.length - maxPills) + ' थप (more)';
+                eventsList.appendChild(moreDiv);
             }
 
-            cell.innerHTML = `
-                <div class="nepali-day-cell-header">
-                    <span class="day-num-ne">${toDevanagari(d)}</span>
-                    <span class="day-num-en text-muted font-size-xs">${d}</span>
-                </div>
-                <div class="nepali-day-events-list">
-                    ${eventsHtml}
-                </div>
-            `;
+            cell.appendChild(eventsList);
 
             this.bindDayCell(cell, curDateStr, dayEvents);
             daysGrid.appendChild(cell);
@@ -567,12 +616,18 @@
 
         var filteredEvents = this.getFilteredEvents();
         if (filteredEvents.length === 0) {
-            agendaContainer.innerHTML = `
-                <div class="text-center py-5 text-muted">
-                    <i class="icon-calendar2 icon-2x mb-2 d-block"></i>
-                    <h6>यस महिनामा कुनै कार्यक्रम छैन (No events scheduled for this month)</h6>
-                </div>
-            `;
+            var emptyDiv = document.createElement('div');
+            emptyDiv.className = 'text-center py-5 text-muted';
+
+            var icon = document.createElement('i');
+            icon.className = 'icon-calendar2 icon-2x mb-2 d-block';
+            emptyDiv.appendChild(icon);
+
+            var emptyH6 = document.createElement('h6');
+            emptyH6.textContent = 'यस महिनामा कुनै कार्यक्रम छैन (No events scheduled for this month)';
+            emptyDiv.appendChild(emptyH6);
+
+            agendaContainer.appendChild(emptyDiv);
             return;
         }
 
@@ -585,63 +640,120 @@
         });
 
         var dates = Object.keys(grouped).sort();
-        var html = '<div class="nepali-agenda-list list-group list-group-flush">';
-
-        dates.forEach(function(dateKey) {
-            html += `
-                <div class="nepali-agenda-date-group border-bottom py-3">
-                    <div class="d-flex align-items-center mb-2">
-                        <span class="badge badge-dark mr-2" style="background:#111827; font-size: 0.9rem;">${dateKey} BS</span>
-                    </div>
-                    <div class="list-group">
-            `;
-
-            grouped[dateKey].forEach(function(ev) {
-                var color = ev.color || '#1e88e5';
-                var timeInfo = ev.is_all_day ? 'दिनभर (All Day)' : (ev.start_time ? ev.start_time + (ev.end_time ? ' - ' + ev.end_time : '') : '');
-
-                html += `
-                    <div class="list-group-item list-group-item-action border-0 mb-2 p-3 shadow-sm rounded d-flex justify-content-between align-items-center nepali-agenda-item" data-event-id="${ev.event_id || ev.id}" style="border-left: 4px solid ${color} !important; background: #ffffff;">
-                        <div>
-                            <div class="d-flex align-items-center mb-1">
-                                <span class="badge mr-2 text-white" style="background: ${color};">${ev.category_name || ev.category}</span>
-                                <h6 class="font-weight-bold mb-0 text-dark">${ev.title}</h6>
-                            </div>
-                            <div class="text-muted font-size-xs d-flex align-items-center flex-wrap">
-                                <span class="mr-3"><i class="icon-clock2 mr-1"></i>${timeInfo}</span>
-                                ${ev.location ? '<span class="mr-3"><i class="icon-location4 mr-1"></i>' + ev.location + '</span>' : ''}
-                                ${ev.class_name ? '<span class="mr-3"><i class="icon-graduation2 mr-1"></i>' + ev.class_name + '</span>' : ''}
-                            </div>
-                        </div>
-                        <div>
-                            <button type="button" class="btn btn-outline-secondary btn-sm btn-view-event" data-event-id="${ev.event_id || ev.id}">
-                                विवरण (Details)
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            html += `
-                    </div>
-                </div>
-            `;
-        });
-
-        html += '</div>';
-        agendaContainer.innerHTML = html;
+        var agendaList = document.createElement('div');
+        agendaList.className = 'nepali-agenda-list list-group list-group-flush';
 
         var self = this;
-        agendaContainer.querySelectorAll('.nepali-agenda-item, .btn-view-event').forEach(function(el) {
-            el.addEventListener('click', function(e) {
-                e.stopPropagation();
-                var eventId = this.getAttribute('data-event-id');
-                var foundEvent = self.events.find(function(item) {
-                    return (item.event_id && ('event_' + item.event_id === eventId || item.event_id == eventId)) || item.id === eventId;
+
+        dates.forEach(function(dateKey) {
+            var dateGroup = document.createElement('div');
+            dateGroup.className = 'nepali-agenda-date-group border-bottom py-3';
+
+            var badgeRow = document.createElement('div');
+            badgeRow.className = 'd-flex align-items-center mb-2';
+
+            var dateBadge = document.createElement('span');
+            dateBadge.className = 'badge badge-dark mr-2';
+            dateBadge.style.background = '#111827';
+            dateBadge.style.fontSize = '0.9rem';
+            dateBadge.textContent = dateKey + ' BS';
+            badgeRow.appendChild(dateBadge);
+            dateGroup.appendChild(badgeRow);
+
+            var itemsGroup = document.createElement('div');
+            itemsGroup.className = 'list-group';
+
+            grouped[dateKey].forEach(function(ev) {
+                var safeColor = sanitizeHexColor(ev.color, '#1e88e5');
+                var timeInfo = ev.is_all_day ? 'दिनभर (All Day)' : (ev.start_time ? ev.start_time + (ev.end_time ? ' - ' + ev.end_time : '') : '');
+
+                var item = document.createElement('div');
+                item.className = 'list-group-item list-group-item-action border-0 mb-2 p-3 shadow-sm rounded d-flex justify-content-between align-items-center nepali-agenda-item';
+                item.setAttribute('data-event-id', String(ev.event_id || ev.id || ''));
+                item.style.borderLeft = '4px solid ' + safeColor;
+                item.style.background = '#ffffff';
+
+                var leftDiv = document.createElement('div');
+
+                var topRow = document.createElement('div');
+                topRow.className = 'd-flex align-items-center mb-1';
+
+                var catBadge = document.createElement('span');
+                catBadge.className = 'badge mr-2 text-white';
+                catBadge.style.background = safeColor;
+                catBadge.textContent = String(ev.category_name || ev.category || 'Event');
+
+                var titleH6 = document.createElement('h6');
+                titleH6.className = 'font-weight-bold mb-0 text-dark';
+                titleH6.textContent = String(ev.title || '');
+
+                topRow.appendChild(catBadge);
+                topRow.appendChild(titleH6);
+                leftDiv.appendChild(topRow);
+
+                var metaRow = document.createElement('div');
+                metaRow.className = 'text-muted font-size-xs d-flex align-items-center flex-wrap';
+
+                if (timeInfo) {
+                    var timeSpan = document.createElement('span');
+                    timeSpan.className = 'mr-3';
+                    var timeIcon = document.createElement('i');
+                    timeIcon.className = 'icon-clock2 mr-1';
+                    timeSpan.appendChild(timeIcon);
+                    timeSpan.appendChild(document.createTextNode(timeInfo));
+                    metaRow.appendChild(timeSpan);
+                }
+
+                if (ev.location) {
+                    var locSpan = document.createElement('span');
+                    locSpan.className = 'mr-3';
+                    var locIcon = document.createElement('i');
+                    locIcon.className = 'icon-location4 mr-1';
+                    locSpan.appendChild(locIcon);
+                    locSpan.appendChild(document.createTextNode(String(ev.location)));
+                    metaRow.appendChild(locSpan);
+                }
+
+                if (ev.class_name) {
+                    var clsSpan = document.createElement('span');
+                    clsSpan.className = 'mr-3';
+                    var clsIcon = document.createElement('i');
+                    clsIcon.className = 'icon-graduation2 mr-1';
+                    clsSpan.appendChild(clsIcon);
+                    clsSpan.appendChild(document.createTextNode(String(ev.class_name)));
+                    metaRow.appendChild(clsSpan);
+                }
+
+                leftDiv.appendChild(metaRow);
+                item.appendChild(leftDiv);
+
+                var rightDiv = document.createElement('div');
+                var btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-outline-secondary btn-sm btn-view-event';
+                btn.setAttribute('data-event-id', String(ev.event_id || ev.id || ''));
+                btn.textContent = 'विवरण (Details)';
+
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    self.showEventDetails(ev);
                 });
-                if (foundEvent) self.showEventDetails(foundEvent);
+
+                rightDiv.appendChild(btn);
+                item.appendChild(rightDiv);
+
+                item.addEventListener('click', function() {
+                    self.showEventDetails(ev);
+                });
+
+                itemsGroup.appendChild(item);
             });
+
+            dateGroup.appendChild(itemsGroup);
+            agendaList.appendChild(dateGroup);
         });
+
+        agendaContainer.appendChild(agendaList);
     };
 
     NepaliBsCalendar.prototype.showEventDetails = function(ev) {
@@ -662,11 +774,11 @@
             bsDateRange += ' (' + ev.start_time + (ev.end_time ? ' - ' + ev.end_time : '') + ')';
         }
 
-        if (titleEl) titleEl.textContent = ev.title;
+        if (titleEl) titleEl.textContent = String(ev.title || '');
         if (dateEl) dateEl.textContent = bsDateRange;
         if (typeEl) {
-            typeEl.textContent = ev.category_name || (ev.type ? ev.type.toUpperCase() : 'EVENT');
-            typeEl.style.backgroundColor = ev.color || '#FF5700';
+            typeEl.textContent = String(ev.category_name || (ev.type ? ev.type.toUpperCase() : 'EVENT'));
+            typeEl.style.backgroundColor = sanitizeHexColor(ev.color, '#FF5700');
             typeEl.style.color = '#FFFFFF';
         }
 
@@ -680,15 +792,19 @@
         if (descEl) descEl.textContent = fullContent;
 
         if (linkEl) {
-            if (ev.notice_id) {
-                linkEl.setAttribute('href', '/notices/' + ev.notice_id);
+            var rawNoticeId = ev.notice_id ? parseInt(ev.notice_id, 10) : null;
+            var rawEventId = ev.event_id ? parseInt(ev.event_id, 10) : null;
+
+            if (rawNoticeId && rawNoticeId > 0) {
+                linkEl.setAttribute('href', '/notices/' + rawNoticeId);
                 linkEl.textContent = 'View Notice';
                 linkEl.style.display = 'inline-block';
-            } else if (ev.event_id && ev.can_edit) {
-                linkEl.setAttribute('href', '/events/' + ev.event_id + '/edit');
+            } else if (rawEventId && rawEventId > 0 && ev.can_edit) {
+                linkEl.setAttribute('href', '/events/' + rawEventId + '/edit');
                 linkEl.textContent = 'Edit Event';
                 linkEl.style.display = 'inline-block';
             } else {
+                linkEl.removeAttribute('href');
                 linkEl.style.display = 'none';
             }
         }

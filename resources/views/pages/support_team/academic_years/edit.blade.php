@@ -55,12 +55,17 @@
                         <div class="form-group row">
                             <label class="col-lg-3 col-form-label font-weight-semibold">{{ __('Set as Active Session') }}:</label>
                             <div class="col-lg-9">
-                                <div class="form-check">
-                                    <label class="form-check-label">
-                                        <input type="checkbox" name="is_active" value="1" class="form-check-input-styled" {{ old('is_active', $ay->is_active) ? 'checked' : '' }} data-fouc>
-                                        {{ __('Make this session active for student admissions, marks, and fees') }}
-                                    </label>
-                                </div>
+                                @if($ay->is_closed)
+                                    <div class="badge badge-secondary p-2 mb-1">{{ __('Closed / Archived Session') }}</div>
+                                    <p class="text-muted font-size-sm">{{ __('This session is currently closed and cannot be activated directly. Please reopen the session first to enable activation.') }}</p>
+                                @else
+                                    <div class="form-check">
+                                        <label class="form-check-label">
+                                            <input type="checkbox" name="is_active" value="1" class="form-check-input-styled" {{ old('is_active', $ay->is_active) ? 'checked' : '' }} data-fouc>
+                                            {{ __('Make this session active for student admissions, marks, and fees') }}
+                                        </label>
+                                    </div>
+                                @endif
                             </div>
                         </div>
 

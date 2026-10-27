@@ -30,12 +30,33 @@ class ExamController extends Controller
         $data = $req->only(['name', 'term', 'exam_type', 'start_date_bs', 'end_date_bs', 'status', 'description']);
         $data['year'] = Qs::getCurrentSession();
 
+        $bsService = app(\App\Services\BikramSambatService::class);
+        $startDate = null;
+        $endDate = null;
+
         if (!empty($data['start_date_bs'])) {
-            $data['start_date'] = \App\Helpers\NepaliHelper::bsToAd($data['start_date_bs']);
+            try {
+                $conv = $bsService->bsToAd($data['start_date_bs']);
+                $startDate = $conv['ad_date'];
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('flash_danger', __('Failed to convert start BS date: ') . $e->getMessage());
+            }
         }
         if (!empty($data['end_date_bs'])) {
-            $data['end_date'] = \App\Helpers\NepaliHelper::bsToAd($data['end_date_bs']);
+            try {
+                $conv = $bsService->bsToAd($data['end_date_bs']);
+                $endDate = $conv['ad_date'];
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('flash_danger', __('Failed to convert end BS date: ') . $e->getMessage());
+            }
         }
+
+        if ($startDate && $endDate && $endDate < $startDate) {
+            return back()->withInput()->with('flash_danger', __('Examination end date cannot be earlier than start date.'));
+        }
+
+        $data['start_date'] = $startDate;
+        $data['end_date'] = $endDate;
 
         if (($data['status'] ?? 'draft') === 'published') {
             $data['published_by'] = \Illuminate\Support\Facades\Auth::id();
@@ -48,8 +69,10 @@ class ExamController extends Controller
             return back()->withInput()->with('flash_danger', __('An examination with this title already exists in the current academic session.'));
         }
 
-        $created = $this->exam->create($data);
-        $this->syncExamCalendarEvent($created);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+            $created = $this->exam->create($data);
+            $this->syncExamCalendarEvent($created);
+        });
 
         return back()->with('flash_success', __('msg.store_ok'));
     }
@@ -64,16 +87,33 @@ class ExamController extends Controller
     {
         $data = $req->only(['name', 'term', 'exam_type', 'start_date_bs', 'end_date_bs', 'status', 'description']);
 
+        $bsService = app(\App\Services\BikramSambatService::class);
+        $startDate = null;
+        $endDate = null;
+
         if (!empty($data['start_date_bs'])) {
-            $data['start_date'] = \App\Helpers\NepaliHelper::bsToAd($data['start_date_bs']);
+            try {
+                $conv = $bsService->bsToAd($data['start_date_bs']);
+                $startDate = $conv['ad_date'];
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('flash_danger', __('Failed to convert start BS date: ') . $e->getMessage());
+            }
         }
         if (!empty($data['end_date_bs'])) {
-            $data['end_date'] = \App\Helpers\NepaliHelper::bsToAd($data['end_date_bs']);
+            try {
+                $conv = $bsService->bsToAd($data['end_date_bs']);
+                $endDate = $conv['ad_date'];
+            } catch (\Throwable $e) {
+                return back()->withInput()->with('flash_danger', __('Failed to convert end BS date: ') . $e->getMessage());
+            }
         }
 
-        if (!empty($data['start_date']) && !empty($data['end_date']) && $data['end_date'] < $data['start_date']) {
+        if ($startDate && $endDate && $endDate < $startDate) {
             return back()->withInput()->with('flash_danger', __('Examination end date cannot be earlier than start date.'));
         }
+
+        $data['start_date'] = $startDate;
+        $data['end_date'] = $endDate;
 
         $currentExam = $this->exam->find($id);
         if (($data['status'] ?? 'draft') === 'published' && $currentExam->status !== 'published') {
@@ -81,9 +121,11 @@ class ExamController extends Controller
             $data['published_at'] = now();
         }
 
-        $this->exam->update($id, $data);
-        $updatedExam = $this->exam->find($id);
-        $this->syncExamCalendarEvent($updatedExam);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id, $data) {
+            $this->exam->update($id, $data);
+            $updatedExam = $this->exam->find($id);
+            $this->syncExamCalendarEvent($updatedExam);
+        });
 
         return back()->with('flash_success', __('msg.update_ok'));
     }
@@ -96,13 +138,15 @@ class ExamController extends Controller
             return back()->with('flash_danger', __('Exam not found.'));
         }
 
-        $this->exam->update($examId, [
-            'status' => 'published',
-            'published_by' => \Illuminate\Support\Facades\Auth::id(),
-            'published_at' => now(),
-        ]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($examId) {
+            $this->exam->update($examId, [
+                'status' => 'published',
+                'published_by' => \Illuminate\Support\Facades\Auth::id(),
+                'published_at' => now(),
+            ]);
 
-        \App\Models\Event::where('exam_id', $examId)->update(['is_published' => true]);
+            \App\Models\Event::where('exam_id', $examId)->update(['is_published' => true]);
+        });
 
         return back()->with('flash_success', __('Exam results published successfully.'));
     }
@@ -114,20 +158,41 @@ class ExamController extends Controller
             return back()->with('flash_danger', __('Exam not found.'));
         }
 
-        $this->exam->update($id, [
-            'status' => 'completed',
-        ]);
+        $now = now()->format('Y-m-d');
+        $revertStatus = 'draft';
+        if (!empty($exam->end_date) && $exam->end_date->format('Y-m-d') < $now) {
+            $revertStatus = 'completed';
+        } elseif (!empty($exam->start_date) && $exam->start_date->format('Y-m-d') <= $now) {
+            $revertStatus = 'ongoing';
+        } elseif (!empty($exam->start_date)) {
+            $revertStatus = 'scheduled';
+        }
 
-        \App\Models\Event::where('exam_id', $id)->update(['is_published' => false]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id, $revertStatus) {
+            $this->exam->update($id, [
+                'status' => $revertStatus,
+                'published_by' => null,
+                'published_at' => null,
+            ]);
+
+            \App\Models\Event::where('exam_id', $id)->update(['is_published' => false]);
+        });
 
         return back()->with('flash_success', __('Exam results unpublished successfully.'));
     }
 
     public function destroy($id)
     {
-        // Safe deletion behavior: Remove linked calendar event, preserving marks and audit records
-        \App\Models\Event::where('exam_id', $id)->delete();
-        $this->exam->delete($id);
+        $hasMarks = \App\Models\Mark::where('exam_id', $id)->exists();
+        if ($hasMarks) {
+            return back()->with('flash_danger', __('Cannot delete examination: Student marks and results have already been recorded for this examination.'));
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
+            \App\Models\Event::where('exam_id', $id)->delete();
+            $this->exam->delete($id);
+        });
+
         return back()->with('flash_success', __('msg.del_ok'));
     }
 

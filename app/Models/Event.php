@@ -107,6 +107,15 @@ class Event extends Model
         ],
     ];
 
+    public const AUDIENCES = [
+        'all' => 'Entire School',
+        'teachers' => 'Staff / Teachers Only',
+        'students' => 'All Students',
+        'parents' => 'All Parents',
+        'classes' => 'Class / Section Targeted',
+        'class_section' => 'Class / Section Targeted',
+    ];
+
     public function my_class()
     {
         return $this->belongsTo(MyClass::class, 'my_class_id');
@@ -171,7 +180,7 @@ class Event extends Model
     }
 
     /**
-     * Scope events visible to a specific user based on roles and targeting.
+     * Scope events visible to a specific user based on roles, audience targeting, and section enrollment.
      */
     public function scopeVisibleTo($query, ?User $user = null)
     {
@@ -188,13 +197,55 @@ class Event extends Model
         // Non-admin roles see only published events
         $query->where('is_published', true);
 
+        // Events tied to examinations are only visible to non-admins if the exam is published
+        $query->where(function ($q) {
+            $q->whereNull('exam_id')
+              ->orWhereHas('exam', function ($examQ) {
+                  $examQ->where('status', 'published');
+              });
+        });
+
         if ($user->user_type === 'teacher') {
-            $assignedClassIds = Section::where('teacher_id', $user->id)->pluck('my_class_id')->unique()->toArray();
-            return $query->where(function ($q) use ($assignedClassIds) {
-                $q->whereIn('target_audience', ['all', 'teachers', 'students'])
-                  ->orWhere(function ($sub) use ($assignedClassIds) {
-                      $sub->where('target_audience', 'classes')
-                          ->whereIn('my_class_id', $assignedClassIds);
+            $assignedSectionIds = Section::where('teacher_id', $user->id)->pluck('id')->toArray();
+            $assignedClassIds = array_unique(array_merge(
+                Section::where('teacher_id', $user->id)->pluck('my_class_id')->toArray(),
+                Subject::where('teacher_id', $user->id)->pluck('my_class_id')->toArray()
+            ));
+
+            return $query->where(function ($q) use ($assignedClassIds, $assignedSectionIds) {
+                $q->whereIn('target_audience', ['all', 'teachers'])
+                  ->orWhere(function ($sub) use ($assignedClassIds, $assignedSectionIds) {
+                      $sub->whereIn('target_audience', ['classes', 'class_section'])
+                          ->where(function ($matchQ) use ($assignedClassIds, $assignedSectionIds) {
+                              $hasMatch = false;
+
+                              // Class-wide events (section_id is null): teacher must teach subject or section in this class
+                              if (!empty($assignedClassIds)) {
+                                  $hasMatch = true;
+                                  $matchQ->where(function ($classQ) use ($assignedClassIds) {
+                                      $classQ->whereIn('my_class_id', $assignedClassIds)
+                                             ->whereNull('section_id');
+                                  });
+                              }
+
+                              // Section-specific events: teacher must be assigned to that specific section
+                              if (!empty($assignedSectionIds)) {
+                                  if ($hasMatch) {
+                                      $matchQ->orWhere(function ($secQ) use ($assignedSectionIds) {
+                                          $secQ->whereIn('section_id', $assignedSectionIds);
+                                      });
+                                  } else {
+                                      $hasMatch = true;
+                                      $matchQ->where(function ($secQ) use ($assignedSectionIds) {
+                                          $secQ->whereIn('section_id', $assignedSectionIds);
+                                      });
+                                  }
+                              }
+
+                              if (!$hasMatch) {
+                                  $matchQ->whereRaw('0 = 1');
+                              }
+                          });
                   });
             });
         }
@@ -205,29 +256,63 @@ class Event extends Model
             $mySectionId = $sr ? $sr->section_id : null;
 
             return $query->where(function ($q) use ($myClassId, $mySectionId) {
-                $q->whereIn('target_audience', ['all', 'students'])
-                  ->orWhere(function ($sub) use ($myClassId, $mySectionId) {
-                      $sub->where('target_audience', 'classes')
-                          ->where('my_class_id', $myClassId)
-                          ->where(function ($s) use ($mySectionId) {
-                              $s->whereNull('section_id')->orWhere('section_id', $mySectionId);
-                          });
-                  });
+                $q->whereIn('target_audience', ['all', 'students']);
+
+                if ($myClassId) {
+                    $q->orWhere(function ($sub) use ($myClassId, $mySectionId) {
+                        $sub->whereIn('target_audience', ['classes', 'class_section'])
+                            ->where('my_class_id', $myClassId)
+                            ->where(function ($s) use ($mySectionId) {
+                                $s->whereNull('section_id');
+                                if ($mySectionId) {
+                                    $s->orWhere('section_id', $mySectionId);
+                                }
+                            });
+                    });
+                }
             });
         }
 
         if ($user->user_type === 'parent') {
-            $childClassIds = StudentRecord::where('my_parent_id', $user->id)->pluck('my_class_id')->unique()->toArray();
-            return $query->where(function ($q) use ($childClassIds) {
-                $q->whereIn('target_audience', ['all', 'parents'])
-                  ->orWhere(function ($sub) use ($childClassIds) {
-                      $sub->where('target_audience', 'classes')
-                          ->whereIn('my_class_id', $childClassIds);
-                  });
+            $children = StudentRecord::where('my_parent_id', $user->id)
+                ->whereNotNull('my_class_id')
+                ->get(['my_class_id', 'section_id']);
+
+            return $query->where(function ($q) use ($children) {
+                $q->whereIn('target_audience', ['all', 'parents']);
+
+                if ($children->isNotEmpty()) {
+                    $q->orWhere(function ($sub) use ($children) {
+                        $sub->whereIn('target_audience', ['classes', 'class_section'])
+                            ->where(function ($matchQuery) use ($children) {
+                                foreach ($children as $child) {
+                                    $matchQuery->orWhere(function ($cQ) use ($child) {
+                                        $cQ->where('my_class_id', $child->my_class_id)
+                                           ->where(function ($sQ) use ($child) {
+                                               $sQ->whereNull('section_id');
+                                               if ($child->section_id) {
+                                                   $sQ->orWhere('section_id', $child->section_id);
+                                               }
+                                           });
+                                    });
+                                }
+                            });
+                    });
+                }
             });
         }
 
         // Other staff (accountant, librarian)
         return $query->whereIn('target_audience', ['all', 'teachers']);
+    }
+
+    /**
+     * Get eligible recipient user IDs for notifications based on audience targeting.
+     *
+     * @return array<int>
+     */
+    public function getEligibleRecipientUserIds(): array
+    {
+        return app(\App\Services\EventNotificationService::class)->getEligibleUserIds($this);
     }
 }

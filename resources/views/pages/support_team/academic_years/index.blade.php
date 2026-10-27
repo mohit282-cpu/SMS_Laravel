@@ -113,7 +113,7 @@
                                 <div class="form-group row">
                                     <label class="col-lg-3 col-form-label font-weight-semibold">{{ __('Session Name') }}: <span class="text-danger">*</span></label>
                                     <div class="col-lg-9">
-                                        <input name="name" value="{{ old('name', '2083/84 BS') }}" required type="text" class="form-control" placeholder="e.g. 2083/84 BS">
+                                        <input name="name" value="{{ old('name', '2083 BS') }}" required type="text" class="form-control" placeholder="e.g. 2083 BS or 2083/84 BS">
                                     </div>
                                 </div>
 

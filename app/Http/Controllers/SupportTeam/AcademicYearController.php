@@ -35,18 +35,38 @@ class AcademicYearController extends Controller
             'end_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
         ]);
 
+        if (!$this->bsService->isValidBsDate($request->start_date_bs)) {
+            return back()->withInput()->with('flash_danger', __('Invalid start Bikram Sambat (BS) date.'));
+        }
+        if (!$this->bsService->isValidBsDate($request->end_date_bs)) {
+            return back()->withInput()->with('flash_danger', __('Invalid end Bikram Sambat (BS) date.'));
+        }
+
+        $startYear = (int) substr($request->start_date_bs, 0, 4);
+        $endYear = (int) substr($request->end_date_bs, 0, 4);
+
+        if ($startYear !== (int) $request->year_bs) {
+            return back()->withInput()->with('flash_danger', __('The academic year (BS) must match the start year of the session start date.'));
+        }
+        if ($endYear < $startYear) {
+            return back()->withInput()->with('flash_danger', __('The session end date year cannot be earlier than start date year.'));
+        }
+        if ($endYear > $startYear + 1) {
+            return back()->withInput()->with('flash_danger', __('An academic session cannot span more than two calendar years.'));
+        }
+
         try {
             $convStart = $this->bsService->bsToAd($request->start_date_bs);
             $convEnd = $this->bsService->bsToAd($request->end_date_bs);
         } catch (\Exception $e) {
-            return back()->with('flash_danger', __('Invalid BS date: ') . $e->getMessage());
+            return back()->withInput()->with('flash_danger', __('Invalid BS date: ') . $e->getMessage());
         }
 
         if ($convEnd['ad_date'] <= $convStart['ad_date']) {
-            return back()->with('flash_danger', __('End date must be greater than start date.'));
+            return back()->withInput()->with('flash_danger', __('End date must be greater than start date.'));
         }
 
-        $shouldActivate = $request->has('is_active') || (AcademicYear::where('is_active', true)->count() === 0);
+        $shouldActivate = $request->has('is_active') || (AcademicYear::where('is_active', true)->where('is_closed', false)->count() === 0);
 
         $ay = AcademicYear::create([
             'name' => trim($request->name),
@@ -82,20 +102,44 @@ class AcademicYearController extends Controller
             'end_date_bs' => 'required|string|regex:/^\d{4}-\d{2}-\d{2}$/',
         ]);
 
+        if (!$this->bsService->isValidBsDate($request->start_date_bs)) {
+            return back()->withInput()->with('flash_danger', __('Invalid start Bikram Sambat (BS) date.'));
+        }
+        if (!$this->bsService->isValidBsDate($request->end_date_bs)) {
+            return back()->withInput()->with('flash_danger', __('Invalid end Bikram Sambat (BS) date.'));
+        }
+
+        $startYear = (int) substr($request->start_date_bs, 0, 4);
+        $endYear = (int) substr($request->end_date_bs, 0, 4);
+
+        if ($startYear !== (int) $request->year_bs) {
+            return back()->withInput()->with('flash_danger', __('The academic year (BS) must match the start year of the session start date.'));
+        }
+        if ($endYear < $startYear) {
+            return back()->withInput()->with('flash_danger', __('The session end date year cannot be earlier than start date year.'));
+        }
+        if ($endYear > $startYear + 1) {
+            return back()->withInput()->with('flash_danger', __('An academic session cannot span more than two calendar years.'));
+        }
+
         try {
             $convStart = $this->bsService->bsToAd($request->start_date_bs);
             $convEnd = $this->bsService->bsToAd($request->end_date_bs);
         } catch (\Exception $e) {
-            return back()->with('flash_danger', __('Invalid BS date: ') . $e->getMessage());
+            return back()->withInput()->with('flash_danger', __('Invalid BS date: ') . $e->getMessage());
         }
 
         if ($convEnd['ad_date'] <= $convStart['ad_date']) {
-            return back()->with('flash_danger', __('End date must be greater than start date.'));
+            return back()->withInput()->with('flash_danger', __('End date must be greater than start date.'));
         }
 
         $ay = AcademicYear::findOrFail($id);
         $wasActive = $ay->is_active;
         $shouldActivate = $request->has('is_active');
+
+        if ($ay->is_closed && $shouldActivate) {
+            return back()->withInput()->with('flash_danger', __('Cannot activate a closed academic session. Please reopen it first.'));
+        }
 
         $ay->update([
             'name' => trim($request->name),
@@ -107,7 +151,7 @@ class AcademicYearController extends Controller
             'description' => $request->description,
         ]);
 
-        if ($shouldActivate || ($wasActive && !$ay->is_closed)) {
+        if (($shouldActivate || $wasActive) && !$ay->is_closed) {
             AcademicYear::activateSession($ay->id);
         }
 
@@ -116,6 +160,11 @@ class AcademicYearController extends Controller
 
     public function activate($id)
     {
+        $ay = AcademicYear::findOrFail($id);
+        if ($ay->is_closed) {
+            return back()->with('flash_danger', __('Cannot activate a closed academic session. Please reopen the session before activating it.'));
+        }
+
         AcademicYear::activateSession($id);
 
         return back()->with('flash_success', __('Academic session activated successfully.'));
@@ -126,15 +175,24 @@ class AcademicYearController extends Controller
         $ay = AcademicYear::findOrFail($id);
         $wasActive = $ay->is_active;
 
-        $ay->update(['is_active' => false, 'is_closed' => true]);
+        \Illuminate\Support\Facades\DB::transaction(function () use ($ay, $wasActive) {
+            $ay->update(['is_active' => false, 'is_closed' => true]);
+
+            if ($wasActive) {
+                // If active session closed, activate the next open session if one exists
+                $nextOpen = AcademicYear::where('is_closed', false)->where('id', '!=', $ay->id)->orderBy('year_bs', 'desc')->first();
+                if ($nextOpen) {
+                    AcademicYear::activateSession($nextOpen->id);
+                }
+            }
+        });
 
         if ($wasActive) {
-            // If active session closed, activate the next open session or fallback
-            $nextOpen = AcademicYear::where('is_closed', false)->orderBy('year_bs', 'desc')->first();
+            $nextOpen = AcademicYear::where('is_active', true)->where('is_closed', false)->first();
             if ($nextOpen) {
-                AcademicYear::activateSession($nextOpen->id);
                 return back()->with('flash_success', __('Session closed. Active session automatically switched to :name.', ['name' => $nextOpen->name]));
             }
+            return back()->with('flash_warning', __('Session closed. No open academic session is currently active. Please create or reopen an academic session.'));
         }
 
         return back()->with('flash_success', __('Academic session closed and archived successfully.'));
@@ -145,7 +203,7 @@ class AcademicYearController extends Controller
         $ay = AcademicYear::findOrFail($id);
         $ay->update(['is_closed' => false]);
 
-        return back()->with('flash_success', __('Academic session reopened successfully.'));
+        return back()->with('flash_success', __('Academic session reopened successfully. It is now open but not active. Click Activate to set it as the current active session.'));
     }
 
     public function destroy($id)
@@ -156,13 +214,15 @@ class AcademicYearController extends Controller
             return back()->with('flash_danger', __('Cannot delete an active academic session.'));
         }
 
-        // Integrity check: prevent deletion if historical records reference this session
+        // Integrity check: prevent deletion if historical or calendar records reference this session
         $hasStudents = \App\Models\StudentRecord::where('session', $ay->name)->exists();
         $hasExams = \App\Models\Exam::where('year', $ay->name)->exists();
         $hasPayments = \App\Models\Payment::where('year', $ay->name)->exists();
+        $hasEvents = \App\Models\Event::where('academic_year_id', $ay->id)->orWhere('session', $ay->name)->exists();
+        $hasMarks = \App\Models\Mark::where('year', $ay->name)->exists();
 
-        if ($hasStudents || $hasExams || $hasPayments) {
-            return back()->with('flash_danger', __('Cannot delete session: Historical student, payment, or examination records are associated with this academic session.'));
+        if ($hasStudents || $hasExams || $hasPayments || $hasEvents || $hasMarks) {
+            return back()->with('flash_danger', __('Cannot delete session: Historical student, payment, examination, mark, or calendar event records are associated with this academic session.'));
         }
 
         $ay->delete();
