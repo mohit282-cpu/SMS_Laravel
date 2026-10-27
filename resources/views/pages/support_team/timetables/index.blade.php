@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Manage TimeTables</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('Manage TimeTables') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -14,10 +14,10 @@
                 <li class="nav-item"><a href="#add-tt" class="nav-link active" data-toggle="tab">Create Timetable</a></li>
                 @endif
                 <li class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Show TimeTables</a>
+                    <a href="#" class="nav-link dropdown-toggle {{ !Qs::userIsTeamSA() ? 'active' : '' }}" data-toggle="dropdown" data-default="Show TimeTables"><span class="selected-text">{{ (!Qs::userIsTeamSA() && count($my_classes ?? [])) ? $my_classes->first()->name : 'Show TimeTables' }}</span></a>
                     <div class="dropdown-menu dropdown-menu-right">
                         @foreach($my_classes as $mc)
-                            <a href="#ttr{{ $mc->id }}" class="dropdown-item" data-toggle="tab">{{ $mc->name }}</a>
+                            <a href="#ttr{{ $mc->id }}" class="dropdown-item {{ (!Qs::userIsTeamSA() && $loop->first) ? 'active' : '' }}" data-toggle="tab">{{ $mc->name }}</a>
                         @endforeach
                     </div>
                 </li>
@@ -72,7 +72,8 @@
                 @endif
 
                 @foreach($my_classes as $mc)
-                    <div class="tab-pane fade" id="ttr{{ $mc->id }}">                         <table class="table datatable-button-html5-columns">
+                    <div class="tab-pane fade {{ (!Qs::userIsTeamSA() && $loop->first) ? 'show active' : '' }}" id="ttr{{ $mc->id }}">
+                        <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
                                 <th>S/N</th>

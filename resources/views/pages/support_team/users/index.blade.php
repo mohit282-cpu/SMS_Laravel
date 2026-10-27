@@ -12,7 +12,7 @@
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#new-user" class="nav-link active" data-toggle="tab">Create New User</a></li>
                 <li class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Manage Users</a>
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" data-default="Manage Users"><span class="selected-text">Manage Users</span></a>
                     <div class="dropdown-menu dropdown-menu-right">
                         @foreach($user_types as $ut)
                             <a href="#ut-{{ Qs::hash($ut->id) }}" class="dropdown-item" data-toggle="tab">{{ $ut->name }}s</a>

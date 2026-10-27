@@ -12,7 +12,7 @@
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#new-subject" class="nav-link active" data-toggle="tab">Add Subject</a></li>
                 <li class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Manage Subjects</a>
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" data-default="Manage Subjects"><span class="selected-text">Manage Subjects</span></a>
                     <div class="dropdown-menu dropdown-menu-right">
                         @foreach($my_classes as $c)
                             <a href="#c{{ $c->id }}" class="dropdown-item" data-toggle="tab">{{ $c->name }}</a>

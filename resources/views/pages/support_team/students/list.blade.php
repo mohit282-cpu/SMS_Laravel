@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Students List</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('Students List') }} &bull; {{ $my_class->name }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -12,7 +12,7 @@
             <ul class="nav nav-tabs nav-tabs-highlight">
                 <li class="nav-item"><a href="#all-students" class="nav-link active" data-toggle="tab">All {{ $my_class->name }} Students</a></li>
                 <li class="nav-item dropdown">
-                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown">Sections</a>
+                    <a href="#" class="nav-link dropdown-toggle" data-toggle="dropdown" data-default="Sections"><span class="selected-text">Sections</span></a>
                     <div class="dropdown-menu dropdown-menu-right">
                         @foreach($sections as $s)
                             <a href="#s{{ $s->id }}" class="dropdown-item" data-toggle="tab">{{ $my_class->name.' '.$s->name }}</a>

@@ -219,7 +219,7 @@
                     </div>
 
                     <div class="nepali-calendar-title-center text-center">
-                        <h4 class="nepali-calendar-heading mb-0 font-weight-bold"></h4>
+                        <h3 class="nepali-calendar-heading mb-0 font-weight-bold"></h3>
                         <span class="nepali-calendar-subheading text-muted font-size-xs"></span>
                     </div>
 

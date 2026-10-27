@@ -290,6 +290,71 @@
                 }
             }
         });
+
+        // Uiverse-inspired Tab Select Label & State Sync
+        $(document).on('click', '.nav-tabs .dropdown-menu .dropdown-item', function() {
+            var selectedText = $(this).text().trim();
+            var $dropdown = $(this).closest('.nav-item.dropdown');
+            var $toggle = $dropdown.find('.dropdown-toggle');
+            if (!$toggle.data('default-text')) {
+                var def = $toggle.attr('data-default') || $toggle.text().trim();
+                $toggle.data('default-text', def);
+            }
+            var $textSpan = $toggle.find('.selected-text');
+            if ($textSpan.length) {
+                $textSpan.text(selectedText);
+            } else {
+                $toggle.html('<span class="selected-text">' + selectedText + '</span>');
+            }
+            $toggle.addClass('active');
+            $dropdown.find('.dropdown-item').removeClass('active');
+            $(this).addClass('active');
+
+            // On mobile, close dropdown smoothly after selection
+            if (window.innerWidth < 768) {
+                $dropdown.removeClass('show');
+                $dropdown.find('.dropdown-menu').removeClass('show');
+            }
+        });
+
+        // When a non-dropdown tab is clicked, reset the dropdown toggle state to default
+        $(document).on('click', '.nav-tabs > .nav-item:not(.dropdown) > .nav-link', function() {
+            var $dropdown = $(this).closest('.nav-tabs').find('.nav-item.dropdown');
+            var $toggle = $dropdown.find('.dropdown-toggle');
+            var defaultText = $toggle.data('default-text') || $toggle.attr('data-default');
+            if (defaultText) {
+                var $textSpan = $toggle.find('.selected-text');
+                if ($textSpan.length) {
+                    $textSpan.text(defaultText);
+                } else {
+                    $toggle.html('<span class="selected-text">' + defaultText + '</span>');
+                }
+            }
+            $toggle.removeClass('active');
+            $dropdown.find('.dropdown-item').removeClass('active');
+        });
+
+        // Dynamic Liquid Glass Mobile Dock: shrink on interaction/scroll across all pages
+        var dockShrinkTimeout;
+        var $mobileDock = $('.apple-mobile-dock');
+
+        function triggerDockInteraction() {
+            if ($mobileDock.length && window.innerWidth < 992) {
+                $mobileDock.addClass('dock-shrunk');
+                clearTimeout(dockShrinkTimeout);
+                dockShrinkTimeout = setTimeout(function() {
+                    $mobileDock.removeClass('dock-shrunk');
+                }, 1200);
+            }
+        }
+
+        $(window).on('scroll', triggerDockInteraction);
+        $(document).on('scroll touchmove', '.content-wrapper, .content, body', triggerDockInteraction);
+
+        $mobileDock.on('mouseenter touchstart', function() {
+            clearTimeout(dockShrinkTimeout);
+            $mobileDock.removeClass('dock-shrunk');
+        });
     });
 
 </script>

@@ -2,6 +2,21 @@
 @section('page_title', __('My Dashboard'))
 @section('content')
 
+    {{-- Clean Apple Executive Header --}}
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-2 border-bottom">
+        <div>
+            <div class="d-flex align-items-center mb-1">
+                <span class="badge badge-primary mr-2"><i class="icon-shield-check mr-1"></i> {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}</span>
+                <span class="text-muted font-size-sm font-weight-medium">{{ date('l, F j, Y') }}</span>
+            </div>
+            <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.4rem; letter-spacing: -0.02em;">{{ __('Welcome back') }}, {{ Auth::user()->name }}</h2>
+        </div>
+        <div class="d-none d-md-flex align-items-center mt-3 mt-md-0">
+            <a href="{{ route('notices.index') }}" class="btn btn-light mr-2 shadow-sm"><i class="icon-bell2 mr-1"></i> {{ __('Notices') }}</a>
+            <a href="{{ route('my_account') }}" class="btn btn-outline-primary shadow-sm"><i class="icon-cog5 mr-1"></i> {{ __('Account Settings') }}</a>
+        </div>
+    </div>
+
     {{-- Super Admin & Admin Dashboard Cards --}}
     @if(Qs::userIsTeamSA() && isset($users))
        <div class="row">
@@ -24,7 +39,7 @@
                        <div class="stat-label">{{ __('Total Teachers') }}</div>
                    </div>
                    <div class="stat-icon-wrapper stat-icon-navy">
-                       <i class="icon-users2"></i>
+                       <i class="icon-user"></i>
                    </div>
                </div>
            </div>
@@ -35,7 +50,7 @@
                        <div class="stat-number">{{ Qs::formatNumber($users->where('user_type', 'admin')->count()) }}</div>
                        <div class="stat-label">{{ __('Administrators') }}</div>
                    </div>
-                   <div class="stat-icon-wrapper stat-icon-emerald">
+                   <div class="stat-icon-wrapper stat-icon-blue">
                        <i class="icon-user-tie"></i>
                    </div>
                </div>
@@ -289,9 +304,9 @@
     {{-- Events Calendar Card (Bikram Sambat BS) --}}
     <div class="card shadow-sm">
         <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="card-title font-weight-bold mb-0">
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 <i class="icon-calendar3 mr-2" style="color: #FF5700;"></i>{{ __('School Calendar & Notices (Bikram Sambat BS)') }}
-            </h5>
+            </h2>
             <div class="d-flex align-items-center">
                 @if(Qs::userIsSuperAdmin() || Qs::userIsAdmin())
                     <a href="{{ route('events.create') }}" class="btn btn-sm text-white mr-2" style="background: #FF5700; border-radius: 8px;">
@@ -315,7 +330,7 @@
         <div class="modal-dialog modal-dialog-centered" role="document">
             <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
                 <div class="modal-header d-flex align-items-center justify-content-between" style="background: #111827; color: #FFFFFF; border-bottom: 1px solid rgba(255,255,255,0.08);">
-                    <h6 class="modal-title font-weight-bold mb-0 text-white" id="eventModalTitle">{{ __('Event Details') }}</h6>
+                    <h3 class="modal-title font-weight-bold mb-0 text-white" id="eventModalTitle" style="font-size: 1.15rem;">{{ __('Event Details') }}</h3>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
                         <span aria-hidden="true">&times;</span>
                     </button>

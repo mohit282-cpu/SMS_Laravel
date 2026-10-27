@@ -19,6 +19,14 @@
   overflow-x: auto;
 }
 
+.card-body .nepali-calendar-wrapper,
+.card .nepali-calendar-wrapper {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
 .nepali-calendar-header {
   display: flex;
   align-items: center;
@@ -114,8 +122,9 @@
 }
 
 .nepali-calendar-day-cell.is-today .day-num-ne {
-  background: #FF5700;
+  background: #111827 !important;
   color: #FFFFFF !important;
+  border: 2px solid #FF5700 !important;
   border-radius: 50%;
   width: 26px;
   height: 26px;
@@ -123,6 +132,7 @@
   align-items: center;
   justify-content: center;
   font-size: 0.85rem;
+  font-weight: 700 !important;
 }
 
 .nepali-day-cell-header {
