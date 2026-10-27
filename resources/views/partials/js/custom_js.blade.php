@@ -334,7 +334,7 @@
             $dropdown.find('.dropdown-item').removeClass('active');
         });
 
-        // Dynamic Liquid Glass Mobile Dock: shrink on interaction/scroll across all pages
+        // Dynamic Liquid Glass Mobile Dock: compress to icons only on interaction/scroll across all pages
         var dockShrinkTimeout;
         var $mobileDock = $('.apple-mobile-dock');
 
@@ -344,14 +344,14 @@
                 clearTimeout(dockShrinkTimeout);
                 dockShrinkTimeout = setTimeout(function() {
                     $mobileDock.removeClass('dock-shrunk');
-                }, 1200);
+                }, 1400);
             }
         }
 
         $(window).on('scroll', triggerDockInteraction);
-        $(document).on('scroll touchmove', '.content-wrapper, .content, body', triggerDockInteraction);
+        $(document).on('scroll touchmove wheel', '.content-wrapper, .content, body', triggerDockInteraction);
 
-        $mobileDock.on('mouseenter touchstart', function() {
+        $mobileDock.on('mouseenter touchstart focusin', function() {
             clearTimeout(dockShrinkTimeout);
             $mobileDock.removeClass('dock-shrunk');
         });

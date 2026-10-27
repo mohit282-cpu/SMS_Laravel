@@ -988,40 +988,51 @@ input, select, textarea, .form-control {
 
 .apple-mobile-dock-inner {
   pointer-events: auto;
-  background: rgba(17, 24, 39, 0.58) !important;
-  backdrop-filter: blur(28px) saturate(190%) !important;
-  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.16) !important;
-  border-top: 1.5px solid rgba(255, 255, 255, 0.28) !important;
-  border-radius: 28px !important;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.2) !important;
+  background: rgba(17, 24, 39, 0.62) !important;
+  backdrop-filter: blur(32px) saturate(210%) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(210%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.32) !important;
+  border-radius: 30px !important;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.36),
+              0 0 24px rgba(255, 87, 0, 0.08),
+              inset 0 1px 1px rgba(255, 255, 255, 0.25) !important;
   display: flex;
   align-items: center;
   justify-content: space-around;
-  padding: 6px 8px;
-  max-width: 520px;
+  padding: 5px 8px;
+  max-width: 480px;
   margin: 0 auto;
   transform-origin: center bottom;
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              opacity 0.28s cubic-bezier(0.16, 1, 0.3, 1),
-              background 0.28s ease,
-              padding 0.28s ease !important;
+  transition: max-width 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              transform 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s ease,
+              background 0.32s ease,
+              border-radius 0.32s ease !important;
 }
 
-/* Shrink when interacting with the page (mobile / every panel) */
+/* Compressing the navbar to icons only when interacting with page */
 .apple-mobile-dock.dock-shrunk .apple-mobile-dock-inner {
-  transform: scale(0.85) translateY(6px) !important;
-  opacity: 0.65 !important;
-  background: rgba(17, 24, 39, 0.38) !important;
-  padding: 3px 6px !important;
+  max-width: 310px !important;
+  padding: 4px 6px !important;
+  border-radius: 26px !important;
+  transform: translateY(3px) scale(0.97) !important;
+  opacity: 0.94 !important; /* Properly visible when interacting! */
+  background: rgba(17, 24, 39, 0.72) !important;
+  backdrop-filter: blur(35px) saturate(220%) !important;
+  -webkit-backdrop-filter: blur(35px) saturate(220%) !important;
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.45),
+              0 0 20px rgba(255, 87, 0, 0.15),
+              inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
 }
 
 .apple-mobile-dock.dock-shrunk:hover .apple-mobile-dock-inner,
 .apple-mobile-dock.dock-shrunk:focus-within .apple-mobile-dock-inner,
 .apple-mobile-dock-inner:active {
-  transform: scale(1) translateY(0) !important;
+  transform: translateY(0) scale(1) !important;
   opacity: 1 !important;
-  background: rgba(17, 24, 39, 0.58) !important;
+  background: rgba(17, 24, 39, 0.65) !important;
 }
 
 .apple-dock-item {
@@ -1031,62 +1042,114 @@ input, select, textarea, .form-control {
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   outline: none;
   text-decoration: none !important;
-  padding: 6px 0 4px;
+  padding: 5px 4px 3px;
+  margin: 0 2px;
+  border-radius: 20px;
   cursor: pointer;
   position: relative;
-  transition: transform 0.12s var(--ease-spring);
+  transition: transform 0.2s var(--spring-snappy),
+              background 0.25s ease,
+              border-color 0.25s ease,
+              box-shadow 0.25s ease,
+              padding 0.25s ease !important;
+}
+
+/* Liquid glass transparent orange tinted liquid effect for the selected item */
+.apple-dock-item.active {
+  background: rgba(255, 87, 0, 0.2) !important;
+  backdrop-filter: blur(20px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(200%) !important;
+  border: 1px solid rgba(255, 87, 0, 0.45) !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.45),
+              0 4px 14px rgba(255, 87, 0, 0.22) !important;
 }
 
 .dock-icon-wrapper {
   position: relative;
   width: 32px;
-  height: 28px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--color-slate-light);
   font-size: 1.25rem;
-  transition: color 0.15s ease, transform 0.15s var(--ease-spring);
+  transition: color 0.18s ease, transform 0.2s var(--spring-snappy) !important;
+}
+
+.apple-dock-item.active .dock-icon-wrapper {
+  color: #FFFFFF !important;
+  text-shadow: 0 0 12px rgba(255, 87, 0, 0.6);
+  transform: translateY(-1px) scale(1.06);
 }
 
 .dock-label {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 600;
   color: var(--color-slate-light);
   letter-spacing: -0.01em;
   margin-top: 2px;
-  transition: color 0.15s ease;
-}
-
-/* Active State in iOS Dock */
-.apple-dock-item.active .dock-icon-wrapper {
-  color: var(--color-orange);
-  transform: translateY(-2px);
+  max-height: 18px;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: max-height 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.2s ease,
+              transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              margin-top 0.2s ease !important;
+  white-space: nowrap;
 }
 
 .apple-dock-item.active .dock-label {
-  color: #FFFFFF;
-  font-weight: 700;
+  color: #FFFFFF !important;
+  font-weight: 700 !important;
 }
 
+/* Remove static selected top line */
 .apple-dock-item.active::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  width: 18px;
-  height: 3px;
-  border-radius: var(--radius-apple-pill);
-  background: var(--color-orange-gradient);
-  box-shadow: 0 0 10px var(--color-orange);
+  display: none !important;
+  content: none !important;
+}
+
+/* When interacting with page: Compress to icons only! */
+.apple-mobile-dock.dock-shrunk .dock-label {
+  opacity: 0 !important;
+  max-height: 0 !important;
+  margin-top: 0 !important;
+  overflow: hidden !important;
+  transform: translateY(4px) scale(0.7) !important;
+  pointer-events: none !important;
+}
+
+.apple-mobile-dock.dock-shrunk .apple-dock-item {
+  padding: 6px 0 !important;
+  min-height: 38px !important;
+}
+
+.apple-mobile-dock.dock-shrunk .dock-icon-wrapper {
+  font-size: 1.35rem !important;
+  width: 36px !important;
+  height: 28px !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+}
+
+.apple-mobile-dock.dock-shrunk .apple-dock-item.active {
+  background: rgba(255, 87, 0, 0.26) !important;
+  border-color: rgba(255, 87, 0, 0.5) !important;
+  box-shadow: inset 0 1px 1.5px rgba(255, 255, 255, 0.5),
+              0 4px 14px rgba(255, 87, 0, 0.28) !important;
+}
+
+.apple-mobile-dock.dock-shrunk .apple-dock-item.active .dock-icon-wrapper {
+  color: #FFFFFF !important;
+  transform: scale(1.1) !important;
 }
 
 .dock-badge-dot {
   position: absolute;
-  top: 2px;
-  right: 2px;
+  top: 1px;
+  right: 1px;
   width: 8px;
   height: 8px;
   border-radius: 50%;
