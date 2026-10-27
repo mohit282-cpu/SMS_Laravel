@@ -1,3 +1,8 @@
+@php
+    $currentUser = Auth::user();
+    $studentRec = ($currentUser && Qs::userIsStudent()) ? Qs::findStudentRecord($currentUser->id) : null;
+    $myProfileUrl = $studentRec ? route('students.show', Qs::hash($studentRec->id)) : ($currentUser ? route('users.show', Qs::hash($currentUser->id)) : '#');
+@endphp
 <div class="navbar navbar-expand-md navbar-dark apple-navbar-glass">
     <div class="navbar-brand-wrapper mr-auto mr-md-4 d-flex align-items-center">
         <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center text-decoration-none">
@@ -37,7 +42,7 @@
                 <div class="dropdown-header font-weight-bold text-uppercase font-size-xs text-muted">
                     {{ __('Signed in as') }} <strong class="text-white">{{ Auth::user()->username }}</strong>
                 </div>
-                <a href="{{ Qs::userIsStudent() ? route('students.show', Qs::hash(Qs::findStudentRecord(Auth::user()->id)->id)) : route('users.show', Qs::hash(Auth::user()->id)) }}" class="dropdown-item">
+                <a href="{{ $myProfileUrl }}" class="dropdown-item">
                     <i class="icon-user-check text-muted mr-2"></i> {{ __('My Profile') }}
                 </a>
                 <a href="{{ route('my_account') }}" class="dropdown-item">
@@ -108,7 +113,7 @@
                     <div class="dropdown-header font-weight-bold text-uppercase font-size-xs text-muted">
                         {{ __('Signed in as') }} <strong class="text-white">{{ Auth::user()->username }}</strong>
                     </div>
-                    <a href="{{ Qs::userIsStudent() ? route('students.show', Qs::hash(Qs::findStudentRecord(Auth::user()->id)->id)) : route('users.show', Qs::hash(Auth::user()->id)) }}" class="dropdown-item">
+                    <a href="{{ $myProfileUrl }}" class="dropdown-item">
                         <i class="icon-user-check text-muted mr-2"></i> {{ __('My Profile') }}
                     </a>
                     <a href="{{ route('my_account') }}" class="dropdown-item">
