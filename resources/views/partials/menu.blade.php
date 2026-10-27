@@ -1,15 +1,6 @@
 <div class="sidebar sidebar-dark sidebar-main sidebar-expand-md" style="background: rgba(17, 24, 39, 0.95) !important; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-right: 1px solid rgba(255, 255, 255, 0.08);">
 
-    <!-- Sidebar mobile sheet header with iOS close button -->
-    <div class="sidebar-mobile-toggler d-flex align-items-center justify-content-between px-3 py-2">
-        <span class="font-weight-bold text-white d-flex align-items-center" style="font-size: 0.95rem; letter-spacing: -0.01em;">
-            <i class="icon-menu7 mr-2" style="color: #FF5700;"></i>{{ __('Menu') }}
-        </span>
-        <a href="#" class="sidebar-mobile-main-toggle btn-close-sheet" aria-label="{{ __('Close Navigation') }}">
-            <i class="icon-cross2 text-white"></i>
-        </a>
-    </div>
-    <!-- /sidebar mobile sheet header -->
+
 
     <!-- Sidebar content -->
     <div class="sidebar-content">
