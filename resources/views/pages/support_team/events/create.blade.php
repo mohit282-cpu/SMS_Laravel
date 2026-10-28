@@ -4,9 +4,9 @@
 
     <div class="card shadow-sm border-0" style="border-radius: 16px;">
         <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="card-title font-weight-bold mb-0">
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 <i class="icon-calendar-plus mr-2" style="color: #FF5700;"></i>{{ __('Create School Calendar Event (Bikram Sambat BS)') }}
-            </h5>
+            </h2>
             <a href="{{ route('events.index') }}" class="btn btn-outline-secondary btn-sm" style="border-radius: 8px;">
                 <i class="icon-arrow-left52 mr-1"></i>{{ __('Back to Events') }}
             </a>

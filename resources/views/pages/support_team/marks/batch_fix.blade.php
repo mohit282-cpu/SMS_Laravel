@@ -3,7 +3,7 @@
 @section('content')
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-wrench mr-2"></i> Batch Fix </h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-wrench mr-2" style="color: #FF5700;"></i>{{ __('Batch Fix Marks Errors') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

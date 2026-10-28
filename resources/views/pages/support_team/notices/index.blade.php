@@ -24,9 +24,9 @@
                             <div class="card border-left-3 {{ $notice->is_published ? 'border-left-primary' : 'border-left-danger' }} shadow-sm h-100">
                                 <div class="card-body d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
-                                        <h5 class="card-title font-weight-semibold mb-0">
+                                        <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1.05rem;">
                                             <a href="{{ route('notices.show', $notice->id) }}" class="text-default">{{ $notice->title }}</a>
-                                        </h5>
+                                        </h3>
                                         @if($notice->is_published)
                                             <span class="badge badge-success">{{ __('Published') }}</span>
                                         @else

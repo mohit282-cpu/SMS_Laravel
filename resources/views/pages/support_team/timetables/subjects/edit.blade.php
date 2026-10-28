@@ -7,7 +7,7 @@
                     <div class="col-md-6">
                         <div class="card">
                             <div class="card-header header-elements-inline">
-                                <h6 class="card-title font-weight-bold">{{ ($tt->exam_date ? 'Exam ('.date('D\, d/m/Y', strtotime($tt->exam_date)).')' : $tt->day) }} {{ '('.$tt->time_slot->full.')' .' - '.$tt->subject->name }}</h6>
+                                <h3 class="card-title font-weight-bold" style="font-size: 0.95rem;">{{ ($tt->exam_date ? 'Exam ('.date('D\, d/m/Y', strtotime($tt->exam_date)).')' : $tt->day) }} {{ '('.$tt->time_slot->full.')' .' - '.$tt->subject->name }}</h3>
                                 <div class="header-elements">
                                     <div class="list-icons">
                                         <a onclick="confirmDelete(this.id)" href="#" id="{{ $tt->id }}" title="DELETE"

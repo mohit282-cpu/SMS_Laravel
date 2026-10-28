@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Edit Payment</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-cash2 mr-2" style="color: #FF5700;"></i>{{ __('Edit Payment') }} &bull; {{ $payment->title }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

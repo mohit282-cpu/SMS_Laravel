@@ -1,8 +1,8 @@
 <div class="row">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header header-elements-inline bg-danger">
-                <h6 class="card-title font-weight-bold">AFFECTIVE TRAITS</h6>
+            <div class="card-header header-elements-inline">
+                <h3 class="card-title font-weight-bold">Affective Traits</h3>
                 {!! Qs::getPanelOptions() !!}
             </div>
 
@@ -36,8 +36,8 @@
 
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header header-elements-inline bg-success">
-                <h6 class="card-title font-weight-bold">PSYCHOMOTOR SKILLS</h6>
+            <div class="card-header header-elements-inline">
+                <h3 class="card-title font-weight-bold">Psychomotor Skills</h3>
                 {!! Qs::getPanelOptions() !!}
             </div>
 

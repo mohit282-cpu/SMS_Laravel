@@ -4,7 +4,7 @@
 
         <div class="card">
             <div class="card-header bg-white header-elements-inline">
-                <h6 id="ajax-title" class="card-title">Please fill The form Below To Edit record of {{ $sr->user->name }}</h6>
+                <h2 id="ajax-title" class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('Edit Student Record') }} &bull; {{ $sr->user->name }}</h2>
 
                 {!! Qs::getPanelOptions() !!}
             </div>

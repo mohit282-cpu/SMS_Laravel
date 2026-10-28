@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-cash2 mr-2"></i> Select year</h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-cash2 mr-2" style="color: #FF5700;"></i> {{ __('Select Academic Year') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -42,7 +42,7 @@
 @if($selected)
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Manage Payments for {{ $year }} Session</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-cash3 mr-2" style="color: #FF5700;"></i>Manage Payments for {{ $year }} Session</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

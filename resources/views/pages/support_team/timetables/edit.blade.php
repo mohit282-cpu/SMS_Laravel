@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Edit TimeTable Record</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-calendar mr-2" style="color: #FF5700;"></i>{{ __('Edit Timetable Record') }} &bull; {{ $ttr->name }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

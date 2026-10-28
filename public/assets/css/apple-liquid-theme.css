@@ -1670,7 +1670,7 @@ input, select, textarea, .form-control {
   }
 
   /* All Tables Momentum Touch Scrolling */
-  .dataTables_wrapper,
+  .datatable-scroll,
   .table-responsive,
   .tab-pane > table,
   .card-body > table,
@@ -1686,6 +1686,47 @@ input, select, textarea, .form-control {
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02) !important;
     border: 1px solid var(--color-silver) !important;
     margin-bottom: 1.25rem !important;
+  }
+
+  .dataTables_wrapper {
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .datatable-header {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    padding: 10px 0 !important;
+    float: none !important;
+  }
+
+  .datatable-header::before,
+  .datatable-header::after {
+    display: none !important;
+  }
+
+  .dataTables_filter {
+    margin: 0 !important;
+    float: none !important;
+  }
+
+  .dt-buttons {
+    margin: 0 !important;
+    float: none !important;
+  }
+
+  .dataTables_length {
+    margin: 0 !important;
+    float: none !important;
   }
 
   .table {
@@ -1775,37 +1816,309 @@ input, select, textarea, .form-control {
     font-size: 0.92rem !important;
   }
 
-  /* DataTables Controls on Mobile */
+  /* DataTables Modern Apple Mobile UI (< 768px) */
   .dataTables_wrapper {
+    width: 100% !important;
+    overflow: visible !important;
     padding: 0 !important;
+    margin: 0 0 1.25rem 0 !important;
   }
 
-  .dataTables_length,
-  .dataTables_filter {
-    text-align: left !important;
+  /* Header flex container - vertical stack on mobile */
+  .datatable-header {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 8px 0 14px 0 !important;
+    margin: 0 !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+    width: 100% !important;
     float: none !important;
-    margin-bottom: 0.85rem !important;
-    width: 100% !important;
+    background: transparent !important;
   }
 
-  .dataTables_length select,
-  .dataTables_filter input {
-    width: 100% !important;
-    font-size: 16px !important;
+  .datatable-header::before,
+  .datatable-header::after {
+    display: none !important;
   }
 
-  .dataTables_info,
-  .dataTables_paginate {
+  /* 1. Spotlight Search Pill */
+  .dataTables_filter {
+    order: 1 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+    display: block !important;
+    position: relative !important;
+    text-align: left !important;
+  }
+
+  .dataTables_filter > label {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    position: relative !important;
+    float: none !important;
+  }
+
+  /* Hide raw text 'Filter:' label on mobile for clean Spotlight search bar */
+  .dataTables_filter > label > span {
+    display: none !important;
+  }
+
+  /* Magnifying glass icon inside left of search input */
+  .dataTables_filter > label::after {
+    content: "\e98e" !important;
+    font-family: "icomoon" !important;
+    position: absolute !important;
+    left: 14px !important;
+    right: auto !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    font-size: 1.05rem !important;
+    color: #94A3B8 !important;
+    pointer-events: none !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    z-index: 2 !important;
+    transition: color 0.2s ease !important;
+  }
+
+  .dataTables_filter:focus-within > label::after {
+    color: var(--color-orange) !important;
+  }
+
+  .dataTables_filter input,
+  .dataTables_filter input[type="search"] {
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    height: 44px !important; /* 44px Apple touch target */
+    border-radius: 9999px !important; /* Spotlight pill */
+    background: #F1F5F9 !important;
+    border: 1.5px solid rgba(0, 0, 0, 0.08) !important;
+    padding: 0 16px 0 42px !important; /* Left space for search icon */
+    font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    font-weight: 500 !important;
+    color: var(--color-midnight) !important;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+    margin: 0 !important;
+    float: none !important;
+    outline: none !important;
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    -webkit-appearance: none !important;
+  }
+
+  .dataTables_filter input:focus,
+  .dataTables_filter input[type="search"]:focus {
+    background: #FFFFFF !important;
+    border-color: var(--color-orange) !important;
+    box-shadow: 0 0 0 3px rgba(255, 87, 0, 0.2), 0 4px 16px rgba(0, 0, 0, 0.06) !important;
+  }
+
+  /* 2. Action Buttons (Copy, Excel, PDF, Colvis) - Fluid Horizontal Swipe Tray */
+  .dt-buttons {
+    order: 2 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 2px 2px 6px 2px !important;
+    float: none !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+
+  .dt-buttons::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .dt-buttons > .btn {
+    flex: 0 0 auto !important;
+    min-height: 38px !important;
+    height: 38px !important;
+    padding: 0 16px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: #FFFFFF !important;
+    color: #334155 !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 6px !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    float: none !important;
+    transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease !important;
+  }
+
+  .dt-buttons > .btn:active {
+    transform: scale(0.96) !important;
+    background: #F1F5F9 !important;
+  }
+
+  .dt-buttons > .btn.bg-blue {
+    background: var(--apple-blue, #007AFF) !important;
+    color: #FFFFFF !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25) !important;
+  }
+
+  /* 3. Length dropdown (Entries per page) */
+  .dataTables_length {
+    order: 3 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+    font-size: 0.85rem !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+  }
+
+  .dataTables_length > label {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    margin: 0 !important;
+    float: none !important;
+    font-size: 0.85rem !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+  }
+
+  .dataTables_length > label > span:first-child {
+    float: none !important;
+    margin: 0 !important;
+    font-size: 0.85rem !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+  }
+
+  .dataTables_length select {
+    width: auto !important;
+    min-width: 80px !important;
+    height: 38px !important;
+    border-radius: 9999px !important;
+    background-color: #F8FAFC !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+    padding: 0 28px 0 14px !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    color: var(--color-midnight) !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 10px center !important;
+  }
+
+  .dataTables_length .select2-container {
+    width: auto !important;
+  }
+
+  /* Table horizontal scroll container */
+  .datatable-scroll {
+    display: block !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    border-radius: 12px !important;
+    background: #FFFFFF !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    margin: 8px 0 12px 0 !important;
+  }
+
+  .datatable-scroll table {
+    margin-bottom: 0 !important;
+  }
+
+  /* Footer container - info & tactile pagination */
+  .datatable-footer {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 14px 0 !important;
+    margin: 0 !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+    width: 100% !important;
+    float: none !important;
+  }
+
+  .datatable-footer::before,
+  .datatable-footer::after {
+    display: none !important;
+  }
+
+  .dataTables_info {
     text-align: center !important;
     float: none !important;
-    margin-top: 0.85rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 0.82rem !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+    width: 100% !important;
+  }
+
+  .dataTables_paginate {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    text-align: center !important;
+    float: none !important;
+    margin: 0 !important;
     width: 100% !important;
   }
 
   .dataTables_paginate .paginate_button {
-    padding: 4px 10px !important;
-    font-size: 0.78rem !important;
-    border-radius: 8px !important;
+    min-height: 36px !important;
+    min-width: 36px !important;
+    padding: 6px 12px !important;
+    font-size: 0.82rem !important;
+    font-weight: 600 !important;
+    border-radius: 9999px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    margin: 2px !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    background: #FFFFFF !important;
+    color: #334155 !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .dataTables_paginate .paginate_button.current,
+  .dataTables_paginate .paginate_button.current:hover {
+    background: var(--color-orange) !important;
+    color: #FFFFFF !important;
+    border-color: transparent !important;
+    box-shadow: 0 2px 8px rgba(255, 87, 0, 0.35) !important;
+  }
+
+  .dataTables_paginate .paginate_button.disabled,
+  .dataTables_paginate .paginate_button.disabled:hover {
+    opacity: 0.45 !important;
+    background: #F1F5F9 !important;
+    color: #94A3B8 !important;
+    box-shadow: none !important;
   }
 
   /* Form Layout on Mobile */
@@ -1960,3 +2273,347 @@ input, select, textarea, .form-control {
     align-items: center !important;
   }
 }
+
+/* ========================================================
+   11. UIVERSE THEME: vinodjangid07 Login Form
+   ======================================================== */
+.login-cover {
+  background: radial-gradient(circle at 10% 20%, rgba(209, 193, 255, 0.45) 0%, rgba(248, 250, 252, 0.95) 90%) !important;
+  min-height: calc(100vh - 120px);
+}
+
+.form_main {
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: rgb(255, 255, 255);
+  padding: 38px 32px 30px 32px;
+  box-shadow: 0px 20px 50px rgba(0, 0, 0, 0.07), 0 2px 10px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+  border-radius: 28px;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  margin: auto;
+}
+
+.form_main::before {
+  position: absolute;
+  content: "";
+  width: 300px;
+  height: 300px;
+  background: linear-gradient(135deg, rgb(209, 193, 255) 0%, rgba(199, 114, 255, 0.45) 100%);
+  transform: rotate(45deg);
+  left: -170px;
+  bottom: 25px;
+  z-index: 1;
+  border-radius: 36px;
+  box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+  transition: transform 0.6s var(--spring-snappy);
+}
+
+.form_main:hover::before {
+  transform: rotate(50deg) scale(1.03);
+}
+
+.heading {
+  font-size: 1.85rem;
+  color: #1e1e24;
+  font-weight: 800;
+  margin: 2px 0 6px 0;
+  z-index: 2;
+  letter-spacing: -0.02em;
+}
+
+.inputContainer {
+  width: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  margin: 4px 0 10px 0;
+}
+
+.inputIcon {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  fill: #64748B;
+  transition: fill 0.2s ease, transform 0.2s ease;
+}
+
+.inputContainer:focus-within .inputIcon {
+  fill: rgb(162, 104, 255);
+  transform: translateY(-50%) scale(1.1);
+}
+
+.inputField {
+  width: 100%;
+  height: 44px;
+  background-color: transparent;
+  border: none;
+  border-bottom: 2px solid rgb(203, 213, 225);
+  margin: 6px 0;
+  color: #0F172A;
+  font-size: 16px; /* 16px prevents iOS auto-zoom */
+  font-weight: 500;
+  box-sizing: border-box;
+  padding-left: 32px;
+  padding-right: 12px;
+  transition: border-color 0.25s ease, background-color 0.25s ease;
+  border-radius: 0;
+}
+
+.inputField:focus {
+  outline: none;
+  border-bottom: 2px solid rgb(162, 104, 255);
+}
+
+.inputField::placeholder {
+  color: #94A3B8;
+  font-size: 0.92em;
+  font-weight: 400;
+}
+
+#button {
+  z-index: 2;
+  position: relative;
+  width: 100%;
+  border: none;
+  background: linear-gradient(135deg, rgb(162, 104, 255) 0%, rgb(139, 74, 247) 100%);
+  min-height: 44px;
+  height: 44px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 16px 0 10px 0;
+  cursor: pointer;
+  border-radius: 14px;
+  box-shadow: 0 8px 20px rgba(162, 104, 255, 0.32);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+#button:hover {
+  background: linear-gradient(135deg, rgb(148, 85, 250) 0%, rgb(126, 58, 240) 100%);
+  box-shadow: 0 12px 25px rgba(162, 104, 255, 0.42);
+  transform: translateY(-1px);
+}
+
+#button:active {
+  transform: scale(0.98);
+}
+
+.forgotLink {
+  z-index: 2;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgb(110, 50, 215);
+  text-decoration: none;
+  padding: 6px 14px;
+  border-radius: 20px;
+  transition: all 0.2s ease;
+  display: inline-block;
+  margin-top: 4px;
+}
+
+.forgotLink:hover {
+  color: rgb(85, 25, 190);
+  background-color: rgba(162, 104, 255, 0.08);
+  text-decoration: none;
+}
+
+@media (max-width: 480px) {
+  .form_main {
+    padding: 30px 22px 24px 22px;
+    border-radius: 22px;
+  }
+  .form_main::before {
+    width: 250px;
+    height: 250px;
+    left: -150px;
+    bottom: 20px;
+  }
+}
+
+/* ========================================================
+   LIQUID GLASS CARD THEME SYSTEM
+   Inspired by Skiper UI / Motion Primitives / Uiverse
+   ======================================================== */
+.liquid-glass-container {
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: center;
+  border-radius: 20px;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative;
+  overflow: hidden;
+}
+
+.liquid-glass-card {
+  position: relative;
+  width: 100%;
+  max-width: 320px;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  box-shadow: 
+    0 12px 36px -4px rgba(0, 0, 0, 0.22),
+    0 0 20px 2px rgba(255, 255, 255, 0.14),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.45);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+}
+
+/* Darker ambient variant for high-contrast glass */
+.liquid-glass-card.dark,
+.liquid-glass-card-dark,
+.sidebar-dark .liquid-glass-card {
+  background: rgba(15, 23, 42, 0.65) !important;
+  backdrop-filter: blur(24px) saturate(200%) !important;
+  -webkit-backdrop-filter: blur(24px) saturate(200%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  box-shadow: 
+    0 20px 45px -8px rgba(0, 0, 0, 0.45),
+    0 0 24px 2px rgba(255, 255, 255, 0.08),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Glow intensity modifiers */
+.liquid-glass-card[data-glow="sm"],
+.liquid-glass-glow-sm {
+  box-shadow: 
+    0 8px 24px -2px rgba(0, 0, 0, 0.18),
+    0 0 14px 1px rgba(255, 255, 255, 0.16),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.liquid-glass-card[data-glow="md"],
+.liquid-glass-glow-md {
+  box-shadow: 
+    0 16px 40px -4px rgba(0, 0, 0, 0.25),
+    0 0 28px 4px rgba(255, 87, 0, 0.22),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.45);
+}
+
+/* Navigation items inside liquid glass */
+.liquid-glass-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  position: relative;
+  z-index: 20;
+}
+
+.liquid-glass-btn,
+.liquid-glass-nav .btn-liquid-item,
+.liquid-glass-card button,
+.liquid-glass-card a.nav-link {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.92rem;
+  border: none;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.92);
+  background: transparent;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.liquid-glass-btn svg,
+.liquid-glass-btn i,
+.liquid-glass-card .nav-link i {
+  font-size: 1.15rem;
+  width: 20px;
+  text-align: center;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-glass-btn:hover,
+.liquid-glass-nav .btn-liquid-item:hover,
+.liquid-glass-card button:hover,
+.liquid-glass-card a.nav-link:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #FFFFFF !important;
+  transform: translateX(2px);
+  text-decoration: none;
+}
+
+.liquid-glass-btn:hover i,
+.liquid-glass-btn:hover svg {
+  transform: scale(1.1);
+}
+
+/* Active item inside liquid glass (crisp contrast) */
+.liquid-glass-btn.active,
+.liquid-glass-nav .btn-liquid-item.active,
+.liquid-glass-card a.nav-link.active {
+  background: #FFFFFF !important;
+  color: #0F172A !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.16) !important;
+}
+
+.liquid-glass-btn.active i,
+.liquid-glass-btn.active svg,
+.liquid-glass-card a.nav-link.active i {
+  color: #FF5700 !important;
+}
+
+/* Vibrant orange variant for active */
+.liquid-glass-btn.active-primary,
+.sidebar .nav-sidebar > .nav-item > .nav-link.active {
+  background: linear-gradient(135deg, rgba(255, 87, 0, 0.92) 0%, rgba(255, 120, 40, 0.95) 100%) !important;
+  color: #FFFFFF !important;
+  font-weight: 600 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 6px 18px rgba(255, 87, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Enhanced Sidebar Liquid Glass Styling */
+.sidebar-main {
+  background: rgba(13, 18, 30, 0.88) !important;
+  backdrop-filter: blur(28px) saturate(190%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.09) !important;
+  box-shadow: 10px 0 35px rgba(0, 0, 0, 0.25) !important;
+}
+
+.sidebar .nav-sidebar .nav-link {
+  border-radius: 12px !important;
+  padding: 10px 14px !important;
+  margin: 3px 0 !important;
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.sidebar .nav-sidebar .nav-link:hover:not(.active) {
+  background: rgba(255, 255, 255, 0.14) !important;
+  color: #FFFFFF !important;
+  transform: translateX(3px) !important;
+}
+

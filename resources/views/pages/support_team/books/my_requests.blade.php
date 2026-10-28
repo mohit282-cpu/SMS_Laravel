@@ -6,10 +6,10 @@
         {{-- Left: Currently Borrowed Books --}}
         <div class="col-md-7">
             <div class="card">
-                <div class="card-header header-elements-inline bg-light">
-                    <h6 class="card-title font-weight-semibold text-primary">
-                        <i class="icon-reading mr-2"></i>{{ __('Currently Borrowed Books') }} ({{ count($my_loans) }})
-                    </h6>
+                <div class="card-header header-elements-inline">
+                    <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
+                        <i class="icon-reading mr-2" style="color: #FF5700;"></i>{{ __('Currently Borrowed Books') }} ({{ count($my_loans) }})
+                    </h2>
                     <div class="header-elements">
                         <a href="{{ route('books.catalogue') }}" class="btn btn-sm btn-outline-primary font-weight-bold">
                             <i class="icon-search4 mr-1"></i> {{ __('Browse Catalogue') }}
@@ -76,10 +76,10 @@
         {{-- Right: My Book Requests --}}
         <div class="col-md-5">
             <div class="card">
-                <div class="card-header header-elements-inline bg-light">
-                    <h6 class="card-title font-weight-semibold text-warning">
-                        <i class="icon-hour-glass2 mr-2"></i>{{ __('My Book Requests') }} ({{ count($my_requests) }})
-                    </h6>
+                <div class="card-header header-elements-inline">
+                    <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
+                        <i class="icon-hour-glass2 mr-2" style="color: #FF5700;"></i>{{ __('My Book Requests') }} ({{ count($my_requests) }})
+                    </h2>
                 </div>
 
                 <div class="card-body">

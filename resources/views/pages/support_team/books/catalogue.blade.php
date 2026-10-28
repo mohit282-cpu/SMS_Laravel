@@ -5,7 +5,7 @@
     {{-- Search and Filter Filter Card --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold"><i class="icon-search4 mr-2"></i>{{ __('Search Library Catalogue') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-search4 mr-2" style="color: #FF5700;"></i>{{ __('Search Library Catalogue') }}</h2>
             <div class="header-elements">
                 <a href="{{ route('book_requests.my_requests') }}" class="btn btn-outline-primary btn-sm font-weight-bold">
                     <i class="icon-books mr-1"></i> {{ __('My Borrowed & Requested Books') }}
@@ -62,7 +62,7 @@
     {{-- Books Grid / List --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold">{{ __('Books in Library') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-books mr-2" style="color: #FF5700;"></i>{{ __('Books in Library') }}</h2>
             <span class="badge badge-light badge-striped font-size-sm">{{ count($books) }} {{ __('Titles Found') }}</span>
         </div>
 

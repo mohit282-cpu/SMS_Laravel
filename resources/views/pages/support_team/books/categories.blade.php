@@ -7,7 +7,7 @@
         <div class="col-md-7">
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-semibold"><i class="icon-folder-open mr-2"></i>{{ __('Book Categories') }}</h6>
+                    <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-folder-open mr-2" style="color: #FF5700;"></i>{{ __('Book Categories') }}</h2>
                     {!! Qs::getPanelOptions() !!}
                 </div>
 
@@ -62,8 +62,8 @@
         {{-- Add Category Form Column --}}
         <div class="col-md-5">
             <div class="card">
-                <div class="card-header header-elements-inline bg-light">
-                    <h6 class="card-title font-weight-semibold text-primary"><i class="icon-plus-circle2 mr-2"></i>{{ __('Add New Category') }}</h6>
+                <div class="card-header header-elements-inline">
+                    <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-plus-circle2 mr-2" style="color: #FF5700;"></i>{{ __('Add New Category') }}</h2>
                 </div>
 
                 <div class="card-body">

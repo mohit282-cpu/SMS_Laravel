@@ -1,6 +1,6 @@
 <div class="card">
-    <div class="card-header header-elements-inline bg-success">
-        <h6 class="font-weight-bold card-title">Manage Time Slots - {{ $ttr->name }}</h6>
+    <div class="card-header header-elements-inline">
+        <h2 class="font-weight-bold card-title mb-0" style="font-size: 1.1rem;"><i class="icon-alarm mr-2" style="color: #FF5700;"></i>{{ __('Manage Time Slots') }} &bull; {{ $ttr->name }}</h2>
         {!! Qs::getPanelOptions() !!}
     </div>
 

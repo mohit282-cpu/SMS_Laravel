@@ -19,7 +19,7 @@
     {{-- Main Circulations Card --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold">{{ __('Circulation Records') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-reading mr-2" style="color: #FF5700;"></i>{{ __('Circulation Records & Book Loans') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

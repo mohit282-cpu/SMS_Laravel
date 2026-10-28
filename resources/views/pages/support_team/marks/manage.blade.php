@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-bold">Fill The Form To Manage Marks</h6>
+            <h2 class="card-title font-weight-bold">Manage Marks Selection</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -16,10 +16,10 @@
     <div class="card">
 
         <div class="card-header">
-            <div class="row">
-                <div class="col-md-4"><h6 class="card-title"><strong>Subject: </strong> {{ $m->subject->name }}</h6></div>
-                <div class="col-md-4"><h6 class="card-title"><strong>Class: </strong> {{ $m->my_class->name.' '.$m->section->name }}</h6></div>
-                <div class="col-md-4"><h6 class="card-title"><strong>Exam: </strong> {{ $m->exam->name.' - '.$m->year }}</h6></div>
+            <div class="row align-items-center">
+                <div class="col-md-4 mb-2 mb-md-0"><div class="apple-status-pill"><strong class="text-slate-800">Subject:</strong> {{ $m->subject->name }}</div></div>
+                <div class="col-md-4 mb-2 mb-md-0"><div class="apple-status-pill"><strong class="text-slate-800">Class:</strong> {{ $m->my_class->name.' '.$m->section->name }}</div></div>
+                <div class="col-md-4"><div class="apple-status-pill"><strong class="text-slate-800">Exam:</strong> {{ $m->exam->name.' - '.$m->year }}</div></div>
             </div>
         </div>
 

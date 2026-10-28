@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">{{ __('My Account') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('My Account Settings') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -143,7 +143,7 @@
                         <div class="col-md-8">
                             <div class="card border-left-3 border-left-primary shadow-sm" id="pwa-push-card">
                                 <div class="card-header header-elements-inline">
-                                    <h6 class="card-title font-weight-semibold">{{ __('PWA Web Push Notifications') }}</h6>
+                                    <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1rem;">{{ __('PWA Web Push Notifications') }}</h3>
                                     <div>
                                         <span class="badge badge-secondary mr-1" id="pwa-push-permission-badge">{{ __('Checking...') }}</span>
                                         <span class="badge badge-secondary" id="pwa-push-status-badge">{{ __('Checking...') }}</span>

@@ -3,7 +3,7 @@
 @section('content')
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-alarm mr-2"></i> Select Exam Year</h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-calendar52 mr-2" style="color: #FF5700;"></i>{{ __('Select Exam Year') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

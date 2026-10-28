@@ -4,7 +4,7 @@
 
 <div class="card">
     <div class="card-header header-elements-inline">
-        <h6 class="card-title font-weight-bold"><i class="icon-file-text2 mr-2"></i>{{ __('Study Materials & Lecture Notes') }}</h6>
+        <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-file-text2 mr-2" style="color: #FF5700;"></i>{{ __('Study Materials & Lecture Notes') }}</h2>
         {!! Qs::getPanelOptions() !!}
     </div>
 

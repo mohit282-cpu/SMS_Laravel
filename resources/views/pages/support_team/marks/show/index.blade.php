@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header text-center">
-            <h4 class="card-title font-weight-bold">Student Marksheet for =>  {{ $sr->user->name.' ('.$my_class->name.' '.$my_class->section->first()->name.')' }} </h4>
+            <h2 class="card-title font-weight-bold">Student Marksheet: {{ $sr->user->name.' ('.$my_class->name.' '.$my_class->section->first()->name.')' }}</h2>
         </div>
     </div>
 
@@ -13,7 +13,7 @@
 
                 <div class="card">
                     <div class="card-header header-elements-inline">
-                        <h6 class="font-weight-bold">{{ $ex->name.' - '.$ex->year }}</h6>
+                        <h3 class="card-title font-weight-bold m-0">{{ $ex->name.' - '.$ex->year }}</h3>
                         {!! Qs::getPanelOptions() !!}
                     </div>
 

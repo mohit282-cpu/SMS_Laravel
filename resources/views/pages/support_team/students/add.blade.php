@@ -3,7 +3,7 @@
 @section('content')
         <div class="card">
             <div class="card-header bg-white header-elements-inline">
-                <h6 class="card-title">Please fill The form Below To Admit A New Student</h6>
+                <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('Admit New Student') }}</h2>
 
                 {!! Qs::getPanelOptions() !!}
             </div>

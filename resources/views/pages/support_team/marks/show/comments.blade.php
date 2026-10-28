@@ -1,7 +1,7 @@
 @if(Qs::userIsTeamSAT())
     <div class="card">
-        <div class="card-header header-elements-inline bg-dark">
-            <h6 class="card-title font-weight-bold">Exam Comments</h6>
+        <div class="card-header header-elements-inline">
+            <h3 class="card-title font-weight-bold">Exam Comments</h3>
             {!! Qs::getPanelOptions() !!}
         </div>
 

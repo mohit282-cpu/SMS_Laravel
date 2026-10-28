@@ -4,7 +4,7 @@
 
 <div class="card">
     <div class="card-header header-elements-inline">
-        <h6 class="card-title font-weight-bold">{{ __('Edit School Notice') }}</h6>
+        <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.15rem;"><i class="icon-pencil mr-2" style="color: #FF5700;"></i>{{ __('Edit School Notice') }} &bull; {{ $notice->title }}</h2>
         <div class="header-elements">
             <a href="{{ route('notices.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-arrow-left52 mr-1"></i>{{ __('Back to Notices') }}</a>
         </div>

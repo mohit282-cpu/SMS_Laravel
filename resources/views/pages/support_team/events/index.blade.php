@@ -4,9 +4,9 @@
 
     <div class="card shadow-sm">
         <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="card-title font-weight-bold mb-0">
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 <i class="icon-calendar3 mr-2" style="color: #FF5700;"></i>{{ __('School Calendar & Event Management (Bikram Sambat BS)') }}
-            </h5>
+            </h2>
             <div class="d-flex align-items-center">
                 @if($isAdmin)
                     <a href="{{ route('events.create') }}" class="btn btn-sm text-white mr-2" style="background: #FF5700; border-radius: 8px;">

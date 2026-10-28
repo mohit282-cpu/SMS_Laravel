@@ -8,7 +8,7 @@
                 <span class="badge mr-2 px-3 py-1 font-size-sm" style="background: {{ $event->category_color }}; color: #FFFFFF;">
                     {{ $event->category_name }}
                 </span>
-                <h5 class="card-title font-weight-bold mb-0 text-white">{{ $event->title }}</h5>
+                <h2 class="card-title font-weight-bold mb-0 text-white" style="font-size: 1.15rem;">{{ $event->title }}</h2>
             </div>
             <div class="d-flex align-items-center">
                 @if(in_array(auth()->user()->user_type, ['super_admin', 'admin'], true))

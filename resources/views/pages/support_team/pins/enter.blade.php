@@ -3,7 +3,7 @@
 @section('content')
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-alarm mr-2"></i> Enter PIN</h5>
+            <h2 class="card-title font-weight-bold"><i class="icon-alarm mr-2"></i> Enter PIN</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

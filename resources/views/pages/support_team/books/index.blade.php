@@ -5,85 +5,73 @@
     {{-- Stats Cards Row --}}
     <div class="row">
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-teal-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['total_titles'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Total Titles') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-books icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number">{{ $stats['total_titles'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Total Titles') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-orange">
+                    <i class="icon-books"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-primary-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['total_copies'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Total Copies') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-stack2 icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number">{{ $stats['total_copies'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Total Copies') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-navy">
+                    <i class="icon-stack2"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-success-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['available_copies'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Available Copies') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-checkmark4 icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number">{{ $stats['available_copies'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Available') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-emerald">
+                    <i class="icon-checkmark4"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-indigo-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['issued_copies'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Issued Copies') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-reading icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number">{{ $stats['issued_copies'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Active Loans') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-indigo">
+                    <i class="icon-reading"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-danger-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['overdue_count'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Overdue Loans') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-alarm icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number text-danger">{{ $stats['overdue_count'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Overdue') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-rose">
+                    <i class="icon-alarm"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="card card-body bg-warning-400 has-bg-image">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-semibold">{{ $stats['pending_requests'] ?? 0 }}</h3>
-                        <span class="text-uppercase font-size-xs">{{ __('Pending Requests') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-hour-glass2 icon-2x opacity-75"></i>
-                    </div>
+            <div class="apple-stat-card mb-3">
+                <div>
+                    <div class="stat-number">{{ $stats['pending_requests'] ?? 0 }}</div>
+                    <div class="stat-label">{{ __('Requests') }}</div>
+                </div>
+                <div class="stat-icon-wrapper stat-icon-amber">
+                    <i class="icon-hour-glass2"></i>
                 </div>
             </div>
         </div>
@@ -102,7 +90,7 @@
     {{-- Main Inventory Card --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold"><i class="icon-books mr-2"></i>{{ __('Manage Library Books') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-books mr-2" style="color: #FF5700;"></i>{{ __('Manage Library Books') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

@@ -7,7 +7,7 @@
         <div class="col-md-4">
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-semibold">{{ __('Book Profile') }}</h6>
+                    <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-book mr-2" style="color: #FF5700;"></i>{{ __('Book Profile') }}</h2>
                     <span class="badge {{ $book->available_copies > 0 ? 'badge-success' : 'badge-danger' }}">
                         {{ $book->available_copies > 0 ? __('Available') : __('Out of Stock') }}
                     </span>
@@ -98,7 +98,7 @@
             {{-- Inventory Breakdown Card --}}
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-semibold">{{ __('Inventory Status') }}</h6>
+                    <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1rem;">{{ __('Inventory Status') }}</h3>
                 </div>
                 <div class="card-body">
                     <div class="d-flex justify-content-between mb-2">
@@ -132,7 +132,7 @@
             @if($book->description)
                 <div class="card">
                     <div class="card-header header-elements-inline">
-                        <h6 class="card-title font-weight-semibold">{{ __('Description / Synopsis') }}</h6>
+                        <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1rem;">{{ __('Description / Synopsis') }}</h3>
                     </div>
                     <div class="card-body">
                         <p class="mb-0 text-muted">{{ $book->description }}</p>
@@ -143,7 +143,7 @@
             {{-- Active Loans Card --}}
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-semibold"><i class="icon-reading mr-2"></i>{{ __('Current Active Loans') }}</h6>
+                    <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1rem;"><i class="icon-reading mr-2"></i>{{ __('Current Active Loans') }}</h3>
                     <span class="badge badge-primary">{{ count($book->activeLoans) }} {{ __('Active') }}</span>
                 </div>
 
@@ -211,7 +211,7 @@
             {{-- Past Circulation History Card --}}
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-semibold"><i class="icon-history mr-2"></i>{{ __('Circulation History') }}</h6>
+                    <h3 class="card-title font-weight-semibold mb-0" style="font-size: 1rem;"><i class="icon-history mr-2"></i>{{ __('Circulation History') }}</h3>
                     <a href="{{ route('books.index') }}" class="btn btn-sm btn-outline-dark">
                         <i class="icon-arrow-left7 mr-1"></i> {{ __('Back to Inventory') }}
                     </a>

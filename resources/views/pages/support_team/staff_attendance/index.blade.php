@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-bold">{{ __('Daily Staff Attendance (Bikram Sambat)') }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-user-check mr-2" style="color: #FF5700;"></i>{{ __('Daily Staff Attendance (Bikram Sambat)') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -47,10 +47,10 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-bold">
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 {{ __('Staff Members List') }} ({{ count($staff_users) }})
                 <span class="text-muted ml-2 font-size-sm">[{{ $selected_date }} BS]</span>
-            </h6>
+            </h2>
             <div class="header-elements">
                 <button type="button" class="btn btn-sm btn-outline-success mr-2" onclick="markAllStatus('present')"><i class="icon-checkmark4 mr-1"></i> {{ __('Mark All Present') }}</button>
                 <button type="button" class="btn btn-sm btn-outline-danger" onclick="markAllStatus('absent')"><i class="icon-cross2 mr-1"></i> {{ __('Mark All Absent') }}</button>

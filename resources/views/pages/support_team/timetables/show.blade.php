@@ -3,11 +3,13 @@
 @section('content')
 
     <div class="card">
-        <div class="card-header">
-            <div class="row">
-                <div class="col-md-4"><h6 class="card-title"><strong>Name: </strong> {{ $ttr->name }}</h6></div>
-                <div class="col-md-4"><h6 class="card-title"><strong>Class: </strong> {{ $my_class->name }}</h6></div>
-                <div class="col-md-4"><h6 class="card-title"><strong>Year: </strong> {{ ($ttr->exam_id) ? 'Exam TimeTable' : 'Class TimeTable' }} {{ '('.$ttr->year.')' }}</h6></div>
+        <div class="card-header header-elements-inline">
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.15rem;">
+                <i class="icon-calendar mr-2" style="color: #FF5700;"></i>{{ $ttr->name }}
+            </h2>
+            <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="badge badge-primary px-3 py-1 font-weight-semibold mr-2"><i class="icon-windows2 mr-1"></i>{{ $my_class->name }}</span>
+                <span class="badge badge-secondary px-3 py-1 font-weight-semibold"><i class="icon-calendar52 mr-1"></i>{{ ($ttr->exam_id) ? 'Exam TimeTable' : 'Class TimeTable' }} ({{ $ttr->year }})</span>
             </div>
         </div>
             <div class="card-body">

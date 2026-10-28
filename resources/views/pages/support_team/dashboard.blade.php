@@ -263,9 +263,9 @@
     @if(Qs::userIsParent())
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex align-items-center justify-content-between">
-                <h5 class="card-title font-weight-bold mb-0">
+                <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                     <i class="icon-users4 mr-2" style="color: #FF5700;"></i>{{ __('My Enrolled Children') }}
-                </h5>
+                </h2>
             </div>
             <div class="card-body">
                 <div class="row">

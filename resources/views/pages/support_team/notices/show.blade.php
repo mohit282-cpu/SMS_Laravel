@@ -4,7 +4,7 @@
 
 <div class="card">
     <div class="card-header header-elements-inline">
-        <h5 class="card-title font-weight-bold">{{ $notice->title }}</h5>
+        <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.15rem;"><i class="icon-newspaper mr-2" style="color: #FF5700;"></i>{{ $notice->title }}</h2>
         <div class="header-elements">
             <a href="{{ route('notices.index') }}" class="btn btn-outline-secondary btn-sm"><i class="icon-arrow-left52 mr-1"></i>{{ __('Back to Notices') }}</a>
             @if(Qs::userIsTeamSA())

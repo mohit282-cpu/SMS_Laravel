@@ -10,7 +10,7 @@
     @else
         <div class="card d-print-none">
             <div class="card-header header-elements-inline">
-                <h6 class="card-title font-weight-bold">{{ __('Class-wise Attendance Comparison Report') }}</h6>
+                <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-stats-growth mr-2" style="color: #FF5700;"></i>{{ __('Class-wise Attendance Comparison Report') }}</h2>
                 {!! Qs::getPanelOptions() !!}
             </div>
 
@@ -44,9 +44,9 @@
 
         <div class="card">
             <div class="card-header header-elements-inline">
-                <h6 class="card-title font-weight-bold">
+                <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                     {{ __('Attendance Overview by Class') }} - [{{ $selected_date }} BS]
-                </h6>
+                </h2>
             </div>
 
             <div class="card-body">

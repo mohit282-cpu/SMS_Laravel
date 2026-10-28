@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title">Exam Pins</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">{{ __('Exam Pins Management') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

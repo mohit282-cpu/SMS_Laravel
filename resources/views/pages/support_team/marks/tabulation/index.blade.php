@@ -3,7 +3,7 @@
 @section('content')
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-books mr-2"></i> Tabulation Sheet</h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-books mr-2" style="color: #FF5700;"></i> {{ __('Tabulation Sheet') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -66,7 +66,7 @@
     @if($selected)
         <div class="card">
             <div class="card-header">
-                <h6 class="card-title font-weight-bold">Tabulation Sheet for {{ $my_class->name.' '.$section->name.' - '.$ex->name.' ('.$year.')' }}</h6>
+                <h2 class="card-title font-weight-bold">Tabulation Sheet for {{ $my_class->name.' '.$section->name.' - '.$ex->name.' ('.$year.')' }}</h2>
             </div>
             <div class="card-body">
                 <table class="table table-responsive table-striped">

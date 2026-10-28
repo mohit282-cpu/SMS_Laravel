@@ -13,7 +13,7 @@
 {{-- Reset Promotions --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title font-weight-bold">{{ __('Manage Promotions') }} - {{ __('Students Who Were Promoted From') }} <span class="text-danger">{{ $old_year }}</span> {{ __('TO') }} <span class="text-success">{{ $new_year }}</span> {{ __('Session') }}</h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-reset mr-2" style="color: #FF5700;"></i>{{ __('Manage Promotions') }} &bull; {{ __('Promoted From') }} <span class="text-danger">{{ $old_year }}</span> {{ __('TO') }} <span class="text-success">{{ $new_year }}</span> {{ __('Session') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

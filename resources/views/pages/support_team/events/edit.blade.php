@@ -4,9 +4,9 @@
 
     <div class="card shadow-sm border-0" style="border-radius: 16px;">
         <div class="card-header d-flex align-items-center justify-content-between">
-            <h5 class="card-title font-weight-bold mb-0">
-                <i class="icon-pencil mr-2" style="color: #FF5700;"></i>{{ __('Edit School Event: ') }} {{ $event->title }}
-            </h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
+                <i class="icon-pencil mr-2" style="color: #FF5700;"></i>{{ __('Edit School Event') }} &bull; {{ $event->title }}
+            </h2>
             <div class="d-flex align-items-center">
                 <a href="{{ route('events.show', $event->id) }}" class="btn btn-outline-info btn-sm mr-2" style="border-radius: 8px;">
                     <i class="icon-eye mr-1"></i>{{ __('View Details') }}

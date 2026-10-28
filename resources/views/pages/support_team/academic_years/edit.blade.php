@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-bold">{{ __('Edit Nepali Academic Session (BS)') }} - {{ $ay->name }}</h6>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-pencil mr-2" style="color: #FF5700;"></i>{{ __('Edit Nepali Academic Session (BS)') }} &bull; {{ $ay->name }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

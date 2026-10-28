@@ -3,7 +3,7 @@
 @section('content')
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h5 class="card-title"><i class="icon-books mr-2"></i> Manage Exam Marks</h5>
+            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;"><i class="icon-books mr-2" style="color: #FF5700;"></i> {{ __('Manage Exam Marks') }}</h2>
             {!! Qs::getPanelOptions() !!}
         </div>
 

@@ -8,7 +8,7 @@
             <div class="card">
                 <div class="card-body text-center">
                     <img src="{{ $sr->user->photo }}" class="rounded-circle mb-2" style="width: 80px; height: 80px;" alt="Photo">
-                    <h5 class="font-weight-bold mb-1">{{ $sr->user->name }}</h5>
+                    <h3 class="font-weight-bold mb-1">{{ $sr->user->name }}</h3>
                     <p class="text-muted mb-2">{{ __('Adm No') }}: <strong>{{ $sr->adm_no }}</strong></p>
                     <span class="badge badge-primary p-2">{{ $sr->my_class->name }} {{ $sr->section ? '('.$sr->section->name.')' : '' }}</span>
                     <span class="badge badge-secondary p-2">{{ $sr->session }}</span>
@@ -19,7 +19,7 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header header-elements-inline">
-                    <h6 class="card-title font-weight-bold">{{ __('Attendance Summary & Analytics') }}</h6>
+                    <h2 class="card-title font-weight-bold">{{ __('Attendance Summary & Analytics') }}</h2>
                     <button class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="icon-printer mr-1"></i> {{ __('Print History') }}</button>
                 </div>
                 <div class="card-body">
@@ -107,7 +107,7 @@
     {{-- Records Table --}}
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-bold">{{ __('Attendance Log') }} ({{ count($records) }})</h6>
+            <h2 class="card-title font-weight-bold">{{ __('Attendance Log') }} ({{ count($records) }})</h2>
         </div>
         <div class="card-body">
             @if(count($records) > 0)
