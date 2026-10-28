@@ -21,15 +21,13 @@ class LandingController extends Controller
         return $setting ? $setting->description : $default;
     }
 
-    /**
-     * Institutional Homepage
-     */
-    public function index()
+    protected function getCommonSettings()
     {
-        $settings = [
+        return [
             'system_name' => Qs::getSystemName(),
             'system_title' => Qs::getSystemTitle(),
             'admissions_open' => $this->getSetting('admissions_open', '1'),
+            'entrance_results_visible' => $this->getSetting('entrance_results_visible', '0'),
             'established_year' => $this->getSetting('established_year', '2052 B.S. (1995 A.D.)'),
             'hero_title' => $this->getSetting('hero_title', 'Inspiring Academic Excellence, Leadership & Character.'),
             'hero_subtitle' => $this->getSetting('hero_subtitle', 'Nurturing young minds from Early Childhood through Grade 12 with forward-thinking STEM laboratories, comprehensive humanities, and dedicated character discipline in Koshi Province.'),
@@ -37,10 +35,22 @@ class LandingController extends Controller
             'stat_teachers' => $this->getSetting('stat_teachers', '95+'),
             'stat_pass_rate' => $this->getSetting('stat_pass_rate', '99.4%'),
             'stat_experience' => $this->getSetting('stat_experience', '30+ Years'),
+            'director_name' => $this->getSetting('director_name', 'Mrs. Sunita Sharma'),
+            'director_title' => $this->getSetting('director_title', 'Academic Director (M.Sc., 20+ Yrs Curriculum)'),
+            'principal_name' => $this->getSetting('principal_name', 'Prof. Dr. K. P. Adhikari'),
+            'principal_title' => $this->getSetting('principal_title', 'Principal (Ph.D. in Education Administration)'),
             'phone' => $this->getSetting('phone', '+977-25-560000'),
             'address' => $this->getSetting('address', 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal'),
             'system_email' => $this->getSetting('system_email', 'info@apexschool.edu.np'),
         ];
+    }
+
+    /**
+     * Institutional Homepage
+     */
+    public function index()
+    {
+        $settings = $this->getCommonSettings();
 
         // Fetch latest 3 campus events
         $recentEvents = Event::where('is_published', true)
@@ -56,19 +66,7 @@ class LandingController extends Controller
      */
     public function about()
     {
-        $settings = [
-            'system_name' => Qs::getSystemName(),
-            'established_year' => $this->getSetting('established_year', '2052 B.S. (1995 A.D.)'),
-            'director_name' => $this->getSetting('director_name', 'Er. Bijay Shrestha'),
-            'director_title' => $this->getSetting('director_title', 'Executive Director & Founder'),
-            'principal_name' => $this->getSetting('principal_name', 'Prof. Dr. Madhav Prasad Khatiwada'),
-            'principal_title' => $this->getSetting('principal_title', 'Principal & Academic Head'),
-            'vice_principal_name' => $this->getSetting('vice_principal_name', 'Mrs. Sunita Thapa'),
-            'vice_principal_title' => $this->getSetting('vice_principal_title', 'Vice Principal (Student Welfare)'),
-            'phone' => $this->getSetting('phone', '+977-25-560000'),
-            'address' => $this->getSetting('address', 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal'),
-            'system_email' => $this->getSetting('system_email', 'info@apexschool.edu.np'),
-        ];
+        $settings = $this->getCommonSettings();
 
         return view('landing.about', compact('settings'));
     }
@@ -78,11 +76,7 @@ class LandingController extends Controller
      */
     public function events()
     {
-        $settings = [
-            'system_name' => Qs::getSystemName(),
-            'phone' => $this->getSetting('phone', '+977-25-560000'),
-            'system_email' => $this->getSetting('system_email', 'info@apexschool.edu.np'),
-        ];
+        $settings = $this->getCommonSettings();
 
         $events = Event::where('is_published', true)
             ->orderBy('id', 'desc')
@@ -96,12 +90,7 @@ class LandingController extends Controller
      */
     public function contact()
     {
-        $settings = [
-            'system_name' => Qs::getSystemName(),
-            'phone' => $this->getSetting('phone', '+977-25-560000'),
-            'address' => $this->getSetting('address', 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal'),
-            'system_email' => $this->getSetting('system_email', 'info@apexschool.edu.np'),
-        ];
+        $settings = $this->getCommonSettings();
 
         return view('landing.contact', compact('settings'));
     }
@@ -129,16 +118,15 @@ class LandingController extends Controller
      */
     public function entrance_results()
     {
+        $settings = $this->getCommonSettings();
+        $isVisible = ($settings['entrance_results_visible'] ?? '0') === '1';
+        $isSuperAdmin = auth()->check() && Qs::userIsSuperAdmin();
+
         $batches = EntranceResult::select('batch_year')->distinct()->orderBy('batch_year', 'desc')->pluck('batch_year');
         $exams = EntranceResult::select('exam_name')->distinct()->orderBy('exam_name', 'desc')->pluck('exam_name');
         $classes = EntranceResult::select('class_name')->distinct()->orderBy('class_name', 'asc')->pluck('class_name');
 
-        $settings = [
-            'system_name' => Qs::getSystemName(),
-            'phone' => $this->getSetting('phone', '+977-25-560000'),
-        ];
-
-        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'settings'));
+        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'settings', 'isVisible', 'isSuperAdmin'));
     }
 
     /**
@@ -146,12 +134,27 @@ class LandingController extends Controller
      */
     public function entrance_result_search(Request $request)
     {
-        $batch = trim($request->input('batch_year', ''));
-        $exam = trim($request->input('exam_name', ''));
-        $class = trim($request->input('class_name', ''));
-        $symbol = trim($request->input('symbol_no', ''));
-        $verification = trim($request->input('verification_query', ''));
-        $search = trim($request->input('search_query', ''));
+        $batch = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('batch_year', ''))), 0, 50);
+        $exam = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('exam_name', ''))), 0, 100);
+        $class = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('class_name', ''))), 0, 50);
+        $symbol = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('symbol_no', ''))), 0, 50);
+        $verification = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('verification_query', ''))), 0, 100);
+        $search = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('search_query', ''))), 0, 100);
+
+        $settings = $this->getCommonSettings();
+        $isVisible = ($settings['entrance_results_visible'] ?? '0') === '1';
+        $isSuperAdmin = auth()->check() && Qs::userIsSuperAdmin();
+
+        if (!$isVisible && !$isSuperAdmin) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'status' => 'inactive',
+                    'message' => 'Entrance Examination Results are currently closed or under administrative review.'
+                ], 403);
+            }
+            return redirect()->route('admissions.results');
+        }
 
         if (empty($search) && !empty($symbol)) {
             $search = $symbol;

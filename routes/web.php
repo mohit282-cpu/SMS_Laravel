@@ -13,6 +13,17 @@ Route::get('/manifest.json', 'PwaController@manifest')->name('pwa.manifest');
 Route::get('/offline', 'PwaController@offline')->name('pwa.offline');
 Route::get('/sw.js', 'PwaController@serviceWorker')->name('pwa.sw');
 
+/* Public Institutional School Website & Admissions Desk */
+Route::get('/', 'LandingController@index')->name('landing.home');
+Route::get('/about', 'LandingController@about')->name('landing.about');
+Route::get('/campus-events', 'LandingController@events')->name('landing.events');
+Route::get('/contact', 'LandingController@contact')->name('landing.contact');
+Route::post('/contact', 'LandingController@submit_inquiry')->name('landing.submit_inquiry');
+
+/* New Admission & Entrance Examination Result Subsystem */
+Route::get('/admissions/results', 'LandingController@entrance_results')->name('admissions.results');
+Route::post('/admissions/results/search', 'LandingController@entrance_result_search')->name('admissions.results.search');
+
 Route::group(['middleware' => ['auth', 'no_store']], function () {
     /* PWA Push Subscription Endpoints */
     Route::post('/pwa/push/subscribe', 'PwaController@subscribe')->name('pwa.push.subscribe')->middleware('throttle:30,1');
@@ -20,8 +31,6 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
     Route::get('/pwa/push/vapid-key', 'PwaController@vapidPublicKey')->name('pwa.push.vapid');
     Route::post('/pwa/push/test', 'PwaController@sendTestPush')->name('pwa.push.test')->middleware('throttle:6,1');
 
-
-    Route::get('/', 'HomeController@dashboard')->name('home');
     Route::get('/home', 'HomeController@dashboard')->name('home');
     Route::get('/dashboard', 'HomeController@dashboard')->name('dashboard');
 
@@ -243,6 +252,18 @@ Route::group(['namespace' => 'SuperAdmin','middleware' => 'super_admin', 'prefix
     Route::get('/settings', 'SettingController@index')->name('settings');
     Route::put('/settings', 'SettingController@update')->name('settings.update');
 
+});
+
+/************************ LANDING PAGE & ADMISSIONS (SUPER ADMIN) ****************************/
+Route::group(['namespace' => 'SupportTeam', 'middleware' => ['auth', 'super_admin'], 'prefix' => 'landing-settings'], function(){
+    Route::get('/', 'LandingSettingsController@index')->name('landing_settings.index');
+    Route::post('/update', 'LandingSettingsController@update')->name('landing_settings.update');
+    Route::get('/inquiries', 'LandingSettingsController@inquiries')->name('landing_settings.inquiries');
+    Route::post('/inquiries/{id}/status', 'LandingSettingsController@update_inquiry_status')->name('landing_settings.inquiries.status');
+    Route::delete('/inquiries/{id}', 'LandingSettingsController@destroy_inquiry')->name('landing_settings.inquiries.delete');
+    Route::get('/entrance-results', 'LandingSettingsController@manage_entrance_results')->name('landing_settings.entrance_results');
+    Route::post('/entrance-results/upload', 'LandingSettingsController@upload_entrance_results')->name('landing_settings.entrance_results.upload');
+    Route::delete('/entrance-results/{id}', 'LandingSettingsController@destroy_entrance_result')->name('landing_settings.entrance_results.delete');
 });
 
 /************************ PARENT ****************************/

@@ -49,33 +49,20 @@
                             <span>Events & Life</span>
                         </a>
                     </li>
+                    @if(($settings['entrance_results_visible'] ?? '0') === '1')
                     <li>
                         <a href="{{ route('admissions.results') }}" class="main-nav-link {{ request()->routeIs('admissions.results*') ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                             <span>Entrance Results</span>
                         </a>
                     </li>
+                    @endif
                     <li>
                         <a href="{{ route('landing.contact') }}" class="main-nav-link {{ request()->routeIs('landing.contact') ? 'active' : '' }}">
                             <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                             <span>Contact</span>
                         </a>
                     </li>
-                    @auth
-                    <li>
-                        <a href="{{ route('dashboard') }}" class="main-nav-link" style="background-color: var(--accent-gold); color: #fff;">
-                            <svg viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
-                            <span>Dashboard</span>
-                        </a>
-                    </li>
-                    @else
-                    <li>
-                        <a href="{{ route('login') }}" class="main-nav-link" style="background-color: var(--accent-blue); color: #fff;">
-                            <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5c-1.11 0-2 .9-2 2v4h2V5h14v14H5v-4H3v4c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
-                            <span>Login</span>
-                        </a>
-                    </li>
-                    @endauth
                 </ul>
             </nav>
         </div>
@@ -102,7 +89,9 @@
                         <li><a href="{{ route('landing.home') }}">Home Page</a></li>
                         <li><a href="{{ route('landing.about') }}">About Institution</a></li>
                         <li><a href="{{ route('landing.events') }}">Events & Gallery</a></li>
-                        <li><a href="{{ route('admissions.results') }}">Entrance Exam Results</a></li>
+                        @if(($settings['entrance_results_visible'] ?? '0') === '1')
+                            <li><a href="{{ route('admissions.results') }}">Entrance Exam Results</a></li>
+                        @endif
                         <li><a href="{{ route('landing.contact') }}">Admissions Contact</a></li>
                         @guest
                             <li><a href="{{ route('login') }}">Staff & Student Portal</a></li>
@@ -129,7 +118,19 @@
 
             <div class="footer-bottom">
                 <div>© {{ date('Y') }} {{ $settings['system_name'] ?? 'Apex Model Secondary School' }}. All Rights Reserved.</div>
-                <div>Excellence in Academics, Leadership & Integrity.</div>
+                <div>
+                    @auth
+                        <a href="{{ route('dashboard') }}" class="footer-portal-btn footer-portal-btn-auth">
+                            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                            <span>Open Control Dashboard ⚡</span>
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="footer-portal-btn">
+                            <svg width="14" height="14" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                            <span>Staff & Student ERP Portal</span>
+                        </a>
+                    @endauth
+                </div>
             </div>
         </div>
     </footer>
@@ -149,10 +150,12 @@
                 <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
                 <span>Events</span>
             </a></li>
+            @if(($settings['entrance_results_visible'] ?? '0') === '1')
             <li class="dock-item"><a href="{{ route('admissions.results') }}" class="{{ request()->routeIs('admissions.results*') ? 'active' : '' }}">
                 <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                 <span>Results</span>
             </a></li>
+            @endif
             <li class="dock-item"><a href="{{ route('landing.contact') }}" class="{{ request()->routeIs('landing.contact') ? 'active' : '' }}">
                 <svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
                 <span>Contact</span>

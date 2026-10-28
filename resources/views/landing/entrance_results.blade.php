@@ -88,10 +88,17 @@
                 <a href="{{ route('landing.home') }}" class="px-3.5 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20">
                     ← Main Website
                 </a>
+                @if($isVisible)
                 <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                     <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                     Portal Active
                 </span>
+                @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                    <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    Portal Hidden
+                </span>
+                @endif
                 @guest
                     <a href="{{ route('login') }}" class="px-3.5 py-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 text-white rounded-lg transition-all border border-white/20">
                         Admin Portal 🔐
@@ -105,9 +112,38 @@
         </div>
     </header>
 
+    @if(!$isVisible && $isSuperAdmin)
+        <div class="bg-amber-500 text-navy-900 px-4 py-2.5 text-center text-xs sm:text-sm font-semibold shadow-inner border-b border-amber-600 no-print">
+            <span class="inline-flex items-center justify-center flex-wrap gap-2">
+                <svg class="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+                <span><strong>Super Admin Preview Notice:</strong> Entrance Results Portal is set to <strong>HIDDEN</strong> in Landing Settings. Regular visitors cannot see or access this page. You can enable it anytime in <a href="{{ route('landing_settings.index') }}" class="underline font-black hover:text-black">Landing Page Settings</a>.</span>
+            </span>
+        </div>
+    @endif
+
     <!-- Main Content Area -->
     <main class="flex-grow max-w-4xl w-full mx-auto px-4 py-8">
-        
+        @if(!$isVisible && !$isSuperAdmin)
+        <!-- Portal Inactive Message for Public Visitors -->
+        <div class="bg-white rounded-3xl shadow-xl border border-slate-200 p-8 sm:p-12 text-center max-w-2xl mx-auto my-12">
+            <div class="w-20 h-20 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-6 border border-amber-200 shadow-sm">
+                <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m0 0v2m0-2h2m-2 0H10m11-3.5a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            </div>
+            <span class="inline-block text-xs font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-3.5 py-1 rounded-full mb-3">Portal Under Scheduled Review</span>
+            <h2 class="text-2xl sm:text-3xl font-extrabold text-navy-800 mb-3">Entrance Results Not Currently Available</h2>
+            <p class="text-sm sm:text-base text-slate-600 mb-8 leading-relaxed">
+                Online entrance examination verification for this admission cycle has been closed or is undergoing administrative evaluation. Verified results will be published once officially authorized by the examination committee.
+            </p>
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <a href="{{ route('landing.home') }}" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-navy-800 hover:bg-navy-900 text-white font-bold text-sm transition-all shadow-md">
+                    Return to Homepage
+                </a>
+                <a href="{{ route('landing.contact') }}" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm transition-all border border-slate-300">
+                    Contact Admissions Desk
+                </a>
+            </div>
+        </div>
+        @else
         <!-- Search Section -->
         <div class="no-print bg-white rounded-2xl shadow-xl border border-slate-200 p-6 sm:p-8 mb-8">
             <div class="text-center mb-6">
@@ -314,6 +350,7 @@
             </div>
 
         </div>
+        @endif
     </main>
 
     <!-- Footer -->
@@ -331,10 +368,11 @@
         const errorText = document.getElementById('errorText');
         const marksheetContainer = document.getElementById('marksheetContainer');
 
-        searchForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            errorMsg.classList.add('hidden');
-            marksheetContainer.classList.add('hidden');
+        if (searchForm) {
+            searchForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                errorMsg.classList.add('hidden');
+                marksheetContainer.classList.add('hidden');
 
             const payload = {
                 batch_year: document.getElementById('batch_year') ? document.getElementById('batch_year').value : '',
@@ -383,6 +421,7 @@
                 `;
             }
         });
+    }
 
         function renderMarksheet(data) {
             const batchTag = data.batch_year ? ` (${data.batch_year})` : '';

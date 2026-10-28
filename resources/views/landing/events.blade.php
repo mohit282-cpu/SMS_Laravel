@@ -51,11 +51,11 @@
 
 @section('content')
     <!-- Page Header Hero Banner with Campus Event Background Image (Exact School-Demo) -->
-    <section class="hero-section" style="padding: 4.5rem 0;">
+    <section class="hero-section">
         <div class="hero-video-bg" style="background-image: url('{{ asset('landing_assets/images/events/science_fair.jpg') }}'); background-size: cover; background-position: center; opacity: 0.65;"></div>
         <div class="hero-overlay" style="background: linear-gradient(180deg, rgba(11, 30, 56, 0.85) 0%, rgba(11, 30, 56, 0.7) 50%, rgba(11, 30, 56, 0.9) 100%);"></div>
         <div class="container">
-            <div class="hero-content scroll-reveal" style="padding: 2rem 0; text-align: center;">
+            <div class="hero-content">
                 <div class="hero-badge-pill">
                     📸 Campus Co-Curricular & Event Gallery
                 </div>
@@ -109,8 +109,9 @@
                             'description' => $ev->description,
                             'image_paths' => json_encode($formattedImgs)
                         ];
+                        $eventDir = $loop->index % 3 === 0 ? 'left' : ($loop->index % 3 === 1 ? 'up' : 'right');
                     @endphp
-                    <div class="event-card event-card-item" data-category="{{ $ev->category }}" onclick='showEventDetails(@json($eventData))'>
+                    <div class="event-card event-card-item scroll-anim" data-anim="{{ $eventDir }}" data-category="{{ $ev->category }}" onclick='showEventDetails(@json($eventData))'>
                         <div class="event-img-wrap">
                             <span class="category-pill">{{ $ev->category }}</span>
                             @if($imgCount > 1)

@@ -127,6 +127,36 @@
                     </div>
                 </div>
 
+                <!-- Section 2: Entrance Results Navigation & Portal Visibility Toggle -->
+                <div class="border-bottom pb-4 mb-4">
+                    <h3 class="font-weight-bold text-dark mb-2" style="font-size: 1rem;">
+                        <i class="icon-file-check mr-1 text-purple"></i> {{ __('Public Entrance Results Visibility Toggle') }}
+                    </h3>
+                    <p class="text-muted font-size-sm mb-3">
+                        {{ __('Toggle whether "Entrance Results" is displayed in the public header navigation, mobile dock, and footer links. Keep this OFF when results are not being published.') }}
+                    </p>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="custom-control custom-radio custom-control-inline p-3 border rounded w-100 mb-2 {{ ($settings['entrance_results_visible'] ?? '0') === '1' ? 'border-success bg-light' : '' }}">
+                                <input type="radio" id="res_visible_on" name="entrance_results_visible" value="1" class="custom-control-input" {{ ($settings['entrance_results_visible'] ?? '0') === '1' ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold text-success cursor-pointer w-100" for="res_visible_on">
+                                    🟢 {{ __('Entrance Results PUBLISHED (Show in Header Navigation, Mobile Dock & Footer)') }}
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="custom-control custom-radio custom-control-inline p-3 border rounded w-100 mb-2 {{ ($settings['entrance_results_visible'] ?? '0') === '0' ? 'border-secondary bg-light' : '' }}">
+                                <input type="radio" id="res_visible_off" name="entrance_results_visible" value="0" class="custom-control-input" {{ ($settings['entrance_results_visible'] ?? '0') === '0' ? 'checked' : '' }}>
+                                <label class="custom-control-label font-weight-bold text-secondary cursor-pointer w-100" for="res_visible_off">
+                                    🔴 {{ __('Entrance Results HIDDEN (Hide from Navigation & Mobile Dock — Inactive)') }}
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Section 2: Hero Section Text -->
                 <div class="border-bottom pb-4 mb-4">
                     <h3 class="font-weight-bold text-dark mb-2" style="font-size: 1rem;">

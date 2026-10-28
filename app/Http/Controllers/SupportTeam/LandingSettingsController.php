@@ -46,6 +46,13 @@ class LandingSettingsController extends Controller
     {
         $data = $request->except(['_token', '_method']);
 
+        if ($request->has('admissions_open')) {
+            $data['admissions_open'] = $request->input('admissions_open');
+        }
+        if ($request->has('entrance_results_visible')) {
+            $data['entrance_results_visible'] = $request->input('entrance_results_visible');
+        }
+
         foreach ($data as $key => $val) {
             Setting::updateOrCreate(
                 ['type' => $key],

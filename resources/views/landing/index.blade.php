@@ -1,17 +1,17 @@
 @extends('layouts.landing')
 
-@section('title', ($settings['system_name'] ?? 'Apex Model Secondary School') . ' - Excellence in Academics, Leadership & Integrity')
-@section('meta_description', 'Apex Model Secondary School established 2052 B.S. in Koshi Province, Nepal. Premier academic institution offering Early Childhood to Senior Secondary 10+2 programs.')
+@section('title', ($settings['system_name'] ?? 'Apex Model Secondary School') . ' - Official Campus Portal')
+@section('meta_description', 'Official portal of Apex Model Secondary School. Excellence in Early Childhood, Primary, Lower Secondary, Secondary, and 10+2 Education in Koshi Province, Nepal.')
 
 @section('content')
-    <!-- Dynamic Hero Section (Exact School-Demo) -->
+    <!-- Dynamic Hero Section with Real Campus Drone Video (Exact School-Demo) -->
     <section class="hero-section">
         <video class="hero-video-bg" autoplay loop muted playsinline poster="{{ asset('landing_assets/images/facilities/robotics_lab.jpg') }}">
             <source src="{{ asset('landing_assets/videos/hero-drone.mp4') }}" type="video/mp4">
         </video>
         <div class="hero-overlay"></div>
         <div class="container">
-            <div class="hero-content scroll-reveal">
+            <div class="hero-content">
                 @if(($settings['admissions_open'] ?? '1') == '1')
                     <div class="hero-badge-pill">
                         ✨ Admissions Open for Academic Session 2083/84 B.S.
@@ -40,7 +40,7 @@
 
     <!-- Rolling Metrics Counter Strip (Exact School-Demo) -->
     <div class="container">
-        <div class="metrics-strip scroll-reveal">
+        <div class="metrics-strip scroll-anim" data-anim="up">
             <div class="metrics-grid">
                 <div class="metric-item">
                     <div class="metric-number"><span class="counter-val" data-target="{{ $settings['stats_heritage_years'] ?? 30 }}">0</span><span>+</span></div>
@@ -63,7 +63,7 @@
     </div>
 
     <!-- Academic Streams & Levels Section with Real Image Cards (Exact School-Demo) -->
-    <section class="section scroll-reveal">
+    <section class="section">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Academic Pathways</span>
@@ -72,7 +72,7 @@
             </div>
 
             <div class="streams-grid">
-                <div class="stream-card">
+                <div class="stream-card scroll-anim" data-anim="left">
                     <img src="{{ asset('landing_assets/images/events/assembly.jpg') }}" alt="Pre-Primary & Primary" class="stream-card-img">
                     <div class="stream-card-body">
                         <h3>Pre-Primary & Primary</h3>
@@ -81,7 +81,7 @@
                     </div>
                 </div>
 
-                <div class="stream-card">
+                <div class="stream-card scroll-anim" data-anim="up">
                     <img src="{{ asset('landing_assets/images/facilities/computer_lab.jpg') }}" alt="Lower Secondary" class="stream-card-img">
                     <div class="stream-card-body">
                         <h3>Lower Secondary (BLE)</h3>
@@ -90,7 +90,7 @@
                     </div>
                 </div>
 
-                <div class="stream-card">
+                <div class="stream-card scroll-anim" data-anim="up">
                     <img src="{{ asset('landing_assets/images/facilities/robotics_lab.jpg') }}" alt="Secondary SEE Prep" class="stream-card-img">
                     <div class="stream-card-body">
                         <h3>Secondary (SEE Prep)</h3>
@@ -99,7 +99,7 @@
                     </div>
                 </div>
 
-                <div class="stream-card">
+                <div class="stream-card scroll-anim" data-anim="right">
                     <img src="{{ asset('landing_assets/images/facilities/library.jpg') }}" alt="Senior Secondary 10+2" class="stream-card-img">
                     <div class="stream-card-body">
                         <h3>Senior Secondary 10+2</h3>
@@ -112,7 +112,7 @@
     </section>
 
     <!-- Facilities Showcase Section (Exact School-Demo) -->
-    <section class="section section-alt scroll-reveal">
+    <section class="section section-alt">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Campus Infrastructure</span>
@@ -121,7 +121,7 @@
             </div>
 
             <div class="facilities-grid">
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="left">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/facilities/robotics_lab.jpg') }}" alt="Robotics & STEM Lab">
                     </div>
@@ -131,7 +131,7 @@
                     </div>
                 </div>
 
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="up">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/facilities/computer_lab.jpg') }}" alt="Computer Laboratory">
                     </div>
@@ -141,7 +141,7 @@
                     </div>
                 </div>
 
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="right">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/facilities/library.jpg') }}" alt="Resource Center">
                     </div>
@@ -151,7 +151,7 @@
                     </div>
                 </div>
 
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="left">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/facilities/sports_ground.jpg') }}" alt="Sports Grounds">
                     </div>
@@ -161,7 +161,7 @@
                     </div>
                 </div>
 
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="up">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/facilities/school_bus.jpg') }}" alt="School Transport">
                     </div>
@@ -171,7 +171,7 @@
                     </div>
                 </div>
 
-                <div class="facility-card">
+                <div class="facility-card scroll-anim" data-anim="right">
                     <div class="facility-img-wrap">
                         <img src="{{ asset('landing_assets/images/events/science_fair.jpg') }}" alt="Science Laboratories">
                     </div>
@@ -185,7 +185,7 @@
     </section>
 
     <!-- School Leadership Vision Section (Exact School-Demo) -->
-    <section class="section scroll-reveal">
+    <section class="section">
         <div class="container">
             <div class="section-header">
                 <span class="section-tag">Leadership Vision</span>
@@ -194,7 +194,7 @@
             </div>
 
             <div class="leadership-grid">
-                <div class="leader-card">
+                <div class="leader-card scroll-anim" data-anim="left">
                     <div class="leader-header-block">
                         <img src="{{ asset('landing_assets/images/principal.jpg') }}" alt="Prof. Dr. K. P. Adhikari" class="leader-avatar-lg">
                         <div>
@@ -208,7 +208,7 @@
                     </div>
                 </div>
 
-                <div class="leader-card">
+                <div class="leader-card scroll-anim" data-anim="right">
                     <div class="leader-header-block">
                         <img src="{{ asset('landing_assets/images/director.jpg') }}" alt="Mrs. Sunita Sharma" class="leader-avatar-lg">
                         <div>
@@ -226,7 +226,7 @@
     </section>
 
     <!-- Recent School Life & Events Strip (Exact School-Demo) -->
-    <section class="section section-alt scroll-reveal">
+    <section class="section section-alt">
         <div class="container">
             <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2.5rem; flex-wrap: wrap; gap: 1rem;">
                 <div>
@@ -245,8 +245,10 @@
                         if(strpos($firstImg, 'assets/') === 0) {
                             $firstImg = 'landing_assets/' . substr($firstImg, 7);
                         }
+                        $animDirs = ['left', 'up', 'right'];
+                        $currentAnim = $animDirs[$loop->index % 3];
                     @endphp
-                    <div class="event-card" onclick="location.href='{{ route('landing.events') }}'">
+                    <div class="event-card scroll-anim" data-anim="{{ $currentAnim }}" onclick="location.href='{{ route('landing.events') }}'">
                         <div class="event-img-wrap">
                             <span class="category-pill">{{ $event->category }}</span>
                             @if($imgCount > 1)

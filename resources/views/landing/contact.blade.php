@@ -55,7 +55,7 @@
 
 @section('content')
     <!-- Page Header Banner (Exact School-Demo) -->
-    <section class="section section-alt" style="padding: 3.5rem 0 2rem 0;">
+    <section class="section section-alt" style="padding: 6.5rem 0 2rem 0;">
         <div class="container">
             <div style="text-align: center;">
                 <span class="section-tag">Admissions Office</span>
@@ -71,7 +71,7 @@
             <div class="contact-grid-layout">
                 
                 <!-- Inquiry Form (Left Column) -->
-                <div class="contact-card-wrap">
+                <div class="contact-card-wrap scroll-anim" data-anim="left">
                     <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-navy); margin-bottom: 0.4rem;">Send an Inquiry</h2>
                     <p style="font-size: 0.875rem; color: var(--text-body); margin-bottom: 1.5rem;">Submit your details below and our admissions desk will get back to you.</p>
 
@@ -134,7 +134,7 @@
                 </div>
 
                 <!-- Campus Details & Map (Right Column) -->
-                <div class="contact-card-wrap" style="display: flex; flex-direction: column; justify-content: space-between;">
+                <div class="contact-card-wrap scroll-anim" data-anim="right" style="display: flex; flex-direction: column; justify-content: space-between;">
                     <div>
                         <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--primary-navy); margin-bottom: 1.25rem;">Campus Information</h2>
 

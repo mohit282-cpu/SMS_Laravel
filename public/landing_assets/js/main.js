@@ -5,12 +5,68 @@
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 0. Mobile Bottom Dock - Cult UI AnimatedBackground Hover Tab Engine
+    // 0a. Desktop Navigation - Cult UI AnimatedBackground SegmentedControl Pill Engine
+    const mainNavList = document.querySelector('.main-nav-list');
+    if (mainNavList) {
+        let navTabBg = mainNavList.querySelector('.nav-tab-bg');
+        if (!navTabBg) {
+            navTabBg = document.createElement('div');
+            navTabBg.className = 'nav-tab-bg';
+            mainNavList.appendChild(navTabBg);
+        }
+
+        const navLinks = mainNavList.querySelectorAll('.main-nav-link');
+        const activeNavLink = mainNavList.querySelector('.main-nav-link.active') || navLinks[0];
+
+        function positionNavTabBg(target) {
+            if (!target || !navTabBg || !mainNavList) return;
+            const targetRect = target.getBoundingClientRect();
+            const parentRect = mainNavList.getBoundingClientRect();
+
+            const left = targetRect.left - parentRect.left;
+            const top = targetRect.top - parentRect.top;
+            const width = targetRect.width;
+            const height = targetRect.height;
+
+            navTabBg.style.transform = `translate3d(${left}px, ${top}px, 0)`;
+            navTabBg.style.width = `${width}px`;
+            navTabBg.style.height = `${height}px`;
+            navTabBg.style.opacity = '1';
+
+            navLinks.forEach(link => {
+                if (link === target) {
+                    link.classList.add('nav-pill-active');
+                } else {
+                    link.classList.remove('nav-pill-active');
+                }
+            });
+        }
+
+        // Initial active tab positioning
+        if (activeNavLink) {
+            setTimeout(() => positionNavTabBg(activeNavLink), 50);
+            window.addEventListener('load', () => positionNavTabBg(activeNavLink));
+            window.addEventListener('resize', () => {
+                const currentActive = mainNavList.querySelector('.main-nav-link.active') || activeNavLink;
+                positionNavTabBg(currentActive);
+            });
+        }
+
+        // Click-driven sliding transition (liquid glass pill glides on click/switch, NOT cursor hover)
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                navLinks.forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                positionNavTabBg(link);
+            });
+        });
+    }
+
+    // 0b. Mobile Bottom Dock - Auto-Collapse to Icons (Expands with Text Below on Navbar Interaction)
     const mobileDock = document.querySelector('.mobile-bottom-dock');
     if (mobileDock) {
         const dockItems = mobileDock.querySelector('.dock-items');
         if (dockItems) {
-            // Ensure animated background tab highlight element exists
             let tabBg = dockItems.querySelector('.dock-tab-bg');
             if (!tabBg) {
                 tabBg = document.createElement('div');
@@ -37,82 +93,173 @@ document.addEventListener('DOMContentLoaded', () => {
                 tabBg.style.opacity = '1';
             }
 
-            // Position initial active tab background
+            let collapseTimer = null;
+
+            function expandDock() {
+                mobileDock.classList.add('is-expanded');
+                setTimeout(() => {
+                    const current = dockItems.querySelector('.dock-item a.active') || activeLink;
+                    positionTabBg(current);
+                }, 40);
+
+                if (collapseTimer) clearTimeout(collapseTimer);
+                // Auto-collapse back to icon mode after 3.5s of no interaction on the dock
+                collapseTimer = setTimeout(() => {
+                    collapseDock();
+                }, 3500);
+            }
+
+            function collapseDock() {
+                if (mobileDock.classList.contains('is-expanded')) {
+                    mobileDock.classList.remove('is-expanded');
+                    setTimeout(() => {
+                        const current = dockItems.querySelector('.dock-item a.active') || activeLink;
+                        positionTabBg(current);
+                    }, 40);
+                }
+            }
+
+            // Position initial active tab background in compact icon mode
             setTimeout(() => positionTabBg(activeLink), 60);
+            window.addEventListener('load', () => {
+                const currentActive = dockItems.querySelector('.dock-item a.active') || activeLink;
+                positionTabBg(currentActive);
+            });
             window.addEventListener('resize', () => {
                 const currentActive = dockItems.querySelector('.dock-item a.active') || activeLink;
                 positionTabBg(currentActive);
             });
 
-            // Tab hover & touch interaction (AnimatedBackground spring slide)
+            // Enlarge and reveal text below icons when hovering or interacting with the navbar
+            mobileDock.addEventListener('touchstart', expandDock, { passive: true });
+            mobileDock.addEventListener('mouseenter', expandDock);
+            mobileDock.addEventListener('pointerenter', expandDock);
+            mobileDock.addEventListener('mouseleave', collapseDock);
+            mobileDock.addEventListener('pointerleave', collapseDock);
+
+            // Tab click & touch switching
             links.forEach(link => {
-                link.addEventListener('mouseenter', () => positionTabBg(link));
-                link.addEventListener('focus', () => positionTabBg(link));
                 link.addEventListener('click', () => {
+                    expandDock();
                     links.forEach(l => l.classList.remove('active'));
                     link.classList.add('active');
                     positionTabBg(link);
                 });
             });
 
-            // Smooth return to active page tab when hover leaves dock
-            dockItems.addEventListener('mouseleave', () => {
-                const currentActive = dockItems.querySelector('.dock-item a.active') || activeLink;
-                positionTabBg(currentActive);
-            });
+            // When interacting with page content (scrolling or touching the page): collapse to icons only!
+            window.addEventListener('scroll', () => {
+                collapseDock();
+            }, { passive: true });
+
+            document.addEventListener('touchstart', (e) => {
+                if (!mobileDock.contains(e.target)) {
+                    collapseDock();
+                }
+            }, { passive: true });
         }
     }
 
-    // 1. Progressive Scroll Reveal Animation
-    const scrollElements = document.querySelectorAll('.scroll-reveal');
-    if (scrollElements.length > 0) {
-        const revealObserver = new IntersectionObserver((entries) => {
+    // 1. Cult UI Directional ScrollAnimation System (Reversible on Scroll, Optimized for Mobile & Desktop)
+    const animElements = document.querySelectorAll('.scroll-anim, .scroll-reveal');
+    if (animElements.length > 0) {
+        const isMobile = window.innerWidth <= 768;
+        const animThreshold = isMobile ? 0.05 : 0.12;
+        const animMargin = isMobile ? '0px 0px -10px 0px' : '0px 0px -25px 0px';
+
+        const animObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
-                    entry.target.classList.add('visible');
+                    entry.target.classList.add('in-view', 'visible');
+                } else {
+                    // Reversible animation: when scrolled out of view, remove in-view
+                    // so it smoothly reverses back to its directional offset
+                    entry.target.classList.remove('in-view', 'visible');
                 }
             });
-        }, { threshold: 0.15 });
+        }, { threshold: animThreshold, rootMargin: animMargin });
 
-        scrollElements.forEach(el => revealObserver.observe(el));
+        animElements.forEach(el => {
+            // Check initial position on page load: if in viewport, activate immediately
+            const rect = el.getBoundingClientRect();
+            if (rect.top < (window.innerHeight || document.documentElement.clientHeight) && rect.bottom > 0) {
+                el.classList.add('in-view', 'visible');
+            }
+            animObserver.observe(el);
+        });
     }
 
-    // 2. Rolling Metrics Counter Animation
+    // 2. Rolling Metrics Counter Animation (Bidirectional Re-triggering)
+    const metricsSection = document.querySelector('.metrics-strip');
     const counterElements = document.querySelectorAll('.counter-val');
-    let countersTriggered = false;
+    let activeCounterFrames = [];
 
-    function animateCounters() {
+    function runCounters() {
+        // Cancel any active animation frames before starting fresh
+        activeCounterFrames.forEach(id => cancelAnimationFrame(id));
+        activeCounterFrames = [];
+
         counterElements.forEach(counter => {
             const target = parseInt(counter.getAttribute('data-target'), 10);
-            const duration = 1800; // ms
+            if (isNaN(target)) return;
+
+            counter.textContent = '0';
+            const duration = 1600; // ms
             const startTime = performance.now();
 
             function updateCount(currentTime) {
                 const elapsed = currentTime - startTime;
                 const progress = Math.min(elapsed / duration, 1);
-                const currentVal = Math.floor(target * (1 - (1 - progress) * (1 - progress)));
+                // Ease out cubic deceleration: 1 - (1 - progress)^3
+                const easeVal = 1 - Math.pow(1 - progress, 3);
+                const currentVal = Math.floor(target * easeVal);
                 counter.textContent = currentVal.toLocaleString();
 
                 if (progress < 1) {
-                    requestAnimationFrame(updateCount);
+                    const reqId = requestAnimationFrame(updateCount);
+                    activeCounterFrames.push(reqId);
                 } else {
                     counter.textContent = target.toLocaleString();
                 }
             }
 
-            requestAnimationFrame(updateCount);
+            const reqId = requestAnimationFrame(updateCount);
+            activeCounterFrames.push(reqId);
         });
     }
 
-    const metricsSection = document.querySelector('.metrics-strip');
-    if (metricsSection) {
-        const observer = new IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !countersTriggered) {
-                countersTriggered = true;
-                animateCounters();
-            }
-        }, { threshold: 0.3 });
-        observer.observe(metricsSection);
+    function resetCounterDisplay() {
+        activeCounterFrames.forEach(id => cancelAnimationFrame(id));
+        activeCounterFrames = [];
+        counterElements.forEach(counter => {
+            counter.textContent = '0';
+        });
+    }
+
+    if (metricsSection && counterElements.length > 0) {
+        let metricsInView = false;
+        const metricsObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    if (!metricsInView) {
+                        metricsInView = true;
+                        runCounters();
+                    }
+                } else {
+                    metricsInView = false;
+                    resetCounterDisplay();
+                }
+            });
+        }, { threshold: 0.15, rootMargin: '0px 0px -20px 0px' });
+
+        metricsObserver.observe(metricsSection);
+
+        // Check if metrics strip is in viewport on initial load
+        const mRect = metricsSection.getBoundingClientRect();
+        if (mRect.top < (window.innerHeight || document.documentElement.clientHeight) && mRect.bottom > 0) {
+            metricsInView = true;
+            runCounters();
+        }
     }
 
     // 3. Live Event Keyword Search Filtering on events.php
