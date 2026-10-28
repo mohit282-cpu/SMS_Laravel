@@ -54,18 +54,35 @@ class StudyMaterial extends Model
         }
 
         if ($user->user_type === 'teacher') {
-            // Teacher sees materials they uploaded, or for classes/subjects they teach
-            $taughtSubjectIds = Subject::where('teacher_id', $user->id)->pluck('id')->toArray();
+            $assignedSectionIds = Section::where('teacher_id', $user->id)->pluck('id')->toArray();
             $assignedClassIds = Section::where('teacher_id', $user->id)->pluck('my_class_id')->toArray();
+            $taughtSubjectIds = Subject::where('teacher_id', $user->id)->pluck('id')->toArray();
 
-            return $query->where(function ($q) use ($user, $taughtSubjectIds, $assignedClassIds) {
+            return $query->where(function ($q) use ($user, $assignedSectionIds, $assignedClassIds, $taughtSubjectIds) {
+                // 1. Materials uploaded by this teacher
                 $q->where('teacher_id', $user->id);
-                if (!empty($taughtSubjectIds)) {
-                    $q->orWhereIn('subject_id', $taughtSubjectIds);
+
+                // 2. Section-specific materials: must match teacher's assigned section
+                if (!empty($assignedSectionIds)) {
+                    $q->orWhere(function ($secQ) use ($assignedSectionIds) {
+                        $secQ->whereNotNull('section_id')
+                             ->whereIn('section_id', $assignedSectionIds);
+                    });
                 }
-                if (!empty($assignedClassIds)) {
-                    $q->orWhereIn('my_class_id', $assignedClassIds);
-                }
+
+                // 3. Class-wide materials (section_id IS NULL):
+                // Permitted if teacher teaches a section in that class or teaches the subject
+                $q->orWhere(function ($classQ) use ($assignedClassIds, $taughtSubjectIds) {
+                    $classQ->whereNull('section_id')
+                           ->where(function ($subQ) use ($assignedClassIds, $taughtSubjectIds) {
+                               if (!empty($assignedClassIds)) {
+                                   $subQ->whereIn('my_class_id', $assignedClassIds);
+                               }
+                               if (!empty($taughtSubjectIds)) {
+                                   $subQ->orWhereIn('subject_id', $taughtSubjectIds);
+                               }
+                           });
+                });
             });
         }
 

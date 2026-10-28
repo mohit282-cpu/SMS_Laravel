@@ -1,0 +1,96 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, testing ]
+  pull_request:
+    branches: [ main, testing ]
+
+jobs:
+  laravel-tests:
+    name: PHP Tests & Linting
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: sms_laravel_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, mysql, pdo_mysql, gmp, bcmath, gd, zip
+          coverage: none
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: PHP Syntax Linting
+        run: find app bootstrap config database routes -type f -name "*.php" -exec php -l {} +
+
+      - name: Setup Application Environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run Migrations on Isolated Test Database
+        env:
+          DB_CONNECTION: mysql_test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: sms_laravel_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: |
+          php artisan migrate --force
+          php artisan db:seed --force
+
+      - name: Run Test Suite
+        env:
+          DB_CONNECTION: mysql_test
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: sms_laravel_test
+          DB_USERNAME: root
+          DB_PASSWORD: root
+        run: php artisan test
+
+  frontend-build:
+    name: Frontend Asset Compilation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+
+      - name: Install NPM Dependencies
+        run: npm ci
+
+      - name: Compile Production Assets
+        run: npm run prod

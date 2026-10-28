@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Helpers\Qs;
 use App\Models\Section;
 use App\Models\StudentRecord;
 use App\User;
@@ -60,12 +61,14 @@ class StudentRecordsTableSeeder extends Seeder
                 'user_type' => 'student',
                 'password' => Hash::make('cj'),
                 'email' => 'student@student.com',
+                'code' => strtoupper(\Illuminate\Support\Str::random(10)),
             ]
         );
 
         StudentRecord::firstOrCreate(
             ['user_id' => $user->id],
             [
+                'session' => Qs::getCurrentSession() ?: '2018-2019',
                 'my_class_id' => $section ? $section->my_class_id : null,
                 'section_id' => $section ? $section->id : null,
             ]

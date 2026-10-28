@@ -74,9 +74,25 @@ class BookRequestController extends Controller
             $this->libraryService->submitRequest((int) $req->book_id, Auth::id(), $req->notes);
             return back()->with('flash_success', __('Book request submitted successfully.'));
         } catch (\Illuminate\Validation\ValidationException $e) {
-            return back()->withErrors($e->errors());
-        } catch (\Throwable $e) {
+            return back()->withErrors($e->errors())->withInput()->with('flash_danger', collect($e->errors())->flatten()->first());
+        } catch (\PDOException | \Illuminate\Database\QueryException $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request submission failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'user_id' => Auth::id(),
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected database error occurred. Reference ID: :id', ['id' => $correlationId]));
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request submission failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'user_id' => Auth::id(),
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while processing your request. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -105,8 +121,26 @@ class BookRequestController extends Controller
             }
 
             return back()->with('flash_success', __('Book request approved.'));
-        } catch (\Throwable $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->with('flash_danger', collect($e->errors())->flatten()->first());
+        } catch (\PDOException | \Illuminate\Database\QueryException $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request approval database failure [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected database error occurred. Reference ID: :id', ['id' => $correlationId]));
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request approval failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while approving the request. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -135,8 +169,26 @@ class BookRequestController extends Controller
             }
 
             return back()->with('flash_success', __('Book request rejected.'));
-        } catch (\Throwable $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->with('flash_danger', collect($e->errors())->flatten()->first());
+        } catch (\PDOException | \Illuminate\Database\QueryException $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request rejection database failure [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected database error occurred. Reference ID: :id', ['id' => $correlationId]));
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request rejection failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while rejecting the request. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -150,8 +202,26 @@ class BookRequestController extends Controller
         try {
             $this->libraryService->cancelRequest((int) $targetId, Auth::id());
             return back()->with('flash_success', __('Your book request has been cancelled.'));
-        } catch (\Throwable $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->with('flash_danger', collect($e->errors())->flatten()->first());
+        } catch (\PDOException | \Illuminate\Database\QueryException $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request cancellation database failure [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected database error occurred. Reference ID: :id', ['id' => $correlationId]));
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book request cancellation failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while cancelling the request. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -189,8 +259,24 @@ class BookRequestController extends Controller
             return back()->with('flash_success', __('Book issued from request successfully.'));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors())->with('flash_danger', collect($e->errors())->flatten()->first());
-        } catch (\Throwable $e) {
+        } catch (\PDOException | \Illuminate\Database\QueryException $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book issue from request database failure [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected database error occurred. Reference ID: :id', ['id' => $correlationId]));
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book issue from request failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'target_id' => $targetId,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while issuing the book. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 }

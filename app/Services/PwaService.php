@@ -257,6 +257,9 @@ class PwaService
         foreach ($subscriptions as $sub) {
             if (empty($sub->public_key) || empty($sub->auth_token)) {
                 $skippedCount++;
+            } elseif (!\App\Services\PushEndpointValidator::isValid($sub->endpoint)) {
+                Log::warning("Skipping push subscription with invalid or prohibited endpoint: {$sub->endpoint}");
+                $skippedCount++;
             } else {
                 $validSubscriptions[] = $sub;
             }
@@ -265,7 +268,7 @@ class PwaService
         if (empty($validSubscriptions)) {
             return [
                 'status' => 'failed',
-                'message' => 'All subscriptions are missing required encryption keys.',
+                'message' => 'All subscriptions are missing required encryption keys or have invalid endpoints.',
                 'total' => $subscriptions->count(),
                 'sent' => 0,
                 'expired' => 0,
@@ -287,7 +290,16 @@ class PwaService
                 ],
             ];
 
-            $webPush = new \Minishlink\WebPush\WebPush($auth);
+            $defaultOptions = [
+                'timeout' => 10,
+                'clientOptions' => [
+                    'allow_redirects' => false,
+                    'timeout' => 10,
+                    'connect_timeout' => 5,
+                ],
+            ];
+
+            $webPush = new \Minishlink\WebPush\WebPush($auth, $defaultOptions);
             $webPush->setReuseHttpClient(true);
 
             foreach ($validSubscriptions as $sub) {

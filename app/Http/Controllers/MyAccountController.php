@@ -27,6 +27,11 @@ class MyAccountController extends Controller
 
     public function update_profile(UserUpdate $req)
     {
+        $user = Auth::user();
+        if (!$user) {
+            abort(401);
+        }
+
         $fields = ['email', 'phone', 'phone2', 'address', 'locale'];
         if (!$user->username) {
             $fields[] = 'username';
@@ -35,20 +40,21 @@ class MyAccountController extends Controller
 
         if ($req->filled('locale') && in_array($req->locale, ['ne', 'en'], true)) {
             session()->put('locale', $req->locale);
+            app()->setLocale($req->locale);
         }
 
-        if(!$user->username && !$req->username && !$req->email){
+        if (!$user->username && !$req->username && !$req->email) {
             return back()->with('pop_error', __('msg.user_invalid'));
         }
 
         $user_type = $user->user_type;
-        $code = $user->code;
+        $code = $user->code ?: strtoupper(\Illuminate\Support\Str::random(10));
 
-        if($req->hasFile('photo')) {
+        if ($req->hasFile('photo')) {
             $photo = $req->file('photo');
             $f = Qs::getFileMetaData($photo);
             $f['name'] = 'photo.' . $f['ext'];
-            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type).$code, $f['name']);
+            $f['path'] = $photo->storeAs(Qs::getUploadPath($user_type) . $code, $f['name']);
             $d['photo'] = asset('storage/' . $f['path']);
         }
 

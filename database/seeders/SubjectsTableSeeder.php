@@ -25,7 +25,8 @@ class SubjectsTableSeeder extends Seeder
     {
         $subjects = ['English Language', 'Mathematics'];
         $sub_slug = ['Eng', 'Math'];
-        $teacher_id = User::where(['user_type' => 'teacher'])->first()->id;
+        $teacher = User::where(['user_type' => 'teacher'])->first();
+        $teacher_id = $teacher ? $teacher->id : null;
         $my_classes = MyClass::all();
 
         foreach ($my_classes as $my_class) {

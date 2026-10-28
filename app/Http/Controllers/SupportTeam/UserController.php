@@ -41,6 +41,11 @@ class UserController extends Controller
         return view('pages.support_team.users.index', $d);
     }
 
+    public function create()
+    {
+        return redirect()->route('users.index');
+    }
+
     public function edit($id)
     {
         $id = Qs::decodeHash($id);
@@ -54,14 +59,37 @@ class UserController extends Controller
 
     public function reset_pass($id)
     {
+        if (!Qs::userIsSuperAdmin()) {
+            abort(403);
+        }
+
+        $id = Qs::decodeHash($id) ?: (is_numeric($id) ? (int)$id : null);
+        if (!$id) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
+        $targetUser = $this->user->find($id);
+        if (!$targetUser) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
         // Redirect if Making Changes to Head of Super Admins
         if(Qs::headSA($id)){
             return back()->with('flash_danger', __('msg.denied'));
         }
 
-        $data['password'] = Hash::make('user');
-        $this->user->update($id, $data);
-        return back()->with('flash_success', __('msg.pu_reset'));
+        // Prevent non-head super admin from resetting another super admin
+        if ($targetUser->user_type === 'super_admin' && !Qs::headSA(Auth::id()) && Auth::id() != $id) {
+            abort(403, __('Unauthorized to reset super admin accounts.'));
+        }
+
+        $tempPass = Str::random(10);
+        $this->user->update($id, ['password' => Hash::make($tempPass)]);
+
+        \Illuminate\Support\Facades\Log::info("Password reset for user ID {$id} ({$targetUser->user_type}) by admin " . Auth::id());
+
+        return back()->with('flash_success', __('msg.pu_reset') . ' New temporary password: ' . $tempPass)
+            ->with('temp_password', $tempPass);
     }
 
     public function store(UserRequest $req)
@@ -80,8 +108,9 @@ class UserController extends Controller
         $staff_id = Qs::getAppCode().'/STAFF/'.date('Y/m', strtotime($req->emp_date)).'/'.mt_rand(1000, 9999);
         $data['username'] = $uname = ($user_is_teamSA) ? $req->username : $staff_id;
 
-        $pass = $req->password ?: $user_type;
+        $pass = $req->password ?: Str::random(10);
         $data['password'] = Hash::make($pass);
+        session()->flash('temp_password', $pass);
 
         if($req->hasFile('photo')) {
             $photo = $req->file('photo');

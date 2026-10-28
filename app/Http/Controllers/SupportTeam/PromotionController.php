@@ -120,7 +120,9 @@ class PromotionController extends Controller
 
     public function reset($promotion_id)
     {
-        $this->reset_single($promotion_id);
+        DB::transaction(function() use ($promotion_id) {
+            $this->reset_single($promotion_id);
+        });
 
         return redirect()->route('students.promotion_manage')->with('flash_success', __('msg.update_ok'));
     }
@@ -132,12 +134,14 @@ class PromotionController extends Controller
         $proms = $this->student->getPromotions($where);
 
         if ($proms->count()){
-          foreach ($proms as $prom){
-              $this->reset_single($prom->id);
+            DB::transaction(function() use ($proms, $next_session) {
+                foreach ($proms as $prom){
+                    $this->reset_single($prom->id);
 
-              // Delete Marks if Already Inserted for New Session
-              $this->delete_old_marks($prom->student_id, $next_session);
-          }
+                    // Delete Marks if Already Inserted for New Session
+                    $this->delete_old_marks($prom->student_id, $next_session);
+                }
+            });
         }
 
         return Qs::jsonUpdateOk();
@@ -151,6 +155,9 @@ class PromotionController extends Controller
     protected function reset_single($promotion_id)
     {
         $prom = $this->student->findPromotion($promotion_id);
+        if (!$prom) {
+            return false;
+        }
 
         $data['my_class_id'] = $prom->from_class;
         $data['section_id'] = $prom->from_section;

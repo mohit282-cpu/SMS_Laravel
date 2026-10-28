@@ -180,8 +180,16 @@ class BookController extends Controller
         try {
             $this->bookRepo->delete($id);
             return back()->with('flash_success', __('Record Deleted Successfully'));
-        } catch (\Throwable $e) {
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book deletion failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'book_id' => $id,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while deleting the book. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -244,8 +252,17 @@ class BookController extends Controller
             return back()->with('flash_success', __('Book issued successfully.'));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors())->withInput()->with('flash_danger', collect($e->errors())->flatten()->first());
-        } catch (\Throwable $e) {
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book issue failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'book_id' => $req->book_id,
+                'user_id' => $req->user_id,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while issuing the book. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -280,8 +297,16 @@ class BookController extends Controller
             return back()->with('flash_success', __('Book returned successfully and inventory updated.'));
         } catch (\Illuminate\Validation\ValidationException $e) {
             return back()->withErrors($e->errors())->with('flash_danger', collect($e->errors())->flatten()->first());
-        } catch (\Throwable $e) {
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Book return failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'loan_id' => $id,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while returning the book. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 
@@ -323,8 +348,16 @@ class BookController extends Controller
         try {
             $this->bookRepo->deleteCategory($id);
             return back()->with('flash_success', __('Record Deleted Successfully'));
-        } catch (\Throwable $e) {
+        } catch (\RuntimeException $e) {
             return back()->with('flash_danger', $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Category deletion failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'category_id' => $id,
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('An unexpected error occurred while deleting the category. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 }

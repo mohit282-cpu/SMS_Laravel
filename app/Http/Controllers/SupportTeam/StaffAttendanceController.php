@@ -87,8 +87,16 @@ class StaffAttendanceController extends Controller
             return redirect()->route('staff_attendance.index', [
                 'attendance_date_bs' => $request->attendance_date_bs,
             ])->with('flash_success', $msg);
-        } catch (\Exception $e) {
-            return back()->with('flash_danger', __('Failed to record staff attendance: ') . $e->getMessage());
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return back()->withErrors($e->errors())->withInput()->with('flash_danger', collect($e->errors())->flatten()->first());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Failed to record staff attendance [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'user_id' => Auth::id(),
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('Failed to record staff attendance. Please try again. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 

@@ -36,9 +36,9 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
 
         /*************** Students *****************/
         Route::group(['prefix' => 'students'], function(){
-            Route::get('reset_pass/{st_id}', 'StudentRecordController@reset_pass')->name('st.reset_pass');
-            Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated');
-            Route::put('not_graduated/{id}', 'StudentRecordController@not_graduated')->name('st.not_graduated');
+            Route::post('reset_pass/{st_id}', 'StudentRecordController@reset_pass')->name('st.reset_pass')->middleware('teamSA');
+            Route::get('graduated', 'StudentRecordController@graduated')->name('students.graduated')->middleware('teamSA');
+            Route::put('not_graduated/{id}', 'StudentRecordController@not_graduated')->name('st.not_graduated')->middleware('teamSA');
             Route::get('list/{class_id}', 'StudentRecordController@listByClass')->name('students.list')->middleware('teamSAT');
 
             /* Promotions */
@@ -53,7 +53,7 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
 
         /*************** Users *****************/
         Route::group(['prefix' => 'users'], function(){
-            Route::get('reset_pass/{id}', 'UserController@reset_pass')->name('users.reset_pass');
+            Route::post('reset_pass/{id}', 'UserController@reset_pass')->name('users.reset_pass')->middleware('super_admin');
         });
 
         /*************** TimeTables *****************/
@@ -154,14 +154,14 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
 
         Route::resource('students', 'StudentRecordController');
         Route::resource('users', 'UserController');
-        Route::resource('classes', 'MyClassController');
-        Route::resource('sections', 'SectionController');
-        Route::resource('subjects', 'SubjectController');
-        Route::resource('grades', 'GradeController');
-        Route::resource('exams', 'ExamController');
+        Route::resource('classes', 'MyClassController', ['except' => ['create', 'show']]);
+        Route::resource('sections', 'SectionController', ['except' => ['create', 'show']]);
+        Route::resource('subjects', 'SubjectController', ['except' => ['create', 'show']]);
+        Route::resource('grades', 'GradeController', ['except' => ['create', 'show']]);
+        Route::resource('exams', 'ExamController', ['except' => ['create', 'show']]);
         Route::put('exams/{exam}/publish', 'ExamController@publish')->name('exams.publish');
         Route::put('exams/{exam}/unpublish', 'ExamController@unpublish')->name('exams.unpublish');
-        Route::resource('dorms', 'DormController');
+        Route::resource('dorms', 'DormController', ['except' => ['create', 'show']]);
         Route::resource('payments', 'PaymentController', ['except' => ['show']]);
         Route::get('payments/{year}', 'PaymentController@show')->name('payments.show')->where('year', '.*');
 
@@ -171,7 +171,7 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         Route::get('study_materials/download/{id}', 'StudyMaterialController@download')->name('study_materials.download');
 
         /*************** Academic Years & Holidays (Nepal BS) *****************/
-        Route::resource('academic_years', 'AcademicYearController');
+        Route::resource('academic_years', 'AcademicYearController', ['except' => ['create', 'show']]);
         Route::put('academic_years/activate/{academic_year}', 'AcademicYearController@activate')->name('academic_years.activate');
         Route::put('academic_years/close/{academic_year}', 'AcademicYearController@close')->name('academic_years.close');
         Route::put('academic_years/reopen/{academic_year}', 'AcademicYearController@reopen')->name('academic_years.reopen');
@@ -182,7 +182,7 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         Route::post('events/{id}/unpublish', 'EventController@unpublish')->name('events.unpublish');
         Route::get('calendar/events', 'EventController@calendarEvents')->name('calendar.events');
 
-        Route::resource('holidays', 'HolidayController');
+        Route::resource('holidays', 'HolidayController', ['except' => ['create', 'show', 'edit', 'update']]);
 
         /*************** Nepal Attendance Management (BS) *****************/
         Route::group(['middleware' => 'teamSAT'], function(){

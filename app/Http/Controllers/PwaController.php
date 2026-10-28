@@ -75,13 +75,11 @@ class PwaController extends Controller
         ]);
 
         $endpoint = $request->input('endpoint');
-        $host = parse_url($endpoint, PHP_URL_HOST);
-        $isLocalhost = in_array(strtolower($host ?: ''), ['localhost', '127.0.0.1']);
-
-        if (!str_starts_with(strtolower($endpoint), 'https://') && !$isLocalhost) {
+        $error = null;
+        if (!\App\Services\PushEndpointValidator::isValid($endpoint, $error)) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Subscription endpoint must use secure HTTPS protocol',
+                'message' => $error ?: 'Subscription endpoint is invalid or prohibited.',
             ], 422);
         }
 

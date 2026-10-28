@@ -28,6 +28,8 @@
         <env name="CACHE_DRIVER" value="array"/>
         <env name="SESSION_DRIVER" value="array"/>
         <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="DB_CONNECTION" value="mysql_test"/>
+        <env name="DB_DATABASE" value="sms_laravel_test"/>
         <env name="MAIL_DRIVER" value="array"/>
     </php>
 </phpunit>

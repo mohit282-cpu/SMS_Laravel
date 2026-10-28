@@ -240,4 +240,47 @@ class PaymentHardeningTest extends TestCase
         $response = $this->actingAs($student)->get(route('payments.invoice', $otherStudent->id));
         $response->assertStatus(403);
     }
+
+    /**
+     * Test idempotency key reuse with different parameters is rejected with 422.
+     */
+    public function test_reusing_idempotency_key_with_different_amount_is_rejected()
+    {
+        $accountant = $this->getAccountant();
+        $student = $this->getStudent();
+
+        $payment = Payment::create([
+            'title' => 'Tamper Test Fee ' . rand(1000, 9999),
+            'amount' => 5000,
+            'year' => Qs::getCurrentSession(),
+            'ref_no' => 'PAY_' . rand(1000, 9999),
+        ]);
+
+        $pr = PaymentRecord::create([
+            'payment_id' => $payment->id,
+            'student_id' => $student->id,
+            'ref_no' => 'REC_' . rand(1000, 9999),
+            'amt_paid' => 0,
+            'balance' => 5000,
+            'paid' => 0,
+            'year' => $payment->year,
+        ]);
+
+        $key = 'tamper_key_' . uniqid();
+
+        // 1. Initial valid payment of 1000 with idempotency key
+        $res1 = $this->actingAs($accountant)->postJson(route('payments.pay_now', $pr->id), [
+            'amt_paid' => 1000,
+            'idempotency_key' => $key,
+        ]);
+        $res1->assertStatus(200);
+
+        // 2. Attempt to reuse SAME key with DIFFERENT amount (2000)
+        $res2 = $this->actingAs($accountant)->postJson(route('payments.pay_now', $pr->id), [
+            'amt_paid' => 2000,
+            'idempotency_key' => $key,
+        ]);
+        $res2->assertStatus(422);
+        $this->assertStringContainsString('different payment parameters', $res2->json('msg'));
+    }
 }

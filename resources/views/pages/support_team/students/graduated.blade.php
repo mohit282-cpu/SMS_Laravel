@@ -54,8 +54,8 @@
                                     <div class="dropdown-menu dropdown-menu-left">
                                         <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
                                         @if(Qs::userIsTeamSA())
-                                        <a href="{{ route('students.edit', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-pencil"></i> Edit</a>
-                                        <a href="{{ route('st.reset_pass', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-lock"></i> Reset password</a>
+                                        <a href="#" onclick="event.preventDefault(); if(confirm('Are you sure you want to reset this student\'s password?')) { document.getElementById('item-st-reset-{{ Qs::hash($s->user->id) }}').submit(); }" class="dropdown-item"><i class="icon-lock"></i> Reset password</a>
+                                        <form method="post" id="item-st-reset-{{ Qs::hash($s->user->id) }}" action="{{ route('st.reset_pass', Qs::hash($s->user->id)) }}" class="hidden">@csrf</form>
 
                                         {{--Not Graduated--}}
                                         <a id="{{ Qs::hash($s->id) }}" href="#" onclick="$('form#ng-'+this.id).submit();" class="dropdown-item"><i class="icon-stairs-down"></i> Not Graduated</a>
@@ -111,8 +111,8 @@
                                         <div class="dropdown-menu dropdown-menu-left">
                                             <a href="{{ route('students.show', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-eye"></i> View Profile</a>
                                             @if(Qs::userIsTeamSA())
-                                                <a href="{{ route('students.edit', Qs::hash($s->id)) }}" class="dropdown-item"><i class="icon-pencil"></i> Edit</a>
-                                                <a href="{{ route('st.reset_pass', Qs::hash($s->user->id)) }}" class="dropdown-item"><i class="icon-lock"></i> Reset password</a>
+                                                <a href="#" onclick="event.preventDefault(); if(confirm('Are you sure you want to reset this student\'s password?')) { document.getElementById('item-st-reset-{{ Qs::hash($s->user->id) }}').submit(); }" class="dropdown-item"><i class="icon-lock"></i> Reset password</a>
+                                                <form method="post" id="item-st-reset-{{ Qs::hash($s->user->id) }}" action="{{ route('st.reset_pass', Qs::hash($s->user->id)) }}" class="hidden">@csrf</form>
 
                                                 {{--Not Graduated--}}
                                                 <a id="{{ Qs::hash($s->id) }}" href="#" onclick="$('form#ng-'+this.id).submit();" class="dropdown-item"><i class="icon-stairs-down"></i> Not Graduated</a>

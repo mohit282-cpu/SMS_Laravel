@@ -231,8 +231,14 @@ class AttendanceController extends Controller
             throw $e;
         } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e) {
             throw $e;
-        } catch (\Exception $e) {
-            return back()->with('flash_danger', __('Failed to record attendance: ') . $e->getMessage());
+        } catch (\Throwable $e) {
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            Log::error("Failed to record student attendance [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'user_id' => Auth::id(),
+                'exception' => $e,
+            ]);
+            return back()->with('flash_danger', __('Failed to record attendance. Please try again. Reference ID: :id', ['id' => $correlationId]));
         }
     }
 

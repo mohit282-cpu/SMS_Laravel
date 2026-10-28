@@ -12,6 +12,7 @@ use App\Repositories\StudentRepo;
 use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
+use App\Models\StudentRecord;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -22,7 +23,7 @@ class StudentRecordController extends Controller
 
    public function __construct(LocationRepo $loc, MyClassRepo $my_class, UserRepo $user, StudentRepo $student)
    {
-       $this->middleware('teamSA', ['only' => ['edit','update', 'reset_pass', 'create', 'store', 'graduated'] ]);
+       $this->middleware('teamSA', ['only' => ['edit','update', 'reset_pass', 'create', 'store', 'graduated', 'not_graduated'] ]);
        $this->middleware('super_admin', ['only' => ['destroy',] ]);
 
         $this->loc = $loc;
@@ -31,12 +32,43 @@ class StudentRecordController extends Controller
         $this->student = $student;
    }
 
+    public function index()
+    {
+        $my_classes = $this->my_class->all();
+        if ($my_classes->isNotEmpty()) {
+            return redirect()->route('students.list', $my_classes->first()->id);
+        }
+        $d['my_classes'] = $my_classes;
+        return view('pages.support_team.students.list', $d);
+    }
+
     public function reset_pass($st_id)
     {
-        $st_id = Qs::decodeHash($st_id);
-        $data['password'] = Hash::make('student');
-        $this->user->update($st_id, $data);
-        return back()->with('flash_success', __('msg.p_reset'));
+        if (!Qs::userIsTeamSA()) {
+            abort(403);
+        }
+
+        $st_id = Qs::decodeHash($st_id) ?: (is_numeric($st_id) ? (int)$st_id : null);
+        if (!$st_id) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
+        $targetUser = $this->user->find($st_id);
+        if (!$targetUser) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
+        if ($targetUser->user_type !== 'student') {
+            abort(403, __('Only student accounts can be reset here.'));
+        }
+
+        $tempPass = Str::random(10);
+        $this->user->update($st_id, ['password' => Hash::make($tempPass)]);
+
+        \Illuminate\Support\Facades\Log::info("Student password reset for user ID {$st_id} by staff " . Auth::id());
+
+        return back()->with('flash_success', __('msg.p_reset') . ' New temporary password: ' . $tempPass)
+            ->with('temp_password', $tempPass);
     }
 
     public function create()
@@ -68,7 +100,9 @@ class StudentRecordController extends Controller
         $data['user_type'] = 'student';
         $data['name'] = ucwords($req->name);
         $data['code'] = strtoupper(Str::random(10));
-        $data['password'] = Hash::make('student');
+        $tempPassword = Str::random(10);
+        $data['password'] = Hash::make($tempPassword);
+        session()->flash('temp_password', $tempPassword);
         $data['photo'] = Qs::getDefaultUserImage();
         $adm_no = $req->adm_no;
         $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
@@ -110,6 +144,10 @@ class StudentRecordController extends Controller
 
     public function graduated()
     {
+        if (!Qs::userIsTeamSA()) {
+            abort(403);
+        }
+
         $data['my_classes'] = $this->my_class->all();
         $data['students'] = $this->student->allGradStudents();
 
@@ -118,10 +156,26 @@ class StudentRecordController extends Controller
 
     public function not_graduated($sr_id)
     {
+        if (!Qs::userIsTeamSA()) {
+            abort(403);
+        }
+
+        $decoded_id = Qs::decodeHash($sr_id) ?: (is_numeric($sr_id) ? (int)$sr_id : null);
+        if (!$decoded_id) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
+        $sr = StudentRecord::find($decoded_id);
+        if (!$sr) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
         $d['grad'] = 0;
         $d['grad_date'] = NULL;
         $d['session'] = Qs::getSetting('current_session');
-        $this->student->updateRecord($sr_id, $d);
+        $this->student->updateRecord($sr->id, $d);
+
+        \Illuminate\Support\Facades\Log::info("Student record {$sr->id} marked as not graduated by user " . \Illuminate\Support\Facades\Auth::id());
 
         return back()->with('flash_success', __('msg.update_ok'));
     }

@@ -92,6 +92,39 @@ class TimeTableController extends Controller
 
     public function index()
     {
+        if (Qs::userIsStudent() || Qs::userIsParent()) {
+            return redirect()->route('tt.my_timetable');
+        }
+
+        if (Qs::userIsTeacher()) {
+            $user = auth()->user();
+            $assignedClassIds = \App\Models\Section::where('teacher_id', $user->id)->pluck('my_class_id')
+                ->merge(\App\Models\Subject::where('teacher_id', $user->id)->pluck('my_class_id'))
+                ->unique();
+
+            $d['my_classes'] = $this->my_class->all()->whereIn('id', $assignedClassIds);
+            $d['exams'] = $this->exam->getExam(['year' => $this->year])->filter(function($ex) {
+                return $ex->isPublished();
+            });
+
+            $d['tt_records'] = $this->tt->getAllRecords()->filter(function($rec) use ($assignedClassIds) {
+                if (!$assignedClassIds->contains($rec->my_class_id)) {
+                    return false;
+                }
+                if ($rec->exam_id) {
+                    $ex = $this->exam->find($rec->exam_id);
+                    return $ex && $ex->isPublished();
+                }
+                return true;
+            });
+
+            return view('pages.support_team.timetables.index', $d);
+        }
+
+        if (!Qs::userIsTeamSA()) {
+            abort(403);
+        }
+
         $d['exams'] = $this->exam->getExam(['year' => $this->year]);
         $d['my_classes'] = $this->my_class->all();
         $d['tt_records'] = $this->tt->getAllRecords();
@@ -333,9 +366,67 @@ class TimeTableController extends Controller
 
     /*********** RECORDS *************/
 
+    protected function authorizeViewRecord($ttr_id)
+    {
+        $ttr = $this->tt->findRecord($ttr_id);
+        if (!$ttr) {
+            abort(404, __('Timetable record not found.'));
+        }
+
+        if (Qs::userIsTeamSA()) {
+            return $ttr;
+        }
+
+        // Non-administrators must not view unpublished examination timetables
+        if ($ttr->exam_id) {
+            $exam = $this->exam->find($ttr->exam_id);
+            if (!$exam || !$exam->isPublished()) {
+                abort(403, __('Unpublished examination timetables are not accessible.'));
+            }
+        }
+
+        $user = auth()->user();
+
+        if (Qs::userIsStudent()) {
+            $sr = \App\Models\StudentRecord::where('user_id', $user->id)->first();
+            if (!$sr || $sr->my_class_id != $ttr->my_class_id) {
+                abort(403, __('You are not authorized to view timetables of other classes.'));
+            }
+            return $ttr;
+        }
+
+        if (Qs::userIsParent()) {
+            $hasChildInClass = \App\Models\StudentRecord::where('my_parent_id', $user->id)
+                ->where('my_class_id', $ttr->my_class_id)
+                ->exists();
+            if (!$hasChildInClass) {
+                abort(403, __('You are not authorized to view this timetable.'));
+            }
+            return $ttr;
+        }
+
+        if (Qs::userIsTeacher()) {
+            $teachesClass = \App\Models\Section::where('my_class_id', $ttr->my_class_id)->where('teacher_id', $user->id)->exists()
+                || \App\Models\Subject::where('my_class_id', $ttr->my_class_id)->where('teacher_id', $user->id)->exists()
+                || \App\Models\TimeTable::where('ttr_id', $ttr->id)->whereHas('subject', function($q) use ($user) {
+                    $q->where('teacher_id', $user->id);
+                })->exists();
+
+            if (!$teachesClass) {
+                abort(403, __('You are not assigned to this class or timetable.'));
+            }
+            return $ttr;
+        }
+
+        abort(403);
+    }
+
     public function edit_record($ttr_id)
     {
         $d['ttr'] = $ttr = $this->tt->findRecord($ttr_id);
+        if (!$ttr) {
+            abort(404, __('Timetable record not found.'));
+        }
         $d['exams'] = $this->exam->getExam(['year' => $ttr->year]);
         $d['my_classes'] = $this->my_class->all();
 
@@ -344,13 +435,15 @@ class TimeTableController extends Controller
 
     public function show_record($ttr_id)
     {
+        $ttr = $this->authorizeViewRecord($ttr_id);
+
         $d_time = [];
-        $d['ttr'] = $ttr = $this->tt->findRecord($ttr_id);
-        $d['ttr_id'] = $ttr_id;
+        $d['ttr'] = $ttr;
+        $d['ttr_id'] = $ttr->id;
         $d['my_class'] = $this->my_class->find($ttr->my_class_id);
 
-        $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr_id);
-        $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr_id]);
+        $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr->id);
+        $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr->id]);
 
         if($ttr->exam_id){
             $d['exam_id'] = $ttr->exam_id;
@@ -374,15 +467,18 @@ class TimeTableController extends Controller
 
         return view('pages.support_team.timetables.show', $d);
     }
+
     public function print_record($ttr_id)
     {
+        $ttr = $this->authorizeViewRecord($ttr_id);
+
         $d_time = [];
-        $d['ttr'] = $ttr = $this->tt->findRecord($ttr_id);
-        $d['ttr_id'] = $ttr_id;
+        $d['ttr'] = $ttr;
+        $d['ttr_id'] = $ttr->id;
         $d['my_class'] = $this->my_class->find($ttr->my_class_id);
 
-        $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr_id);
-        $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr_id]);
+        $d['time_slots'] = $tms = $this->tt->getTimeSlotByTTR($ttr->id);
+        $d['tts'] = $tts = $this->tt->getTimeTable(['ttr_id' => $ttr->id]);
 
         if($ttr->exam_id){
             $d['exam_id'] = $ttr->exam_id;

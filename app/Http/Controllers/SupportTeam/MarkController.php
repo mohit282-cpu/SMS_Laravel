@@ -476,9 +476,15 @@ class MarkController extends Controller
             }
 
             \Illuminate\Support\Facades\DB::commit();
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\DB::rollBack();
-            return response()->json(['ok' => false, 'msg' => $e->getMessage()], 500);
+            $correlationId = (string) \Illuminate\Support\Str::uuid();
+            \Illuminate\Support\Facades\Log::error("Mark update transaction failed [Ref: {$correlationId}]: " . $e->getMessage(), [
+                'correlation_id' => $correlationId,
+                'user_id' => \Illuminate\Support\Facades\Auth::id(),
+                'exception' => $e,
+            ]);
+            return response()->json(['ok' => false, 'msg' => __('Failed to update marks. Please try again. Reference ID: :id', ['id' => $correlationId])], 500);
         }
 
         return Qs::jsonUpdateOk();

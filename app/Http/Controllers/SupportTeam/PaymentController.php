@@ -194,8 +194,14 @@ class PaymentController extends Controller
         $idempotencyKey = $req->input('idempotency_key') ?: $req->header('X-Idempotency-Key');
         $cacheKey = null;
         if (!empty($idempotencyKey)) {
-            $cacheKey = 'pay_idem_' . md5($pr_id . '_' . $idempotencyKey);
-            if (\Illuminate\Support\Facades\Cache::has($cacheKey)) {
+            $cacheKey = 'pay_idem_' . md5($idempotencyKey);
+            $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
+            if ($cached) {
+                if ($cached['pr_id'] != $pr_id || abs((float)$cached['amt_paid'] - (float)$rawAmt) > 0.001) {
+                    return response()->json([
+                        'msg' => __('Idempotency key has already been used with different payment parameters.')
+                    ], 422);
+                }
                 return response()->json([
                     'ok' => true,
                     'msg' => __('Payment already processed.'),
@@ -273,7 +279,10 @@ class PaymentController extends Controller
             }
 
             if ($cacheKey) {
-                \Illuminate\Support\Facades\Cache::put($cacheKey, true, now()->addMinutes(10));
+                \Illuminate\Support\Facades\Cache::put($cacheKey, [
+                    'pr_id' => $pr_id,
+                    'amt_paid' => (float)$payAmt,
+                ], now()->addMinutes(30));
             }
 
             return Qs::jsonUpdateOk();
