@@ -14,10 +14,17 @@ class ExampleTest extends TestCase
      */
     public function testGuestIsRedirectedToLogin()
     {
-        $response = $this->get('/');
+        $response = $this->get('/dashboard');
 
         $response->assertStatus(302);
         $response->assertRedirect('/login');
+    }
+
+    public function testLandingPageLoads()
+    {
+        $response = $this->get('/');
+
+        $response->assertStatus(200);
     }
 
     public function testLoginPageLoads()

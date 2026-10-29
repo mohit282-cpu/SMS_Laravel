@@ -18,11 +18,11 @@ Route::get('/', 'LandingController@index')->name('landing.home');
 Route::get('/about', 'LandingController@about')->name('landing.about');
 Route::get('/campus-events', 'LandingController@events')->name('landing.events');
 Route::get('/contact', 'LandingController@contact')->name('landing.contact');
-Route::post('/contact', 'LandingController@submit_inquiry')->name('landing.submit_inquiry');
+Route::post('/contact', 'LandingController@submit_inquiry')->name('landing.submit_inquiry')->middleware('throttle:6,1');
 
 /* New Admission & Entrance Examination Result Subsystem */
 Route::get('/admissions/results', 'LandingController@entrance_results')->name('admissions.results');
-Route::post('/admissions/results/search', 'LandingController@entrance_result_search')->name('admissions.results.search');
+Route::post('/admissions/results/search', 'LandingController@entrance_result_search')->name('admissions.results.search')->middleware('throttle:10,1');
 
 Route::group(['middleware' => ['auth', 'no_store']], function () {
     /* PWA Push Subscription Endpoints */
@@ -257,7 +257,7 @@ Route::group(['namespace' => 'SuperAdmin','middleware' => 'super_admin', 'prefix
 /************************ LANDING PAGE & ADMISSIONS (SUPER ADMIN) ****************************/
 Route::group(['namespace' => 'SupportTeam', 'middleware' => ['auth', 'super_admin'], 'prefix' => 'landing-settings'], function(){
     Route::get('/', 'LandingSettingsController@index')->name('landing_settings.index');
-    Route::post('/update', 'LandingSettingsController@update')->name('landing_settings.update');
+    Route::match(['post', 'put'], '/update', 'LandingSettingsController@update')->name('landing_settings.update');
     Route::get('/inquiries', 'LandingSettingsController@inquiries')->name('landing_settings.inquiries');
     Route::post('/inquiries/{id}/status', 'LandingSettingsController@update_inquiry_status')->name('landing_settings.inquiries.status');
     Route::delete('/inquiries/{id}', 'LandingSettingsController@destroy_inquiry')->name('landing_settings.inquiries.delete');

@@ -23,7 +23,7 @@ jobs:
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
@@ -36,7 +36,7 @@ jobs:
         run: composer validate --strict
 
       - name: Cache Composer Dependencies
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -61,6 +61,7 @@ jobs:
           DB_DATABASE: sms_laravel_test
           DB_USERNAME: root
           DB_PASSWORD: root
+          DB_TEST_PASSWORD: root
         run: |
           php artisan migrate --force
           php artisan db:seed --force
@@ -73,20 +74,21 @@ jobs:
           DB_DATABASE: sms_laravel_test
           DB_USERNAME: root
           DB_PASSWORD: root
+          DB_TEST_PASSWORD: root
         run: php artisan test
 
   frontend-build:
     name: Frontend Asset Compilation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 14
           cache: 'npm'
 
       - name: Install NPM Dependencies

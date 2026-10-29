@@ -102,7 +102,10 @@ class AcademicYearAndHolidayTest extends TestCase
     public function test_admin_can_edit_and_update_academic_year()
     {
         $admin = $this->getAdminUser();
-        $ay = AcademicYear::first();
+        $ay = AcademicYear::where('is_closed', false)->first() ?? AcademicYear::first();
+        if ($ay && $ay->is_closed) {
+            $ay->update(['is_closed' => false]);
+        }
 
         // View edit page
         $response = $this->actingAs($admin)->get(route('academic_years.edit', $ay->id));
@@ -129,7 +132,10 @@ class AcademicYearAndHolidayTest extends TestCase
     public function test_admin_can_activate_and_close_academic_year()
     {
         $admin = $this->getAdminUser();
-        $ay = AcademicYear::first();
+        $ay = AcademicYear::where('is_closed', false)->first() ?? AcademicYear::first();
+        if ($ay && $ay->is_closed) {
+            $ay->update(['is_closed' => false]);
+        }
 
         // Activate
         $response = $this->actingAs($admin)->put(route('academic_years.activate', $ay->id));

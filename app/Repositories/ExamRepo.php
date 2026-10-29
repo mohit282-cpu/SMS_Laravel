@@ -112,7 +112,13 @@ class ExamRepo
 
     public function getExamYears($student_id)
     {
-        return Mark::where('student_id', $student_id)->select('year')->distinct()->get();
+        $markYears = Mark::where('student_id', $student_id)->select('year')->distinct()->pluck('year');
+        $examRecordYears = ExamRecord::where('student_id', $student_id)->select('year')->distinct()->pluck('year');
+        $allYears = $markYears->merge($examRecordYears)->filter()->unique()->values();
+
+        return $allYears->map(function ($y) {
+            return (object) ['year' => $y];
+        });
     }
 
     public function getMark($data)

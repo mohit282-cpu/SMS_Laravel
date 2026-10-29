@@ -24,6 +24,11 @@ class NepalExamAndMarksWorkflowTest extends TestCase
 
     protected function getStudent()
     {
+        $sr = \App\Models\StudentRecord::where('grad', 0)->first();
+        if ($sr && $sr->user) {
+            return $sr->user;
+        }
+
         return User::where('user_type', 'student')->first();
     }
 
@@ -292,10 +297,14 @@ class NepalExamAndMarksWorkflowTest extends TestCase
      */
     public function test_student_without_exam_records_shows_informative_message()
     {
-        $students = User::where('user_type', 'student')->get();
+        $students = User::where('user_type', 'student')
+            ->whereHas('student_record', function ($q) {
+                $q->where('grad', 0);
+            })->get();
         $studentWithoutExam = null;
         foreach ($students as $st) {
-            if (\App\Models\ExamRecord::where('student_id', $st->id)->count() === 0) {
+            if (\App\Models\ExamRecord::where('student_id', $st->id)->count() === 0
+                && \App\Models\Mark::where('student_id', $st->id)->count() === 0) {
                 $studentWithoutExam = $st;
                 break;
             }

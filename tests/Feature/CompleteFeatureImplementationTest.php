@@ -45,6 +45,11 @@ class CompleteFeatureImplementationTest extends TestCase
 
     protected function getStudent(): User
     {
+        $sr = StudentRecord::where('grad', 0)->first();
+        if ($sr && $sr->user) {
+            return $sr->user;
+        }
+
         return User::where('user_type', 'student')->first();
     }
 

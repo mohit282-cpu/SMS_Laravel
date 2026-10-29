@@ -19,7 +19,7 @@ class DemoUsersSeeder extends Seeder
      */
     public function run()
     {
-        if (app()->environment('production')) {
+        if (app()->environment('production', 'staging')) {
             throw new \RuntimeException('DemoUsersSeeder is strictly forbidden in production environments.');
         }
 

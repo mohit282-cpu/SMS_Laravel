@@ -14,7 +14,7 @@
                         <span class="badge badge-primary px-3 py-1 mb-2" style="background: rgba(162, 104, 255, 0.15) !important; color: rgb(110, 50, 215) !important; border-color: rgba(162, 104, 255, 0.3) !important;">
                             <i class="icon-shield-check mr-1"></i> {{ Qs::getSystemName() }}
                         </span>
-                        <h1 class="heading">{{ __('Login') }}</h1>
+                        <h1 class="heading">{{ __('Login to your account') }}</h1>
                         <p class="text-muted font-size-sm mb-3">
                             {{ __('Sign in to access your administrative portal') }}
                         </p>

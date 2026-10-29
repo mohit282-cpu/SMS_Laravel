@@ -357,9 +357,10 @@ class SecurityHardeningAndIntegrityTest extends TestCase
         Storage::fake('local');
 
         // Create an unassigned class where teacher teaches nothing
+        $classType = \App\Models\ClassType::first() ?? \App\Models\ClassType::create(['name' => 'General', 'code' => 'GEN']);
         $myClass = MyClass::create([
             'name' => 'Foreign Class ' . rand(100, 999),
-            'class_type_id' => 1,
+            'class_type_id' => $classType->id,
         ]);
 
         $file = UploadedFile::fake()->create('notes.pdf', 500, 'application/pdf');

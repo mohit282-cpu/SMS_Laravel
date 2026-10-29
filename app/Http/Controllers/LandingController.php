@@ -52,8 +52,8 @@ class LandingController extends Controller
     {
         $settings = $this->getCommonSettings();
 
-        // Fetch latest 3 campus events
-        $recentEvents = Event::where('is_published', true)
+        // Fetch latest 3 campus events explicitly published and visible to guests
+        $recentEvents = Event::visibleTo(null)
             ->orderBy('id', 'desc')
             ->take(3)
             ->get();
@@ -78,7 +78,7 @@ class LandingController extends Controller
     {
         $settings = $this->getCommonSettings();
 
-        $events = Event::where('is_published', true)
+        $events = Event::visibleTo(null)
             ->orderBy('id', 'desc')
             ->paginate(9);
 
@@ -139,7 +139,6 @@ class LandingController extends Controller
         $class = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('class_name', ''))), 0, 50);
         $symbol = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('symbol_no', ''))), 0, 50);
         $verification = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('verification_query', ''))), 0, 100);
-        $search = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('search_query', ''))), 0, 100);
 
         $settings = $this->getCommonSettings();
         $isVisible = ($settings['entrance_results_visible'] ?? '0') === '1';
@@ -156,18 +155,22 @@ class LandingController extends Controller
             return redirect()->route('admissions.results');
         }
 
-        if (empty($search) && !empty($symbol)) {
-            $search = $symbol;
-        }
-
-        if (empty($search) && empty($verification)) {
+        // Require exact symbol number to prevent candidate enumeration and privacy leakage
+        if (empty($symbol) || strlen($symbol) < 1) {
             if ($request->ajax() || $request->wantsJson()) {
-                return response()->json(['success' => false, 'status' => 'error', 'message' => 'Please enter a Student Symbol Number or Name.'], 400);
+                return response()->json([
+                    'success' => false,
+                    'status' => 'error',
+                    'message' => 'A valid Student Symbol Number is required to fetch entrance examination results.'
+                ], 400);
             }
-            return redirect()->route('admissions.results')->with('error_msg', 'Please enter a Symbol Number or Student Name.');
+            return redirect()->route('admissions.results')->with('error_msg', 'A valid Student Symbol Number is required.');
         }
 
         $query = EntranceResult::query();
+
+        // Exact symbol number match (strictly prevents wildcards or broad enumeration)
+        $query->where('symbol_no', $symbol);
 
         if (!empty($batch)) {
             $query->where('batch_year', $batch);
@@ -179,51 +182,49 @@ class LandingController extends Controller
             $query->where('class_name', $class);
         }
 
-        if (!empty($search)) {
-            $query->where(function ($q) use ($search) {
-                $q->where('symbol_no', $search)
-                  ->orWhere('student_name', 'like', '%' . $search . '%');
-            });
-        }
-
+        // Secondary verification factor if provided: verify exact roll_no or student_name match
         if (!empty($verification)) {
             $query->where(function ($q) use ($verification) {
-                $q->where('student_name', 'like', '%' . $verification . '%')
+                $q->where('student_name', $verification)
+                  ->orWhere('student_name', 'like', '%' . $verification . '%')
                   ->orWhere('roll_no', $verification);
             });
         }
 
-        $results = $query->get();
+        $result = $query->first();
 
-        if ($request->ajax() || $request->wantsJson()) {
-            if ($results->isEmpty()) {
+        if (!$result) {
+            if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'status' => 'not_found',
                     'message' => 'No examination record matched your criteria. Please verify your symbol number, class, and examination.'
                 ], 404);
             }
+            $results = collect();
+        } else {
+            $results = collect([$result]);
+        }
 
+        if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'status' => 'success',
-                'data' => $results->map(function ($r) {
-                    return [
-                        'id' => $r->id,
-                        'batch_year' => $r->batch_year,
-                        'exam_name' => $r->exam_name,
-                        'class_name' => $r->class_name,
-                        'section_name' => $r->section_name,
-                        'symbol_no' => $r->symbol_no,
-                        'roll_no' => $r->roll_no,
-                        'student_name' => $r->student_name,
-                        'attendance' => $r->attendance,
-                        'gpa' => number_format((float)$r->gpa, 2),
-                        'remarks' => $r->remarks,
-                        'marks' => $r->marks,
-                        'created_at' => (string)$r->created_at,
-                    ];
-                })->first() // Return primary matched result object
+                'data' => [
+                    'id' => $result->id,
+                    'batch_year' => $result->batch_year,
+                    'exam_name' => $result->exam_name,
+                    'class_name' => $result->class_name,
+                    'section_name' => $result->section_name,
+                    'symbol_no' => $result->symbol_no,
+                    'roll_no' => $result->roll_no,
+                    'student_name' => $result->student_name,
+                    'attendance' => $result->attendance,
+                    'gpa' => number_format((float)$result->gpa, 2),
+                    'remarks' => $result->remarks,
+                    'marks' => $result->marks,
+                    'created_at' => (string)$result->created_at,
+                ]
             ]);
         }
 
@@ -232,6 +233,6 @@ class LandingController extends Controller
         $classes = EntranceResult::select('class_name')->distinct()->orderBy('class_name', 'asc')->pluck('class_name');
         $settings = ['system_name' => Qs::getSystemName()];
 
-        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'results', 'settings', 'search'));
+        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'results', 'settings', 'symbol'));
     }
 }

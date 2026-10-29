@@ -48,16 +48,31 @@ class LandingSettingsController extends Controller
      */
     public function update(Request $request)
     {
-        $data = $request->except(['_token', '_method']);
+        $validated = $request->validate([
+            'system_name' => 'nullable|string|max:100',
+            'system_title' => 'nullable|string|max:50',
+            'address' => 'nullable|string|max:255',
+            'phone' => 'nullable|string|max:50',
+            'system_email' => 'nullable|email|max:100',
+            'admissions_open' => 'nullable|in:0,1',
+            'entrance_results_visible' => 'nullable|in:0,1',
+            'established_year' => 'nullable|string|max:50',
+            'hero_title' => 'nullable|string|max:255',
+            'hero_subtitle' => 'nullable|string|max:500',
+            'stat_students' => 'nullable|string|max:50',
+            'stat_teachers' => 'nullable|string|max:50',
+            'stat_pass_rate' => 'nullable|string|max:50',
+            'stat_experience' => 'nullable|string|max:50',
+            'director_name' => 'nullable|string|max:100',
+            'director_title' => 'nullable|string|max:150',
+            'principal_name' => 'nullable|string|max:100',
+            'principal_title' => 'nullable|string|max:150',
+            'vice_principal_name' => 'nullable|string|max:100',
+            'vice_principal_title' => 'nullable|string|max:150',
+            'pamphlet_image' => 'nullable|string|max:255',
+        ]);
 
-        if ($request->has('admissions_open')) {
-            $data['admissions_open'] = $request->input('admissions_open');
-        }
-        if ($request->has('entrance_results_visible')) {
-            $data['entrance_results_visible'] = $request->input('entrance_results_visible');
-        }
-
-        foreach ($data as $key => $val) {
+        foreach ($validated as $key => $val) {
             Setting::updateOrCreate(
                 ['type' => $key],
                 ['description' => is_null($val) ? '' : $val]
@@ -94,17 +109,19 @@ class LandingSettingsController extends Controller
      */
     public function update_inquiry_status(Request $request, $id)
     {
-        $inquiry = AdmissionInquiry::findOrFail($id);
-        $status = $request->input('status', 'contacted');
-        $notes = $request->input('admin_notes');
+        $validated = $request->validate([
+            'status' => 'required|string|in:pending,contacted,reviewed,admitted,closed',
+            'admin_notes' => 'nullable|string|max:2000',
+        ]);
 
-        $inquiry->status = $status;
-        if (!is_null($notes)) {
-            $inquiry->admin_notes = $notes;
+        $inquiry = AdmissionInquiry::findOrFail($id);
+        $inquiry->status = $validated['status'];
+        if (array_key_exists('admin_notes', $validated)) {
+            $inquiry->admin_notes = $validated['admin_notes'];
         }
         $inquiry->save();
 
-        return back()->with('flash_success', 'Inquiry status updated to ' . strtoupper($status));
+        return back()->with('flash_success', 'Inquiry status updated to ' . strtoupper($validated['status']));
     }
 
     /**
@@ -177,7 +194,7 @@ class LandingSettingsController extends Controller
     public function upload_entrance_results(Request $request)
     {
         $request->validate([
-            'csv_file' => 'required|file|mimes:csv,txt',
+            'csv_file' => 'required|file|mimes:csv,txt|max:5120',
             'batch_year' => 'required|string|max:100',
             'exam_name' => 'required|string|max:255',
             'class_name' => 'required|string|max:100',
@@ -191,23 +208,56 @@ class LandingSettingsController extends Controller
         $handle = fopen($file->getRealPath(), 'r');
         $header = fgetcsv($handle);
 
-        if (!$header) {
-            return back()->with('flash_danger', 'The uploaded CSV file is empty.');
+        if (!$header || count($header) < 6) {
+            if ($handle) fclose($handle);
+            return back()->with('flash_danger', 'The uploaded CSV file must contain a valid header row with at least Symbol No, Roll No, Student Name, Section, Attendance, and at least one Subject column.');
         }
 
         // Expected Columns: Symbol No, Roll No, Student Name, Section, Attendance, Subject:Marks...
         $importedCount = 0;
+        $seenSymbols = [];
+        $rowNumber = 1;
 
         DB::beginTransaction();
         try {
             while (($row = fgetcsv($handle)) !== false) {
-                if (empty($row[0])) continue;
+                $rowNumber++;
+                // Skip completely empty rows
+                if (empty($row) || (count($row) === 1 && trim($row[0]) === '')) continue;
 
                 $symbol_no = trim($row[0] ?? '');
+                if (empty($symbol_no)) {
+                    throw new \InvalidArgumentException("Row {$rowNumber}: Symbol number is required.");
+                }
+
+                // Check for duplicate symbol numbers within the file
+                if (isset($seenSymbols[$symbol_no])) {
+                    throw new \InvalidArgumentException("Row {$rowNumber}: Duplicate symbol number '{$symbol_no}' detected in CSV file.");
+                }
+                $seenSymbols[$symbol_no] = true;
+
                 $roll_no = trim($row[1] ?? '');
                 $student_name = trim($row[2] ?? '');
+                if (empty($student_name)) {
+                    throw new \InvalidArgumentException("Row {$rowNumber}: Student name is required for symbol number '{$symbol_no}'.");
+                }
+
                 $section_name = trim($row[3] ?? 'GENERAL');
                 $attendance = trim($row[4] ?? 'N/A');
+
+                // Sanitize potential CSV formula injection in string fields
+                $sanitizeFormula = function ($val) {
+                    if (is_string($val) && strlen($val) > 0 && in_array($val[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+                        return "'" . $val;
+                    }
+                    return $val;
+                };
+
+                $symbol_no = $sanitizeFormula($symbol_no);
+                $roll_no = $sanitizeFormula($roll_no);
+                $student_name = $sanitizeFormula($student_name);
+                $section_name = $sanitizeFormula($section_name);
+                $attendance = $sanitizeFormula($attendance);
 
                 // Build subjects marks list from column index 5 onwards
                 $marksList = [];
@@ -216,7 +266,17 @@ class LandingSettingsController extends Controller
 
                 for ($i = 5; $i < count($header); $i++) {
                     $subjectName = trim($header[$i]);
-                    $score = isset($row[$i]) ? floatval($row[$i]) : 0;
+                    if (empty($subjectName)) continue;
+
+                    $rawScore = isset($row[$i]) ? trim($row[$i]) : '';
+                    if ($rawScore === '' || !is_numeric($rawScore)) {
+                        throw new \InvalidArgumentException("Row {$rowNumber}: Invalid non-numeric mark '{$rawScore}' for subject '{$subjectName}' (Symbol: {$symbol_no}).");
+                    }
+
+                    $score = floatval($rawScore);
+                    if ($score < 0 || $score > 100) {
+                        throw new \InvalidArgumentException("Row {$rowNumber}: Mark ({$score}) for subject '{$subjectName}' out of range 0-100 (Symbol: {$symbol_no}).");
+                    }
 
                     // Calculate letter grade & GP (Nepal CDC 4.0 scale)
                     $gpInfo = $this->calculateGradePoint($score);
@@ -254,10 +314,15 @@ class LandingSettingsController extends Controller
 
             DB::commit();
             fclose($handle);
+        } catch (\InvalidArgumentException $e) {
+            DB::rollBack();
+            if ($handle) fclose($handle);
+            return back()->with('flash_danger', 'CSV Import Validation Error: ' . $e->getMessage());
         } catch (\Exception $e) {
             DB::rollBack();
-            fclose($handle);
-            return back()->with('flash_danger', 'CSV Import Failed: ' . $e->getMessage());
+            if ($handle) fclose($handle);
+            \Log::error('CSV Entrance Result Import Failed: ' . $e->getMessage());
+            return back()->with('flash_danger', 'CSV Import Failed due to an unexpected error. Please verify the CSV format and try again.');
         }
 
         return back()->with('flash_success', "Successfully imported {$importedCount} student entrance exam records.");

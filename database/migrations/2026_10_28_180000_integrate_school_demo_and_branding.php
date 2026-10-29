@@ -14,41 +14,45 @@ class IntegrateSchoolDemoAndBranding extends Migration
      */
     public function up()
     {
-        // 1. Update Core Settings to Apex Model Secondary School
-        $settingsToUpdate = [
-            'system_name' => 'Apex Model Secondary School',
-            'system_title' => 'Apex Model Secondary School',
-            'address' => 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal',
-            'phone' => '+977-25-560000',
-            'system_email' => 'info@apexschool.edu.np',
-            'logo' => '/landing_assets/images/logo.png',
+        // 1. Introduce Default Core Settings only if missing (never overwrite existing branding)
+        $defaultCoreSettings = [
+            'system_name' => 'School Management System Academy',
+            'system_title' => 'SMS Academy',
+            'address' => '18B North Central Park, Behind Central Square Tourist Center',
+            'phone' => '0123456789',
+            'system_email' => 'smsacademy@sms.com',
+            'logo' => '',
         ];
 
-        foreach ($settingsToUpdate as $type => $val) {
-            DB::table('settings')->updateOrInsert(['type' => $type], ['description' => $val]);
+        foreach ($defaultCoreSettings as $type => $val) {
+            if (!DB::table('settings')->where('type', $type)->exists()) {
+                DB::table('settings')->insert(['type' => $type, 'description' => $val]);
+            }
         }
 
-        // Additional Landing Page Configuration Settings
-        $landingSettings = [
+        // Additional Landing Page Configuration Settings (only if not already set)
+        $defaultLandingSettings = [
             'admissions_open' => '1',
             'established_year' => '2052 B.S. (1995 A.D.)',
             'hero_title' => 'Inspiring Academic Excellence, Leadership & Character.',
-            'hero_subtitle' => 'Nurturing young minds from Early Childhood through Grade 12 with forward-thinking STEM laboratories, comprehensive humanities, and dedicated character discipline in Koshi Province.',
+            'hero_subtitle' => 'Nurturing young minds from Early Childhood through Grade 12 with forward-thinking STEM laboratories, comprehensive humanities, and dedicated character discipline.',
             'stat_students' => '1,850+',
             'stat_teachers' => '95+',
             'stat_pass_rate' => '99.4%',
             'stat_experience' => '30+ Years',
             'pamphlet_image' => 'landing_assets/images/school_pamphlet.jpg',
-            'director_name' => 'Er. Bijay Shrestha',
+            'director_name' => 'Executive Director',
             'director_title' => 'Executive Director & Founder',
-            'principal_name' => 'Prof. Dr. Madhav Prasad Khatiwada',
+            'principal_name' => 'Principal',
             'principal_title' => 'Principal & Academic Head',
-            'vice_principal_name' => 'Mrs. Sunita Thapa',
+            'vice_principal_name' => 'Vice Principal',
             'vice_principal_title' => 'Vice Principal (Student Welfare)',
         ];
 
-        foreach ($landingSettings as $type => $val) {
-            DB::table('settings')->updateOrInsert(['type' => $type], ['description' => $val]);
+        foreach ($defaultLandingSettings as $type => $val) {
+            if (!DB::table('settings')->where('type', $type)->exists()) {
+                DB::table('settings')->insert(['type' => $type, 'description' => $val]);
+            }
         }
 
         // 2. Add image_paths to events table if missing
@@ -90,81 +94,6 @@ class IntegrateSchoolDemoAndBranding extends Migration
                 $table->text('admin_notes')->nullable();
                 $table->timestamps();
             });
-        }
-
-        // 5. Seed historical entrance results from School-Demo SQLite database if available
-        $resultsSqlitePath = base_path('School-Demo/results/database/results.sqlite');
-        if (file_exists($resultsSqlitePath) && DB::table('entrance_results')->count() === 0) {
-            try {
-                $sqlite = new PDO('sqlite:' . $resultsSqlitePath);
-                $sqlite->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $rows = $sqlite->query("SELECT * FROM student_results")->fetchAll(PDO::FETCH_ASSOC);
-
-                $insertBatch = [];
-                foreach ($rows as $row) {
-                    $insertBatch[] = [
-                        'batch_year' => $row['batch_year'] ?? '2083 B.S.',
-                        'exam_name' => $row['exam_name'],
-                        'class_name' => $row['class_name'],
-                        'section_name' => $row['section_name'] ?? 'GENERAL',
-                        'symbol_no' => $row['symbol_no'],
-                        'roll_no' => $row['roll_no'] ?? '',
-                        'student_name' => $row['student_name'],
-                        'attendance' => $row['attendance'] ?? 'N/A',
-                        'gpa' => $row['gpa'] ?? 0.00,
-                        'remarks' => $row['remarks'] ?? 'ELIGIBLE FOR ADMISSION',
-                        'marks_json' => $row['marks_json'],
-                        'created_at' => $row['created_at'] ?? now(),
-                        'updated_at' => now(),
-                    ];
-
-                    if (count($insertBatch) >= 50) {
-                        DB::table('entrance_results')->insert($insertBatch);
-                        $insertBatch = [];
-                    }
-                }
-                if (!empty($insertBatch)) {
-                    DB::table('entrance_results')->insert($insertBatch);
-                }
-            } catch (\Exception $e) {
-                // Ignore seed error if file is inaccessible
-            }
-        }
-
-        // 6. Seed events from School-Demo SQLite database if events table is empty of campus events
-        $eventsSqlitePath = base_path('School-Demo/database/school.sqlite');
-        if (file_exists($eventsSqlitePath)) {
-            try {
-                $sqliteSchool = new PDO('sqlite:' . $eventsSqlitePath);
-                $events = $sqliteSchool->query("SELECT * FROM events")->fetchAll(PDO::FETCH_ASSOC);
-
-                foreach ($events as $ev) {
-                    $exists = DB::table('events')->where('title', $ev['title'])->exists();
-                    if (!$exists) {
-                        // Adjust image path prefix to landing_assets
-                        $imagesJson = $ev['image_paths'];
-                        $imagesJson = str_replace('assets/images/', 'landing_assets/images/', $imagesJson);
-
-                        DB::table('events')->insert([
-                            'title' => $ev['title'],
-                            'description' => $ev['description'],
-                            'category' => 'school_event',
-                            'start_date' => now()->toDateString(),
-                            'end_date' => now()->toDateString(),
-                            'start_date_bs' => $ev['event_date_bs'] ?? '2083-02-18',
-                            'end_date_bs' => $ev['event_date_bs'] ?? '2083-02-18',
-                            'is_all_day' => true,
-                            'is_published' => true,
-                            'location' => 'Apex Campus & Sports Arena, Koshi Province',
-                            'image_paths' => $imagesJson,
-                            'created_at' => now(),
-                            'updated_at' => now(),
-                        ]);
-                    }
-                }
-            } catch (\Exception $e) {
-                // Ignore seed error
-            }
         }
     }
 

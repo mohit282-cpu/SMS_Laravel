@@ -185,8 +185,15 @@ class Event extends Model
     public function scopeVisibleTo($query, ?User $user = null)
     {
         if (!$user) {
-            // Guest sees only published school-wide events
-            return $query->where('is_published', true)->where('target_audience', 'all');
+            // Guest sees only explicitly public, published school-wide events
+            return $query->where('is_published', true)
+                ->where('target_audience', 'all')
+                ->where(function ($q) {
+                    $q->whereNull('exam_id')
+                      ->orWhereHas('exam', function ($examQ) {
+                          $examQ->where('status', 'published');
+                      });
+                });
         }
 
         // Super Admin and Admin see all events (published and draft)
