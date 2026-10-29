@@ -6,6 +6,13 @@ on:
   pull_request:
     branches: [ main, testing ]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
   laravel-tests:
     name: PHP Tests & Linting
@@ -19,7 +26,7 @@ jobs:
           MYSQL_DATABASE: sms_laravel_test
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
 
     steps:
       - name: Checkout Code
@@ -31,53 +38,109 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, xml, ctype, iconv, mysql, pdo_mysql, gmp, bcmath, gd, zip
           coverage: none
+          tools: composer:v2
 
       - name: Validate composer.json
         run: composer validate --strict
 
-      - name: Composer Security Audit
-        run: composer audit || true
+      - name: Setup Application Environment
+        run: cp .env.example .env
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
+          path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: PHP Syntax Linting
-        run: find app bootstrap config database routes -type f -name "*.php" -exec php -l {} +
+      - name: Generate Application Key
+        run: php artisan key:generate
 
-      - name: Setup Application Environment
+      - name: Composer Security Audit
+        run: composer audit --locked
+        continue-on-error: true
+
+      - name: PHP Syntax Linting
         run: |
-          cp .env.example .env
-          php artisan key:generate
+          errors=0
+          while IFS= read -r -d '' file; do
+            if ! php -l "$file" > /dev/null 2>&1; then
+              echo "Syntax error in $file"
+              php -l "$file"
+              errors=$((errors + 1))
+            fi
+          done < <(find app bootstrap config database routes tests -type f -name "*.php" -print0)
+          if [ $errors -ne 0 ]; then
+            echo "$errors PHP syntax errors found!"
+            exit 1
+          fi
+          echo "All PHP files passed syntax linting."
+
+      - name: Verify Laravel Configuration & Routes
+        env:
+          APP_KEY: base64:fakekeyforverificationonlytesting123456=
+          DB_CONNECTION: sqlite
+          DB_DATABASE: ":memory:"
+        run: |
+          php artisan config:clear
+          php artisan route:list --columns=method,uri,name,action
+
+      - name: Verify MySQL Connection
+        run: |
+          php -r "
+            \$retries = 15;
+            while (\$retries > 0) {
+              try {
+                new PDO('mysql:host=127.0.0.1;port=3306;dbname=sms_laravel_test', 'root', 'root');
+                echo 'MySQL service is connected and ready.' . PHP_EOL;
+                exit(0);
+              } catch (Exception \$e) {
+                echo 'Waiting for MySQL... (' . \$e->getMessage() . ')' . PHP_EOL;
+                sleep(2);
+                \$retries--;
+              }
+            }
+            echo 'Unable to connect to MySQL service container.' . PHP_EOL;
+            exit(1);
+          "
 
       - name: Run Migrations on Isolated Test Database
         env:
           DB_CONNECTION: mysql_test
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
+          DB_TEST_DATABASE: sms_laravel_test
+          DB_TEST_USERNAME: root
+          DB_TEST_PASSWORD: root
+          DB_TEST_HOST: 127.0.0.1
+          DB_TEST_PORT: 3306
           DB_DATABASE: sms_laravel_test
           DB_USERNAME: root
           DB_PASSWORD: root
-          DB_TEST_PASSWORD: root
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
         run: |
-          php artisan migrate --force
-          php artisan db:seed --force
+          php artisan migrate --force --database=mysql_test
+          php artisan db:seed --force --database=mysql_test
 
       - name: Run Test Suite
         env:
           DB_CONNECTION: mysql_test
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
+          DB_TEST_DATABASE: sms_laravel_test
+          DB_TEST_USERNAME: root
+          DB_TEST_PASSWORD: root
+          DB_TEST_HOST: 127.0.0.1
+          DB_TEST_PORT: 3306
           DB_DATABASE: sms_laravel_test
           DB_USERNAME: root
           DB_PASSWORD: root
-          DB_TEST_PASSWORD: root
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
         run: php artisan test
 
   frontend-build:
@@ -98,7 +161,14 @@ jobs:
         run: npm ci
 
       - name: NPM Dependency Audit
-        run: npm audit || true
+        run: npm audit
+        continue-on-error: true
 
       - name: Compile Production Assets
         run: npm run prod
+
+      - name: Verify Compiled Assets
+        run: |
+          test -f public/js/app.js || { echo "public/js/app.js is missing!"; exit 1; }
+          test -f public/css/app.css || { echo "public/css/app.css is missing!"; exit 1; }
+          echo "Frontend assets compiled successfully."
