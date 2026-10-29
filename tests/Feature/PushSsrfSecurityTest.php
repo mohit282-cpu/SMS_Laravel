@@ -125,4 +125,38 @@ class PushSsrfSecurityTest extends TestCase
         $this->assertContains($result['status'], ['failed', 'no_subscriptions', 'vapid_keys_missing']);
         $this->assertEquals(0, $result['sent']);
     }
+
+    public function test_invalid_endpoint_skipping_does_not_log_sensitive_tokens_in_full()
+    {
+        config([
+            'services.pwa.vapid_public_key' => 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckj0Ks2S0301eBb4EllxmtxdRhRhB4',
+            'services.pwa.vapid_private_key' => '1234567890abcdef1234567890abcdef1234567890a',
+            'services.pwa.vapid_subject' => 'mailto:test@example.com',
+        ]);
+
+        $sensitiveToken = 'SUPER_SENSITIVE_BEARER_AUTH_TOKEN_SECRET_987654321';
+        $maliciousEndpoint = "https://127.0.0.1/push/{$sensitiveToken}";
+
+        PushSubscription::create([
+            'user_id' => $this->admin->id,
+            'endpoint' => $maliciousEndpoint,
+            'endpoint_hash' => hash('sha256', $maliciousEndpoint),
+            'public_key' => 'dummy-public-key',
+            'auth_token' => 'dummy-auth-token',
+        ]);
+
+        \Illuminate\Support\Facades\Log::shouldReceive('warning')
+            ->once()
+            ->withArgs(function ($message) use ($sensitiveToken) {
+                // Ensure the sensitive token/full URL is NOT in the log message
+                return !str_contains($message, $sensitiveToken);
+            });
+
+        // Allow any other info/error logs
+        \Illuminate\Support\Facades\Log::shouldReceive('info')->andReturnNull();
+        \Illuminate\Support\Facades\Log::shouldReceive('error')->andReturnNull();
+
+        $service = app(PwaService::class);
+        $service->sendToUsers([$this->admin->id], 'Title', 'Body');
+    }
 }

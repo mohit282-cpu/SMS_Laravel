@@ -63,31 +63,15 @@ class LoginController extends Controller
      */
     protected function validateLogin(Request $request)
     {
-        // 1. Sanitize identity input: strip null bytes, newlines, and normalize whitespace
-        $rawIdentity = (string) $request->input('identity', '');
-        $identity = trim(str_replace(["\0", "\x00", "\r", "\n"], '', $rawIdentity));
-
-        // 2. Strict validation rules against SQL injection patterns and buffer overflows
-        $rules = [
-            'identity' => [
-                'required',
-                'string',
-                'max:100',
-                function ($attribute, $value, $fail) {
-                    // Block typical SQL injection vectors: quote escaping, comment sequences, union/sleep/benchmark exploits
-                    if (preg_match('/[\'\"\\\;]|(--)|(\/\*)|(\*\/)|(\b(union|select|insert|update|delete|drop|alter|truncate|exec|benchmark|sleep)\b)/i', $value)) {
-                        $fail('Invalid login credential characters detected.');
-                    }
-                },
-            ],
+        $validated = $request->validate([
+            'identity' => ['required', 'string', 'max:100'],
             'password' => ['required', 'string', 'max:255'],
-        ];
+        ]);
 
-        $request->validate($rules);
-
-        // Merge sanitized identity into request
-        $isEmail = filter_var($identity, FILTER_VALIDATE_EMAIL);
+        $identity = trim($validated['identity']);
+        $isEmail = filter_var($identity, FILTER_VALIDATE_EMAIL) !== false;
         $field = $isEmail ? 'email' : 'username';
+
         $request->merge([
             'identity' => $identity,
             $field => $identity,

@@ -232,7 +232,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Executive Director Name') }}:</label>
-                                <input name="director_name" value="{{ $settings['director_name'] ?? 'Er. Bijay Shrestha' }}" type="text" class="form-control">
+                                <input name="director_name" value="{{ $settings['director_name'] ?? '' }}" type="text" class="form-control" placeholder="e.g. Executive Director">
                             </div>
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Director Title') }}:</label>
@@ -243,7 +243,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Principal Name') }}:</label>
-                                <input name="principal_name" value="{{ $settings['principal_name'] ?? 'Prof. Dr. Madhav Prasad Khatiwada' }}" type="text" class="form-control">
+                                <input name="principal_name" value="{{ $settings['principal_name'] ?? '' }}" type="text" class="form-control" placeholder="e.g. Principal">
                             </div>
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Principal Title') }}:</label>
@@ -254,7 +254,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Vice Principal Name') }}:</label>
-                                <input name="vice_principal_name" value="{{ $settings['vice_principal_name'] ?? 'Mrs. Sunita Thapa' }}" type="text" class="form-control">
+                                <input name="vice_principal_name" value="{{ $settings['vice_principal_name'] ?? '' }}" type="text" class="form-control" placeholder="e.g. Vice Principal">
                             </div>
                             <div class="form-group">
                                 <label class="font-weight-semibold">{{ __('Vice Principal Title') }}:</label>

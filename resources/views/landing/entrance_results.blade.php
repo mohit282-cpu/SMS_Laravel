@@ -241,11 +241,17 @@
             <!-- Header Block with Double Line Accent -->
             <div class="text-center border-b-4 border-double border-navy-800 pb-4 mb-6">
                 <div class="flex items-center justify-center gap-4 mb-2">
-                    <img src="{{ asset('landing_assets/images/logo.png') }}" alt="Apex Emblem" class="w-16 h-16 object-contain">
+                    <img src="{{ asset('landing_assets/images/logo.png') }}" alt="{{ $settings['system_name'] ?? 'School Emblem' }}" class="w-16 h-16 object-contain">
                     <div>
-                        <h2 class="text-xl sm:text-2xl font-black text-navy-800 tracking-tight uppercase">{{ $settings['system_name'] ?? 'Apex Model Secondary School' }}</h2>
-                        <p class="text-xs font-bold text-rose-800 tracking-wider">Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal</p>
-                        <p class="text-xs text-slate-600 font-medium">Estd. 2052 B.S. (1995 A.D.) | Phone: +977-25-560000 | Web: apexschool.edu.np</p>
+                        <h2 class="text-xl sm:text-2xl font-black text-navy-800 tracking-tight uppercase">{{ $settings['system_name'] ?? 'School Management System Academy' }}</h2>
+                        @if(!empty($settings['address']))
+                            <p class="text-xs font-bold text-rose-800 tracking-wider">{{ $settings['address'] }}</p>
+                        @endif
+                        <p class="text-xs text-slate-600 font-medium">
+                            @if(!empty($settings['established_year'])) Estd. {{ $settings['established_year'] }} @endif
+                            @if(!empty($settings['phone'])) | Phone: {{ $settings['phone'] }} @endif
+                            @if(!empty($settings['system_email'])) | Email: {{ $settings['system_email'] }} @endif
+                        </p>
                     </div>
                 </div>
                 <div class="inline-block mt-2 bg-navy-800 text-amber-300 font-bold px-6 py-1 rounded-full text-xs uppercase tracking-widest shadow-sm">

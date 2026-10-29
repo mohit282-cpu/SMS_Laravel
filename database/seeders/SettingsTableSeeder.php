@@ -14,14 +14,14 @@ class SettingsTableSeeder extends Seeder
     public function run()
     {
         $data = [
-            ['type' => 'current_session', 'description' => '2018-2019'],
+            ['type' => 'current_session', 'description' => '2083/84 BS'],
             ['type' => 'system_title', 'description' => 'SMS Academy'],
             ['type' => 'system_name', 'description' => 'School Management System Academy'],
-            ['type' => 'term_ends', 'description' => '7/10/2018'],
-            ['type' => 'term_begins', 'description' => '7/10/2018'],
-            ['type' => 'phone', 'description' => '0123456789'],
-            ['type' => 'address', 'description' => '18B North Central Park, Behind Central Square Tourist Center'],
-            ['type' => 'system_email', 'description' => 'smsacademy@sms.com'],
+            ['type' => 'term_ends', 'description' => ''],
+            ['type' => 'term_begins', 'description' => ''],
+            ['type' => 'phone', 'description' => ''],
+            ['type' => 'address', 'description' => ''],
+            ['type' => 'system_email', 'description' => 'info@smsacademy.edu'],
             ['type' => 'alt_email', 'description' => ''],
             ['type' => 'email_host', 'description' => ''],
             ['type' => 'email_pass', 'description' => ''],

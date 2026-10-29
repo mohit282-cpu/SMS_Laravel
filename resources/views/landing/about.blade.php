@@ -117,13 +117,13 @@
             <div class="leadership-grid">
                 <div class="leader-card scroll-anim" data-anim="left">
                     <div class="leader-quote">
-                        "Education is not merely the transmission of information; it is the ignition of character and purpose. At Apex Model School, we ensure every student gains the confidence to lead in an interconnected world."
+                        "Education is not merely the transmission of information; it is the ignition of character and purpose. We ensure every student gains the confidence to lead in an interconnected world."
                     </div>
                     <div class="leader-meta">
-                        <img src="{{ asset('landing_assets/images/principal.jpg') }}" alt="Prof. Dr. K. P. Adhikari" class="leader-avatar">
+                        <img src="{{ asset('landing_assets/images/principal.jpg') }}" alt="{{ !empty($settings['principal_name']) ? $settings['principal_name'] : 'Principal' }}" class="leader-avatar">
                         <div>
-                            <h3>Prof. Dr. K. P. Adhikari</h3>
-                            <p>Principal (Ph.D. in Education Administration)</p>
+                            <h3>{{ !empty($settings['principal_name']) ? $settings['principal_name'] : 'Principal' }}</h3>
+                            <p>{{ !empty($settings['principal_title']) ? $settings['principal_title'] : 'Principal & Academic Head' }}</p>
                         </div>
                     </div>
                 </div>
@@ -133,10 +133,10 @@
                         "We continuously upgrade our laboratory infrastructure, teacher training frameworks, and digital learning assets to provide scholars with exceptional academic opportunities."
                     </div>
                     <div class="leader-meta">
-                        <img src="{{ asset('landing_assets/images/director.jpg') }}" alt="Mrs. Sunita Sharma" class="leader-avatar">
+                        <img src="{{ asset('landing_assets/images/director.jpg') }}" alt="{{ !empty($settings['director_name']) ? $settings['director_name'] : 'Academic Director' }}" class="leader-avatar">
                         <div>
-                            <h3>Mrs. Sunita Sharma</h3>
-                            <p>Academic Director (M.Sc., 20+ Yrs Curriculum Leadership)</p>
+                            <h3>{{ !empty($settings['director_name']) ? $settings['director_name'] : 'Academic Director' }}</h3>
+                            <p>{{ !empty($settings['director_title']) ? $settings['director_title'] : 'Director of Academics & Curriculum' }}</p>
                         </div>
                     </div>
                 </div>
@@ -144,11 +144,11 @@
         </div>
     </section>
 
-    <!-- School Pamphlet Lightbox Modal (Exact School-Demo) -->
+    <!-- School Pamphlet Lightbox Modal -->
     <div id="pamphletBackdrop" class="modal-backdrop" onclick="closePamphletModal()"></div>
     <div id="pamphletModal" class="modal-window" style="max-width: 860px; text-align: center;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">Apex Model Secondary School — Official Prospectus Poster</h3>
+            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">{{ $settings['system_name'] ?? 'School Management System Academy' }} — Official Prospectus</h3>
             <button onclick="closePamphletModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--text-muted);">&times;</button>
         </div>
         <img src="{{ asset('landing_assets/images/school_pamphlet.jpg') }}" alt="Official School Pamphlet" style="width: 100%; height: auto; border-radius: var(--radius-md); box-shadow: var(--shadow-lg);">

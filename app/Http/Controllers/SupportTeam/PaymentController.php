@@ -96,11 +96,36 @@ class PaymentController extends Controller
 
     public function receipts($pr_id)
     {
+        $dataOrResponse = $this->resolveReceiptData($pr_id);
+        if ($dataOrResponse instanceof \Illuminate\Http\Response || $dataOrResponse instanceof \Illuminate\Http\RedirectResponse) {
+            return $dataOrResponse;
+        }
+
+        return view('pages.support_team.payments.receipt', $dataOrResponse);
+    }
+
+    public function pdf_receipts($pr_id)
+    {
+        $dataOrResponse = $this->resolveReceiptData($pr_id);
+        if ($dataOrResponse instanceof \Illuminate\Http\Response || $dataOrResponse instanceof \Illuminate\Http\RedirectResponse) {
+            return $dataOrResponse;
+        }
+
+        $pdf_name = 'Receipt_' . $dataOrResponse['pr']->ref_no;
+
+        return PDF::loadView('pages.support_team.payments.receipt', $dataOrResponse)->download($pdf_name);
+    }
+
+    /**
+     * Resolve and validate receipt data for both web and PDF views.
+     */
+    protected function resolveReceiptData($pr_id)
+    {
         if(!$pr_id) {return Qs::goWithDanger();}
         $pr_id = Qs::decodeHash($pr_id) ?: $pr_id;
 
         try {
-             $d['pr'] = $pr = $this->pay->getRecord(['id' => $pr_id])->with('receipt')->first();
+             $pr = $this->pay->getRecord(['id' => $pr_id])->with('receipt')->first();
         } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $ex) {
             return back()->with('flash_danger', __('msg.rnf'));
         }
@@ -121,6 +146,7 @@ class PaymentController extends Controller
             }
         }
 
+        $d['pr'] = $pr;
         $d['receipts'] = $pr->receipt;
         $d['payment'] = $pr->payment;
         $d['sr'] = $this->student->findByUserId($pr->student_id)->first();
@@ -128,54 +154,7 @@ class PaymentController extends Controller
             return [$s->type => $s->description];
         });
 
-        return view('pages.support_team.payments.receipt', $d);
-    }
-
-    public function pdf_receipts($pr_id)
-    {
-        if(!$pr_id) {return Qs::goWithDanger();}
-        $pr_id = Qs::decodeHash($pr_id) ?: $pr_id;
-
-        try {
-            $d['pr'] = $pr = $this->pay->getRecord(['id' => $pr_id])->with('receipt')->first();
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $ex) {
-            return back()->with('flash_danger', __('msg.rnf'));
-        }
-
-        if(!$pr) {
-            return back()->with('flash_danger', __('msg.rnf'));
-        }
-
-        if (!Qs::userIsTeamAccount()) {
-            if (Qs::userIsStudent() && \Illuminate\Support\Facades\Auth::id() != $pr->student_id) {
-                abort(403);
-            }
-            if (Qs::userIsParent() && !Qs::userIsMyChild($pr->student_id, \Illuminate\Support\Facades\Auth::id())) {
-                abort(403);
-            }
-            if (!Qs::userIsStudent() && !Qs::userIsParent()) {
-                abort(403);
-            }
-        }
-
-        $d['receipts'] = $pr->receipt;
-        $d['payment'] = $pr->payment;
-        $d['sr'] = $sr =$this->student->findByUserId($pr->student_id)->first();
-        $d['s'] = Setting::all()->flatMap(function($s){
-            return [$s->type => $s->description];
-        });
-
-        $pdf_name = 'Receipt_'.$pr->ref_no;
-
-        return PDF::loadView('pages.support_team.payments.receipt', $d)->download($pdf_name);
-    }
-
-    protected function downloadReceipt($page, $data, $name = NULL){
-        $path = 'receipts/file.html';
-        $disk = Storage::disk('local');
-        $disk->put($path, view($page, $data) );
-        $html = $disk->get($path);
-        return PDF::loadHTML($html)->download($name);
+        return $d;
     }
 
     public function pay_now(Request $req, $pr_id)

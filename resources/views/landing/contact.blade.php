@@ -141,14 +141,14 @@
                         <div style="display: flex; flex-direction: column; gap: 1.25rem;">
                             <div class="info-item">
                                 <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Address & Location</span>
-                                <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary-navy); margin-top: 0.2rem;">{{ $settings['system_name'] ?? 'Apex Model Secondary School' }}</div>
-                                <div style="font-size: 0.875rem; color: var(--text-body);">{{ $settings['address'] ?? 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal' }}</div>
+                                <div style="font-size: 0.95rem; font-weight: 700; color: var(--primary-navy); margin-top: 0.2rem;">{{ $settings['system_name'] ?? 'School Management System Academy' }}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-body);">{{ !empty($settings['address']) ? $settings['address'] : 'Campus Administration Desk' }}</div>
                             </div>
 
                             <div class="info-item">
                                 <span style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Telephone & Email</span>
-                                <div style="font-size: 0.875rem; color: var(--text-body); margin-top: 0.2rem;">Phone: <strong>{{ $settings['phone'] ?? '+977-25-560000' }}</strong></div>
-                                <div style="font-size: 0.875rem; color: var(--text-body);">Email: <strong>{{ $settings['system_email'] ?? 'info@apexschool.edu.np' }}</strong></div>
+                                <div style="font-size: 0.875rem; color: var(--text-body); margin-top: 0.2rem;">Phone: <strong>{{ !empty($settings['phone']) ? $settings['phone'] : 'Not Configured' }}</strong></div>
+                                <div style="font-size: 0.875rem; color: var(--text-body);">Email: <strong>{{ !empty($settings['system_email']) ? $settings['system_email'] : 'Not Configured' }}</strong></div>
                             </div>
 
                             <div class="info-item">

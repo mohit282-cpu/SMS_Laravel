@@ -11,6 +11,7 @@ use App\Models\MyClass;
 use App\Models\Notice;
 use App\Models\Section;
 use App\Services\BikramSambatService;
+use App\Http\Requests\Event\EventRequest;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -131,114 +132,22 @@ class EventController extends Controller
     /**
      * Store a newly created event in storage.
      */
-    public function store(Request $request)
+    public function store(EventRequest $request)
     {
-        $request->validate([
-            'title' => 'required|string|max:191',
-            'title_ne' => 'nullable|string|max:191',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'start_date_bs' => 'required|regex:/^\d{4}-\d{2}-\d{2}$/',
-            'end_date_bs' => 'nullable|regex:/^\d{4}-\d{2}-\d{2}$/',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i',
-            'target_audience' => 'required|in:all,teachers,students,parents,classes,class_section',
-            'my_class_id' => 'nullable|required_if:target_audience,classes,class_section|exists:my_classes,id',
-            'section_id' => 'nullable|exists:sections,id',
-            'academic_year_id' => 'nullable|exists:academic_years,id',
-            'location' => 'nullable|string|max:191',
-            'description' => 'nullable|string',
-            'instructions' => 'nullable|string',
-        ]);
-
-        $startDateBs = $request->start_date_bs;
-        $endDateBs = $request->end_date_bs ?: $startDateBs;
-
-        // Validate BS dates using BikramSambatService
-        if (!$this->bsService->isValidBsDate($startDateBs)) {
-            return back()->withInput()->with('flash_danger', __('Invalid start Bikram Sambat (BS) date.'));
-        }
-        if (!$this->bsService->isValidBsDate($endDateBs)) {
-            return back()->withInput()->with('flash_danger', __('Invalid end Bikram Sambat (BS) date.'));
+        $payloadOrRedirect = $this->prepareEventPayload($request);
+        if ($payloadOrRedirect instanceof \Illuminate\Http\RedirectResponse) {
+            return $payloadOrRedirect;
         }
 
-        try {
-            $convStart = $this->bsService->bsToAd($startDateBs);
-            $convEnd = $this->bsService->bsToAd($endDateBs);
-        } catch (\Exception $e) {
-            return back()->withInput()->with('flash_danger', __('Date conversion error: ') . $e->getMessage());
-        }
-
-        if ($convEnd['ad_date'] < $convStart['ad_date']) {
-            return back()->withInput()->with('flash_danger', __('End date cannot be earlier than start date.'));
-        }
-
-        // Validate timed events
-        $isAllDay = $request->has('is_all_day') || (!$request->filled('start_time') && !$request->filled('end_time'));
-        if (!$isAllDay && $request->filled('start_time') && $request->filled('end_time')) {
-            if ($convStart['ad_date'] === $convEnd['ad_date'] && $request->end_time < $request->start_time) {
-                return back()->withInput()->with('flash_danger', __('End time cannot be earlier than start time on the same date.'));
-            }
-        }
-
-        // Validate target audience and class/section relationship
-        $targetAudience = $request->target_audience;
-        $classId = null;
-        $sectionId = null;
-
-        if (in_array($targetAudience, ['classes', 'class_section'], true)) {
-            if (!$request->filled('my_class_id')) {
-                return back()->withInput()->with('flash_danger', __('Please select a class for class-targeted events.'));
-            }
-            $classId = $request->my_class_id;
-            if ($request->filled('section_id')) {
-                $section = Section::where('id', $request->section_id)->where('my_class_id', $classId)->first();
-                if (!$section) {
-                    return back()->withInput()->with('flash_danger', __('The selected section does not belong to the selected class.'));
-                }
-                $sectionId = $section->id;
-            }
-        }
-
-        // Academic session assignment
-        $academicYear = null;
-        if ($request->filled('academic_year_id')) {
-            $academicYear = AcademicYear::find($request->academic_year_id);
-        }
-        if (!$academicYear) {
-            $academicYear = AcademicYear::current();
-        }
-        $session = $academicYear ? $academicYear->code : Qs::getCurrentSession();
-
-        $isClosure = $request->has('is_closure') || in_array($request->category, ['public_holiday', 'school_holiday'], true);
-        $isPublished = $request->has('is_published');
-
-        $event = Event::create([
-            'title' => $request->title,
-            'title_ne' => $request->title_ne ?: $request->title,
-            'description' => $request->description,
-            'category' => $request->category,
-            'start_date' => $convStart['ad_date'],
-            'end_date' => $convEnd['ad_date'],
-            'start_date_bs' => $startDateBs,
-            'end_date_bs' => $endDateBs,
-            'start_time' => $isAllDay ? null : $request->start_time,
-            'end_time' => $isAllDay ? null : $request->end_time,
-            'is_all_day' => $isAllDay,
-            'is_published' => $isPublished,
-            'is_closure' => $isClosure,
-            'academic_year_id' => $academicYear ? $academicYear->id : null,
-            'session' => $session,
-            'target_audience' => $targetAudience,
-            'my_class_id' => $classId,
-            'section_id' => $sectionId,
-            'location' => $request->location,
-            'instructions' => $request->instructions,
+        $payload = array_merge($payloadOrRedirect, [
             'created_by' => Auth::id(),
             'updated_by' => Auth::id(),
         ]);
 
+        $event = Event::create($payload);
+
         // Push notification if published
-        if ($isPublished) {
+        if ($payload['is_published']) {
             $this->dispatchNotification($event);
         }
 
@@ -297,30 +206,46 @@ class EventController extends Controller
     /**
      * Update the specified event in storage.
      */
-    public function update(Request $request, $id)
+    public function update(EventRequest $request, $id)
     {
         $event = Event::findOrFail($id);
 
-        $request->validate([
-            'title' => 'required|string|max:191',
-            'title_ne' => 'nullable|string|max:191',
-            'category' => 'required|in:' . implode(',', array_keys(Event::CATEGORIES)),
-            'start_date_bs' => 'required|regex:/^\d{4}-\d{2}-\d{2}$/',
-            'end_date_bs' => 'nullable|regex:/^\d{4}-\d{2}-\d{2}$/',
-            'start_time' => 'nullable|date_format:H:i',
-            'end_time' => 'nullable|date_format:H:i',
-            'target_audience' => 'required|in:all,teachers,students,parents,classes,class_section',
-            'my_class_id' => 'nullable|required_if:target_audience,classes,class_section|exists:my_classes,id',
-            'section_id' => 'nullable|exists:sections,id',
-            'academic_year_id' => 'nullable|exists:academic_years,id',
-            'location' => 'nullable|string|max:191',
-            'description' => 'nullable|string',
-            'instructions' => 'nullable|string',
+        $payloadOrRedirect = $this->prepareEventPayload($request, $event);
+        if ($payloadOrRedirect instanceof \Illuminate\Http\RedirectResponse) {
+            return $payloadOrRedirect;
+        }
+
+        $payload = array_merge($payloadOrRedirect, [
+            'updated_by' => Auth::id(),
         ]);
 
+        $wasPublished = $event->is_published;
+        $event->update($payload);
+
+        if (!$wasPublished && $payload['is_published']) {
+            $this->dispatchNotification($event);
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => __('Event updated successfully.'),
+                'event' => $event,
+            ]);
+        }
+
+        return redirect()->route('events.index')->with('flash_success', __('Event updated successfully.'));
+    }
+
+    /**
+     * Validate BS date conversions, time order, audience constraints, and prepare event attributes.
+     */
+    protected function prepareEventPayload(EventRequest $request, $existingEvent = null)
+    {
         $startDateBs = $request->start_date_bs;
         $endDateBs = $request->end_date_bs ?: $startDateBs;
 
+        // Validate BS dates using BikramSambatService
         if (!$this->bsService->isValidBsDate($startDateBs)) {
             return back()->withInput()->with('flash_danger', __('Invalid start Bikram Sambat (BS) date.'));
         }
@@ -339,6 +264,7 @@ class EventController extends Controller
             return back()->withInput()->with('flash_danger', __('End date cannot be earlier than start date.'));
         }
 
+        // Validate timed events
         $isAllDay = $request->has('is_all_day') || (!$request->filled('start_time') && !$request->filled('end_time'));
         if (!$isAllDay && $request->filled('start_time') && $request->filled('end_time')) {
             if ($convStart['ad_date'] === $convEnd['ad_date'] && $request->end_time < $request->start_time) {
@@ -365,6 +291,7 @@ class EventController extends Controller
             }
         }
 
+        // Academic session assignment
         $academicYear = null;
         if ($request->filled('academic_year_id')) {
             $academicYear = AcademicYear::find($request->academic_year_id);
@@ -372,13 +299,13 @@ class EventController extends Controller
         if (!$academicYear) {
             $academicYear = AcademicYear::current();
         }
-        $session = $academicYear ? $academicYear->code : ($event->session ?: Qs::getCurrentSession());
+        $fallbackSession = $existingEvent ? ($existingEvent->session ?: Qs::getCurrentSession()) : Qs::getCurrentSession();
+        $session = $academicYear ? $academicYear->code : $fallbackSession;
 
         $isClosure = $request->has('is_closure') || in_array($request->category, ['public_holiday', 'school_holiday'], true);
-        $wasPublished = $event->is_published;
         $isPublished = $request->has('is_published');
 
-        $event->update([
+        return [
             'title' => $request->title,
             'title_ne' => $request->title_ne ?: $request->title,
             'description' => $request->description,
@@ -399,22 +326,7 @@ class EventController extends Controller
             'section_id' => $sectionId,
             'location' => $request->location,
             'instructions' => $request->instructions,
-            'updated_by' => Auth::id(),
-        ]);
-
-        if (!$wasPublished && $isPublished) {
-            $this->dispatchNotification($event);
-        }
-
-        if ($request->ajax()) {
-            return response()->json([
-                'success' => true,
-                'message' => __('Event updated successfully.'),
-                'event' => $event,
-            ]);
-        }
-
-        return redirect()->route('events.index')->with('flash_success', __('Event updated successfully.'));
+        ];
     }
 
     /**

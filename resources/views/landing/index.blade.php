@@ -190,30 +190,30 @@
             <div class="section-header">
                 <span class="section-tag">Leadership Vision</span>
                 <h2 class="section-h2">Guided by Educational Pioneers</h2>
-                <p class="section-desc prose-constrained">Meet the visionary leaders steering Apex Model Secondary School towards regional and national academic distinction.</p>
+                <p class="section-desc prose-constrained">Meet the dedicated leaders steering {{ $settings['system_name'] ?? 'our institution' }} towards academic distinction.</p>
             </div>
 
             <div class="leadership-grid">
                 <div class="leader-card scroll-anim" data-anim="left">
                     <div class="leader-header-block">
-                        <img src="{{ asset('landing_assets/images/principal.jpg') }}" alt="Prof. Dr. K. P. Adhikari" class="leader-avatar-lg">
+                        <img src="{{ asset('landing_assets/images/principal.jpg') }}" alt="{{ !empty($settings['principal_name']) ? $settings['principal_name'] : 'Principal' }}" class="leader-avatar-lg">
                         <div>
-                            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">Prof. Dr. K. P. Adhikari</h3>
-                            <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; margin-top: 0.2rem;">Principal (Ph.D. in Education Administration)</p>
-                            <span style="font-size: 0.75rem; background-color: #dbeafe; color: #1e40af; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.4rem;">30+ Years Leadership</span>
+                            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">{{ !empty($settings['principal_name']) ? $settings['principal_name'] : 'Principal' }}</h3>
+                            <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; margin-top: 0.2rem;">{{ !empty($settings['principal_title']) ? $settings['principal_title'] : 'Principal & Academic Head' }}</p>
+                            <span style="font-size: 0.75rem; background-color: #dbeafe; color: #1e40af; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.4rem;">Academic Administration</span>
                         </div>
                     </div>
                     <div class="leader-quote">
-                        "For three decades, Apex Model Secondary School has stood as a beacon of academic excellence and holistic student formation. Our mission is to inspire critical thinking, foster ethical leadership, and equip scholars with 21st-century competencies."
+                        "Our institution stands as a beacon of academic excellence and holistic student formation. Our mission is to inspire critical thinking, foster ethical leadership, and equip scholars with 21st-century competencies."
                     </div>
                 </div>
 
                 <div class="leader-card scroll-anim" data-anim="right">
                     <div class="leader-header-block">
-                        <img src="{{ asset('landing_assets/images/director.jpg') }}" alt="Mrs. Sunita Sharma" class="leader-avatar-lg">
+                        <img src="{{ asset('landing_assets/images/director.jpg') }}" alt="{{ !empty($settings['director_name']) ? $settings['director_name'] : 'Academic Director' }}" class="leader-avatar-lg">
                         <div>
-                            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">Mrs. Sunita Sharma</h3>
-                            <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; margin-top: 0.2rem;">Academic Director (M.Sc., 20+ Yrs Curriculum)</p>
+                            <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--primary-navy);">{{ !empty($settings['director_name']) ? $settings['director_name'] : 'Academic Director' }}</h3>
+                            <p style="font-size: 0.85rem; color: var(--accent-gold); font-weight: 700; margin-top: 0.2rem;">{{ !empty($settings['director_title']) ? $settings['director_title'] : 'Director of Academics & Curriculum' }}</p>
                             <span style="font-size: 0.75rem; background-color: #dcfce7; color: #166534; font-weight: 700; padding: 0.15rem 0.5rem; border-radius: 4px; display: inline-block; margin-top: 0.4rem;">Curriculum Directorate</span>
                         </div>
                     </div>

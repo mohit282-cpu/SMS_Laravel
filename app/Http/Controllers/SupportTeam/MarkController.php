@@ -128,64 +128,32 @@ class MarkController extends Controller
 
     public function print_view($student_id, $exam_id, $year)
     {
-        $st_id = $this->decodeStudentId($student_id);
-
-        /* Prevent unauthorized access */
-        if(!$this->canAccessStudentRecord($st_id)){
-            return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
+        $dataOrResponse = $this->resolveMarksheetViewData($student_id, $exam_id, $year);
+        if ($dataOrResponse instanceof \Illuminate\Http\Response || $dataOrResponse instanceof \Illuminate\Http\RedirectResponse) {
+            return $dataOrResponse;
         }
 
-        if(Mk::examIsLocked() && !Qs::userIsTeamSA()){
-            Session::put('marks_url', route('marks.show', [Qs::hash($st_id), $year]));
-
-            if(!$this->checkPinVerified($st_id)){
-                return redirect()->route('pins.enter', Qs::hash($st_id));
-            }
-        }
-
-        if(!$this->verifyStudentExamYear($st_id, $year)){
-            return $this->noStudentRecord();
-        }
-
-        $wh = ['student_id' => $st_id, 'exam_id' => $exam_id, 'year' => $year ];
-        $d['marks'] = $mks = $this->exam->getMark($wh);
-        $d['exr'] = $exr = $this->exam->getRecord($wh)->first();
-        if (!$exr) {
-            return $this->noStudentRecord();
-        }
-        $d['my_class'] = $mc = $this->my_class->find($exr->my_class_id);
-        $d['section_id'] = $exr->section_id;
-        $d['ex'] = $exam = $this->exam->find($exam_id);
-        if (!$exam) {
-            return $this->noStudentRecord();
-        }
-
-        /* Prevent students/parents from viewing unpublished results */
-        if (!Qs::userIsTeamSAT() && $exam->status !== 'published') {
-            return redirect(route('dashboard'))->with('flash_danger', __('Results for this examination have not been published yet.'));
-        }
-
-        $d['tex'] = 'tex'.$exam->term;
-        $d['sr'] = $sr = $this->student->getRecord(['user_id' => $st_id])->first();
-        $d['class_type'] = $this->my_class->findTypeByClass($mc->id);
-        $d['subjects'] = $this->my_class->findSubjectByClass($mc->id);
-
-        $d['ct'] = $ct = $d['class_type']->code;
-        $d['year'] = $year;
-        $d['student_id'] = $st_id;
-        $d['exam_id'] = $exam_id;
-
-        $d['skills'] = $this->exam->getSkillByClassType() ?: NULL;
-        $d['s'] = Setting::all()->flatMap(function($s){
-            return [$s->type => $s->description];
-        });
-
-        //$d['mark_type'] = Qs::getMarkType($ct);
-
-        return view('pages.support_team.marks.print.index', $d);
+        return view('pages.support_team.marks.print.index', $dataOrResponse);
     }
 
     public function pdf_download($student_id, $exam_id, $year)
+    {
+        $dataOrResponse = $this->resolveMarksheetViewData($student_id, $exam_id, $year);
+        if ($dataOrResponse instanceof \Illuminate\Http\Response || $dataOrResponse instanceof \Illuminate\Http\RedirectResponse) {
+            return $dataOrResponse;
+        }
+
+        $sr = $dataOrResponse['sr'];
+        $exam = $dataOrResponse['ex'];
+        $pdf_name = 'Marksheet_' . ($sr->user->name ?? 'Student') . '_' . $exam->name . '_' . str_replace('/', '-', $year);
+
+        return \PDF::loadView('pages.support_team.marks.print.index', $dataOrResponse)->download($pdf_name);
+    }
+
+    /**
+     * Resolve and validate data required for marksheet print and PDF views.
+     */
+    protected function resolveMarksheetViewData($student_id, $exam_id, $year)
     {
         $st_id = $this->decodeStudentId($student_id);
 
@@ -207,7 +175,7 @@ class MarkController extends Controller
         }
 
         $wh = ['student_id' => $st_id, 'exam_id' => $exam_id, 'year' => $year ];
-        $d['marks'] = $mks = $this->exam->getMark($wh);
+        $d['marks'] = $this->exam->getMark($wh);
         $d['exr'] = $exr = $this->exam->getRecord($wh)->first();
         if (!$exr) {
             return $this->noStudentRecord();
@@ -219,17 +187,17 @@ class MarkController extends Controller
             return $this->noStudentRecord();
         }
 
-        /* Prevent students/parents from downloading unpublished results */
+        /* Prevent students/parents from viewing unpublished results */
         if (!Qs::userIsTeamSAT() && $exam->status !== 'published') {
             return redirect(route('dashboard'))->with('flash_danger', __('Results for this examination have not been published yet.'));
         }
 
         $d['tex'] = 'tex'.$exam->term;
-        $d['sr'] = $sr = $this->student->getRecord(['user_id' => $st_id])->first();
+        $d['sr'] = $this->student->getRecord(['user_id' => $st_id])->first();
         $d['class_type'] = $this->my_class->findTypeByClass($mc->id);
         $d['subjects'] = $this->my_class->findSubjectByClass($mc->id);
 
-        $d['ct'] = $ct = $d['class_type']->code;
+        $d['ct'] = $d['class_type']->code;
         $d['year'] = $year;
         $d['student_id'] = $st_id;
         $d['exam_id'] = $exam_id;
@@ -239,9 +207,7 @@ class MarkController extends Controller
             return [$s->type => $s->description];
         });
 
-        $pdf_name = 'Marksheet_' . ($sr->user->name ?? 'Student') . '_' . $exam->name . '_' . str_replace('/', '-', $year);
-
-        return \PDF::loadView('pages.support_team.marks.print.index', $d)->download($pdf_name);
+        return $d;
     }
 
     public function selector(MarkSelector $req)

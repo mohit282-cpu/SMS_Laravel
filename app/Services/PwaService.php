@@ -258,7 +258,9 @@ class PwaService
             if (empty($sub->public_key) || empty($sub->auth_token)) {
                 $skippedCount++;
             } elseif (!\App\Services\PushEndpointValidator::isValid($sub->endpoint)) {
-                Log::warning("Skipping push subscription with invalid or prohibited endpoint: {$sub->endpoint}");
+                $maskedHost = parse_url($sub->endpoint, PHP_URL_HOST) ?: 'unknown';
+                $hashPrefix = substr(hash('sha256', (string) $sub->endpoint), 0, 8);
+                Log::warning("Skipping push subscription with invalid or prohibited endpoint on host: {$maskedHost} (hash prefix: {$hashPrefix})");
                 $skippedCount++;
             } else {
                 $validSubscriptions[] = $sub;

@@ -140,15 +140,8 @@ class TimeTableController extends Controller
             return Qs::goWithDanger('tt.index');
         }
 
-        if (!Qs::userIsTeamSA()) {
-            if (Qs::userIsTeacher()) {
-                $isClassTeacher = \App\Models\Section::where('my_class_id', $ttr->my_class_id)->where('teacher_id', auth()->id())->exists();
-                if (!$isClassTeacher) {
-                    abort(403, __('Only assigned class teachers can manage class timetable.'));
-                }
-            } else {
-                abort(403);
-            }
+        if (!$this->canManageTimeTableRecord($ttr)) {
+            abort(403, __('Only assigned class teachers can manage class timetable.'));
         }
 
         $d['time_slots'] = $this->tt->getTimeSlotByTTR($ttr_id);
@@ -174,15 +167,8 @@ class TimeTableController extends Controller
             return response()->json(['msg' => __('Record not found.'), 'ok' => false], 404);
         }
 
-        if (!Qs::userIsTeamSA()) {
-            if (Qs::userIsTeacher()) {
-                $isClassTeacher = \App\Models\Section::where('my_class_id', $ttr->my_class_id)->where('teacher_id', auth()->id())->exists();
-                if (!$isClassTeacher) {
-                    return response()->json(['msg' => __('Only assigned class teachers can manage class timetable.'), 'ok' => false], 403);
-                }
-            } else {
-                return response()->json(['msg' => __('Unauthorized.'), 'ok' => false], 403);
-            }
+        if (!$this->canManageTimeTableRecord($ttr)) {
+            return response()->json(['msg' => __('Only assigned class teachers can manage class timetable.'), 'ok' => false], 403);
         }
 
         $tms = $this->tt->findTimeSlot($req->ts_id);
@@ -236,15 +222,8 @@ class TimeTableController extends Controller
             return back()->with('flash_danger', __('Record not found.'));
         }
 
-        if (!Qs::userIsTeamSA()) {
-            if (Qs::userIsTeacher()) {
-                $isClassTeacher = \App\Models\Section::where('my_class_id', $ttr->my_class_id)->where('teacher_id', auth()->id())->exists();
-                if (!$isClassTeacher) {
-                    return back()->with('flash_danger', __('Only assigned class teachers can manage class timetable.'));
-                }
-            } else {
-                abort(403);
-            }
+        if (!$this->canManageTimeTableRecord($ttr)) {
+            return back()->with('flash_danger', __('Only assigned class teachers can manage class timetable.'));
         }
 
         $tms = $this->tt->findTimeSlot($req->ts_id);
@@ -527,5 +506,23 @@ class TimeTableController extends Controller
     {
         $this->tt->deleteRecord($ttr_id);
         return back()->with('flash_success', __('msg.delete_ok'));
+    }
+
+    /**
+     * Check if authenticated user is authorized to manage the given timetable record.
+     */
+    protected function canManageTimeTableRecord($ttr): bool
+    {
+        if (Qs::userIsTeamSA()) {
+            return true;
+        }
+
+        if (Qs::userIsTeacher() && $ttr) {
+            return \App\Models\Section::where('my_class_id', $ttr->my_class_id)
+                ->where('teacher_id', auth()->id())
+                ->exists();
+        }
+
+        return false;
     }
 }

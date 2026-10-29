@@ -21,27 +21,29 @@ class LandingController extends Controller
         return $setting ? $setting->description : $default;
     }
 
-    protected function getCommonSettings()
+    protected function getCommonSettings(): array
     {
+        $allSettings = Setting::all()->pluck('description', 'type');
+
         return [
-            'system_name' => Qs::getSystemName(),
-            'system_title' => Qs::getSystemTitle(),
-            'admissions_open' => $this->getSetting('admissions_open', '1'),
-            'entrance_results_visible' => $this->getSetting('entrance_results_visible', '0'),
-            'established_year' => $this->getSetting('established_year', '2052 B.S. (1995 A.D.)'),
-            'hero_title' => $this->getSetting('hero_title', 'Inspiring Academic Excellence, Leadership & Character.'),
-            'hero_subtitle' => $this->getSetting('hero_subtitle', 'Nurturing young minds from Early Childhood through Grade 12 with forward-thinking STEM laboratories, comprehensive humanities, and dedicated character discipline in Koshi Province.'),
-            'stat_students' => $this->getSetting('stat_students', '1,850+'),
-            'stat_teachers' => $this->getSetting('stat_teachers', '95+'),
-            'stat_pass_rate' => $this->getSetting('stat_pass_rate', '99.4%'),
-            'stat_experience' => $this->getSetting('stat_experience', '30+ Years'),
-            'director_name' => $this->getSetting('director_name', 'Mrs. Sunita Sharma'),
-            'director_title' => $this->getSetting('director_title', 'Academic Director (M.Sc., 20+ Yrs Curriculum)'),
-            'principal_name' => $this->getSetting('principal_name', 'Prof. Dr. K. P. Adhikari'),
-            'principal_title' => $this->getSetting('principal_title', 'Principal (Ph.D. in Education Administration)'),
-            'phone' => $this->getSetting('phone', '+977-25-560000'),
-            'address' => $this->getSetting('address', 'Ward No. 3, Main Highway Corridor, Itahari-5, Sunsari, Koshi Province, Nepal'),
-            'system_email' => $this->getSetting('system_email', 'info@apexschool.edu.np'),
+            'system_name' => $allSettings->get('system_name') ?: Qs::getSystemName(),
+            'system_title' => $allSettings->get('system_title') ?: Qs::getSystemTitle(),
+            'admissions_open' => (string) ($allSettings->get('admissions_open') ?? '1'),
+            'entrance_results_visible' => (string) ($allSettings->get('entrance_results_visible') ?? '0'),
+            'established_year' => (string) ($allSettings->get('established_year') ?? ''),
+            'hero_title' => (string) ($allSettings->get('hero_title') ?: 'Inspiring Academic Excellence, Leadership & Character.'),
+            'hero_subtitle' => (string) ($allSettings->get('hero_subtitle') ?: 'Nurturing young minds through holistic education, comprehensive academics, and character development.'),
+            'stat_students' => (string) ($allSettings->get('stat_students') ?? ''),
+            'stat_teachers' => (string) ($allSettings->get('stat_teachers') ?? ''),
+            'stat_pass_rate' => (string) ($allSettings->get('stat_pass_rate') ?? ''),
+            'stat_experience' => (string) ($allSettings->get('stat_experience') ?? ''),
+            'director_name' => (string) ($allSettings->get('director_name') ?? ''),
+            'director_title' => (string) ($allSettings->get('director_title') ?? ''),
+            'principal_name' => (string) ($allSettings->get('principal_name') ?? ''),
+            'principal_title' => (string) ($allSettings->get('principal_title') ?? ''),
+            'phone' => (string) ($allSettings->get('phone') ?: ''),
+            'address' => (string) ($allSettings->get('address') ?: ''),
+            'system_email' => (string) ($allSettings->get('system_email') ?: ''),
         ];
     }
 
@@ -134,12 +136,6 @@ class LandingController extends Controller
      */
     public function entrance_result_search(Request $request)
     {
-        $batch = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('batch_year', ''))), 0, 50);
-        $exam = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('exam_name', ''))), 0, 100);
-        $class = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('class_name', ''))), 0, 50);
-        $symbol = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('symbol_no', ''))), 0, 50);
-        $verification = substr(trim(str_replace(["\0", "\x00"], '', (string) $request->input('verification_query', ''))), 0, 100);
-
         $settings = $this->getCommonSettings();
         $isVisible = ($settings['entrance_results_visible'] ?? '0') === '1';
         $isSuperAdmin = auth()->check() && Qs::userIsSuperAdmin();
@@ -155,17 +151,33 @@ class LandingController extends Controller
             return redirect()->route('admissions.results');
         }
 
-        // Require exact symbol number to prevent candidate enumeration and privacy leakage
-        if (empty($symbol) || strlen($symbol) < 1) {
+        $validator = \Illuminate\Support\Facades\Validator::make($request->all(), [
+            'symbol_no' => 'required|string|max:50',
+            'batch_year' => 'nullable|string|max:50',
+            'exam_name' => 'nullable|string|max:100',
+            'class_name' => 'nullable|string|max:50',
+            'verification_query' => 'nullable|string|max:100',
+        ], [
+            'symbol_no.required' => 'A valid Student Symbol Number is required to fetch entrance examination results.',
+        ]);
+
+        if ($validator->fails()) {
             if ($request->ajax() || $request->wantsJson()) {
                 return response()->json([
                     'success' => false,
                     'status' => 'error',
-                    'message' => 'A valid Student Symbol Number is required to fetch entrance examination results.'
+                    'message' => $validator->errors()->first('symbol_no') ?: 'Invalid input parameters provided.'
                 ], 400);
             }
-            return redirect()->route('admissions.results')->with('error_msg', 'A valid Student Symbol Number is required.');
+            return redirect()->route('admissions.results')->with('error_msg', $validator->errors()->first('symbol_no') ?: 'A valid Student Symbol Number is required.');
         }
+
+        $validated = $validator->validated();
+        $symbol = trim($validated['symbol_no']);
+        $batch = !empty($validated['batch_year']) ? trim($validated['batch_year']) : null;
+        $exam = !empty($validated['exam_name']) ? trim($validated['exam_name']) : null;
+        $class = !empty($validated['class_name']) ? trim($validated['class_name']) : null;
+        $verification = !empty($validated['verification_query']) ? trim($validated['verification_query']) : null;
 
         $query = EntranceResult::query();
 
