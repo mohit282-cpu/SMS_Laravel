@@ -45,11 +45,6 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "optimize-autoloader": true,
-        "policy": {
-            "advisories": {
-                "block": false
-            }
-        },
         "allow-plugins": {
             "php-http/discovery": true
         }

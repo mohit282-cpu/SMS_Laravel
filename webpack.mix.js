@@ -12,4 +12,15 @@ const mix = require('laravel-mix');
  */
 
 mix.js('resources/js/app.js', 'public/js')
-   .sass('resources/sass/app.scss', 'public/css');
+   .sass('resources/sass/app.scss', 'public/css')
+   .options({
+       uglify: {
+           uglifyOptions: {
+               compress: {
+                   collapse_vars: false,
+                   reduce_vars: false,
+                   inline: false
+               }
+           }
+       }
+   });

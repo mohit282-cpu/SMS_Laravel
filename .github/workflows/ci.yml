@@ -36,7 +36,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, mysql, pdo_mysql, gmp, bcmath, gd, zip
+          extensions: mbstring, xml, ctype, iconv, pdo_mysql, mysqli, gmp, bcmath, gd, zip
           coverage: none
           tools: composer:v2
 
