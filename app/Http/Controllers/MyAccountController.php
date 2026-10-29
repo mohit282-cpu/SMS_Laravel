@@ -80,8 +80,31 @@ class MyAccountController extends Controller
         if(password_verify($old_pass, $my_pass)){
             $data['password'] = Hash::make($new_pass);
             $this->user->update($user_id, $data);
+
+            app(\App\Services\AuditLogService::class)->log(
+                'auth.password_change',
+                'security',
+                "User '" . Auth::user()->name . "' changed their account password.",
+                Auth::user(),
+                [],
+                ['changed_at' => now()->toIso8601String()],
+                'success',
+                Auth::user()
+            );
+
             return back()->with('flash_success', __('msg.p_reset'));
         }
+
+        app(\App\Services\AuditLogService::class)->log(
+            'auth.password_change_failed',
+            'security',
+            "User '" . Auth::user()->name . "' attempted to change password with invalid current credentials.",
+            Auth::user(),
+            [],
+            ['failed_at' => now()->toIso8601String()],
+            'failure',
+            Auth::user()
+        );
 
         return back()->with('flash_danger', __('msg.p_reset_fail'));
     }

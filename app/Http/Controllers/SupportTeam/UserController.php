@@ -88,6 +88,16 @@ class UserController extends Controller
 
         \Illuminate\Support\Facades\Log::info("Password reset for user ID {$id} ({$targetUser->user_type}) by admin " . Auth::id());
 
+        app(\App\Services\AuditLogService::class)->log(
+            'auth.password_reset',
+            'security',
+            "Administrator reset password for user '{$targetUser->name}' ({$targetUser->user_type}, ID: {$id})",
+            $targetUser,
+            [],
+            ['target_user_id' => $id, 'role' => $targetUser->user_type],
+            'success'
+        );
+
         return back()->with('flash_success', __('msg.pu_reset') . ' New temporary password: ' . $tempPass)
             ->with('temp_password', $tempPass);
     }
@@ -135,6 +145,16 @@ class UserController extends Controller
             $this->user->createStaffRecord($d2);
         }
 
+        app(\App\Services\AuditLogService::class)->log(
+            'user.create',
+            'administration',
+            "Created user account '{$user->name}' ({$user->user_type}, Username: {$user->username})",
+            $user,
+            [],
+            ['name' => $user->name, 'username' => $user->username, 'user_type' => $user->user_type],
+            'success'
+        );
+
         return Qs::jsonStoreOk();
     }
 
@@ -181,6 +201,16 @@ class UserController extends Controller
             $this->user->updateStaffRecord(['user_id' => $id], $d2);
         }
 
+        app(\App\Services\AuditLogService::class)->log(
+            'user.update',
+            'administration',
+            "Updated user account '{$user->name}' ({$user->user_type}, ID: {$id})",
+            $user,
+            [],
+            $data,
+            'success'
+        );
+
         return Qs::jsonUpdateOk();
     }
 
@@ -209,6 +239,8 @@ class UserController extends Controller
         }
 
         $user = $this->user->find($id);
+        $deletedName = $user ? $user->name : "User #{$id}";
+        $deletedRole = $user ? $user->user_type : 'unknown';
 
         if($user->user_type == 'teacher' && $this->userTeachesSubject($user)) {
             return back()->with('pop_error', __('msg.del_teacher'));
@@ -217,6 +249,16 @@ class UserController extends Controller
         $path = Qs::getUploadPath($user->user_type).$user->code;
         Storage::exists($path) ? Storage::deleteDirectory($path) : true;
         $this->user->delete($user->id);
+
+        app(\App\Services\AuditLogService::class)->log(
+            'user.delete',
+            'administration',
+            "Deleted user account '{$deletedName}' ({$deletedRole}, ID: {$id})",
+            null,
+            ['user_id' => $id, 'name' => $deletedName, 'user_type' => $deletedRole],
+            [],
+            'success'
+        );
 
         return back()->with('flash_success', __('msg.del_ok'));
     }

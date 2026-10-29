@@ -255,6 +255,14 @@ Route::group(['namespace' => 'SuperAdmin','middleware' => 'super_admin', 'prefix
     Route::get('/settings', 'SettingController@index')->name('settings');
     Route::put('/settings', 'SettingController@update')->name('settings.update');
 
+    // Activity & Audit Logs Dashboard, Live Feed & Export
+    Route::group(['prefix' => 'audit_logs'], function(){
+        Route::get('/', 'AuditLogController@index')->name('audit_logs.index');
+        Route::get('/feed', 'AuditLogController@feed')->name('audit_logs.feed');
+        Route::get('/export', 'AuditLogController@export')->name('audit_logs.export');
+        Route::get('/{id}', 'AuditLogController@show')->name('audit_logs.show');
+    });
+
 });
 
 /************************ LANDING PAGE & ADMISSIONS (SUPER ADMIN) ****************************/

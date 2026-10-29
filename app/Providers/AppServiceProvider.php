@@ -33,5 +33,10 @@ class AppServiceProvider extends ServiceProvider
         });
         $this->app->alias(\App\Services\NepaliDateService::class, \App\Services\BikramSambatService::class);
         $this->app->alias(\App\Services\NepaliDateService::class, 'nepali_date');
+
+        $this->app->singleton(\App\Services\AuditLogService::class, function () {
+            return new \App\Services\AuditLogService();
+        });
+        $this->app->alias(\App\Services\AuditLogService::class, 'audit_log');
     }
 }

@@ -67,6 +67,16 @@ class StudentRecordController extends Controller
 
         \Illuminate\Support\Facades\Log::info("Student password reset for user ID {$st_id} by staff " . Auth::id());
 
+        app(\App\Services\AuditLogService::class)->log(
+            'auth.password_reset',
+            'security',
+            "Password reset for student '{$targetUser->name}' (ID: {$targetUser->id}) by staff.",
+            $targetUser,
+            [],
+            ['student_id' => $targetUser->id],
+            'success'
+        );
+
         return back()->with('flash_success', __('msg.p_reset') . ' New temporary password: ' . $tempPass)
             ->with('temp_password', $tempPass);
     }
@@ -130,6 +140,17 @@ class StudentRecordController extends Controller
         $sr['session'] = Qs::getCurrentSession();
 
         $this->student->createRecord($sr); // Create Student
+
+        app(\App\Services\AuditLogService::class)->log(
+            'student.admit',
+            'students',
+            "Student admitted: '{$user->name}' (Adm No: {$sr['adm_no']})",
+            $user,
+            [],
+            ['name' => $user->name, 'adm_no' => $sr['adm_no'], 'my_class_id' => $sr['my_class_id'], 'session' => $sr['session']],
+            'success'
+        );
+
         return Qs::jsonStoreOk();
     }
 
@@ -250,6 +271,16 @@ class StudentRecordController extends Controller
 
         // Preserve historical results across class/section transfers without destructive purge
 
+        app(\App\Services\AuditLogService::class)->log(
+            'student.update',
+            'students',
+            "Updated student profile and record for '{$sr->user->name}' (ID: {$sr->user->id})",
+            $sr->user,
+            [],
+            array_merge($d, $srec),
+            'success'
+        );
+
         return Qs::jsonUpdateOk();
     }
 
@@ -259,9 +290,20 @@ class StudentRecordController extends Controller
         if(!$st_id){return Qs::goWithDanger();}
 
         $sr = $this->student->getRecord(['user_id' => $st_id])->first();
+        $studentName = $sr && $sr->user ? $sr->user->name : "Student #{$st_id}";
         $path = Qs::getUploadPath('student').$sr->user->code;
         Storage::exists($path) ? Storage::deleteDirectory($path) : false;
         $this->user->delete($sr->user->id);
+
+        app(\App\Services\AuditLogService::class)->log(
+            'student.delete',
+            'students',
+            "Deleted student '{$studentName}' (User ID: {$st_id})",
+            null,
+            ['user_id' => $st_id, 'name' => $studentName],
+            [],
+            'success'
+        );
 
         return back()->with('flash_success', __('msg.del_ok'));
     }

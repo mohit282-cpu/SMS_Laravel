@@ -45,7 +45,18 @@ class SettingController extends Controller
             $f['path'] = $logo->storeAs(Qs::getPublicUploadPath(), $f['name']);
             $logo_path = asset('storage/' . $f['path']);
             $this->setting->update('logo', $logo_path);
+            $sets['logo'] = $logo_path;
         }
+
+        app(\App\Services\AuditLogService::class)->log(
+            'settings.update',
+            'administration',
+            'Updated school and system configuration settings.',
+            null,
+            [],
+            $sets,
+            'success'
+        );
 
         return back()->with('flash_success', __('msg.update_ok'));
 

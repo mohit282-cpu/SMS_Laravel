@@ -84,6 +84,16 @@ class AcademicYearController extends Controller
             AcademicYear::activateSession($ay->id);
         }
 
+        app(\App\Services\AuditLogService::class)->log(
+            'academic_year.create',
+            'academics',
+            "Created academic session '{$ay->name}' (BS {$ay->year_bs})",
+            $ay,
+            [],
+            ['name' => $ay->name, 'year_bs' => $ay->year_bs, 'is_active' => (bool)$shouldActivate],
+            'success'
+        );
+
         return back()->with('flash_success', __('Academic session created successfully.'));
     }
 
@@ -167,6 +177,16 @@ class AcademicYearController extends Controller
 
         AcademicYear::activateSession($id);
 
+        app(\App\Services\AuditLogService::class)->log(
+            'academic_year.activate',
+            'academics',
+            "Activated academic session '{$ay->name}' (BS {$ay->year_bs})",
+            $ay,
+            ['is_active' => false],
+            ['is_active' => true],
+            'success'
+        );
+
         return back()->with('flash_success', __('Academic session activated successfully.'));
     }
 
@@ -186,6 +206,16 @@ class AcademicYearController extends Controller
                 }
             }
         });
+
+        app(\App\Services\AuditLogService::class)->log(
+            'academic_year.close',
+            'academics',
+            "Closed academic session '{$ay->name}' (BS {$ay->year_bs})",
+            $ay,
+            ['is_closed' => false],
+            ['is_closed' => true, 'was_active' => (bool)$wasActive],
+            'success'
+        );
 
         if ($wasActive) {
             $nextOpen = AcademicYear::where('is_active', true)->where('is_closed', false)->first();

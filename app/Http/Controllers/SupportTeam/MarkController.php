@@ -476,6 +476,16 @@ class MarkController extends Controller
             }
 
             \Illuminate\Support\Facades\DB::commit();
+
+            app(\App\Services\AuditLogService::class)->log(
+                'mark.update',
+                'academics',
+                "Updated examination marks for {$marks->count()} student(s) in '{$subject->name}' for exam '{$exam->name}'",
+                $exam,
+                ['exam_id' => $exam_id, 'subject_id' => $subject_id, 'class_id' => $class_id],
+                ['count' => $marks->count()],
+                'success'
+            );
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\DB::rollBack();
             $correlationId = (string) \Illuminate\Support\Str::uuid();

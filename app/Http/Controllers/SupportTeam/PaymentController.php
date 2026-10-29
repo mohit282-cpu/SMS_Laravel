@@ -285,6 +285,16 @@ class PaymentController extends Controller
                 ], now()->addMinutes(30));
             }
 
+            app(\App\Services\AuditLogService::class)->log(
+                'payment.pay_now',
+                'finance',
+                "Payment of Rs. {$payAmt} recorded for invoice #{$pr->ref_no}",
+                $pr,
+                ['amt_paid' => $currentPaid, 'balance' => $outstanding],
+                ['amt_paid' => $newAmtPaid, 'balance' => $newBalance, 'paid' => $isPaid],
+                'success'
+            );
+
             return Qs::jsonUpdateOk();
         });
     }
@@ -345,7 +355,17 @@ class PaymentController extends Controller
             $data['due_date'] = app(\App\Services\NepaliDateService::class)->toAdDateString($data['due_date_bs']);
         }
 
-        $this->pay->create($data);
+        $payment = $this->pay->create($data);
+
+        app(\App\Services\AuditLogService::class)->log(
+            'payment.create',
+            'finance',
+            "Created fee/payment item '{$data['title']}' for Rs. {$data['amount']}",
+            $payment,
+            [],
+            ['title' => $data['title'], 'amount' => $data['amount'], 'my_class_id' => $data['my_class_id'] ?? null],
+            'success'
+        );
 
         return Qs::jsonStoreOk();
     }
@@ -379,6 +399,16 @@ class PaymentController extends Controller
 
         $payment->delete();
 
+        app(\App\Services\AuditLogService::class)->log(
+            'payment.delete',
+            'finance',
+            "Deleted payment item '{$payment->title}' (ID: {$payment->id})",
+            $payment,
+            ['title' => $payment->title, 'amount' => $payment->amount],
+            [],
+            'success'
+        );
+
         return Qs::deleteOk('payments.index');
     }
 
@@ -393,12 +423,25 @@ class PaymentController extends Controller
             }
 
             $payment = $this->pay->find($pr->payment_id);
+            $oldPaid = $pr->amt_paid;
+            $oldBalance = $pr->balance;
+
             $data['amt_paid'] = 0;
             $data['paid'] = 0;
             $data['balance'] = $payment ? $payment->amount : 0;
 
             $this->pay->updateRecord($id, $data);
             $this->pay->deleteReceipts(['pr_id' => $id]);
+
+            app(\App\Services\AuditLogService::class)->log(
+                'payment.reset',
+                'finance',
+                "Reset payment record #{$pr->ref_no} (reversal of Rs. {$oldPaid}).",
+                $pr,
+                ['amt_paid' => $oldPaid, 'balance' => $oldBalance],
+                ['amt_paid' => 0, 'balance' => $data['balance']],
+                'success'
+            );
 
             return back()->with('flash_success', __('msg.update_ok'));
         });

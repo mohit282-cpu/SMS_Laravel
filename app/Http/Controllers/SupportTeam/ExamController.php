@@ -69,10 +69,20 @@ class ExamController extends Controller
             return back()->withInput()->with('flash_danger', __('An examination with this title already exists in the current academic session.'));
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($data) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, &$created) {
             $created = $this->exam->create($data);
             $this->syncExamCalendarEvent($created);
         });
+
+        app(\App\Services\AuditLogService::class)->log(
+            'exam.create',
+            'academics',
+            "Created examination '{$data['name']}' (Year: {$data['year']}, Term: {$data['term']})",
+            $created ?? null,
+            [],
+            ['name' => $data['name'], 'term' => $data['term'], 'year' => $data['year']],
+            'success'
+        );
 
         return back()->with('flash_success', __('msg.store_ok'));
     }
@@ -148,6 +158,16 @@ class ExamController extends Controller
             \App\Models\Event::where('exam_id', $examId)->update(['is_published' => true]);
         });
 
+        app(\App\Services\AuditLogService::class)->log(
+            'exam.publish',
+            'academics',
+            "Published examination results for '{$exam->name}' (ID: {$examId})",
+            $exam,
+            ['status' => $exam->status],
+            ['status' => 'published'],
+            'success'
+        );
+
         return back()->with('flash_success', __('Exam results published successfully.'));
     }
 
@@ -188,10 +208,23 @@ class ExamController extends Controller
             return back()->with('flash_danger', __('Cannot delete examination: Student marks and results have already been recorded for this examination.'));
         }
 
+        $exam = $this->exam->find($id);
+        $examName = $exam ? $exam->name : "Exam #{$id}";
+
         \Illuminate\Support\Facades\DB::transaction(function () use ($id) {
             \App\Models\Event::where('exam_id', $id)->delete();
             $this->exam->delete($id);
         });
+
+        app(\App\Services\AuditLogService::class)->log(
+            'exam.delete',
+            'academics',
+            "Deleted examination '{$examName}' (ID: {$id})",
+            null,
+            ['id' => $id, 'name' => $examName],
+            [],
+            'success'
+        );
 
         return back()->with('flash_success', __('msg.del_ok'));
     }
