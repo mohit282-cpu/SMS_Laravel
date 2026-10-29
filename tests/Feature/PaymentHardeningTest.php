@@ -46,13 +46,13 @@ class PaymentHardeningTest extends TestCase
             'title' => 'Lab Fee ' . rand(1000, 9999),
             'amount' => 1500,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 0,
             'balance' => 1500,
             'paid' => 0,
@@ -86,13 +86,13 @@ class PaymentHardeningTest extends TestCase
             'title' => 'Sports Fee ' . rand(1000, 9999),
             'amount' => 2000,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 0,
             'balance' => 2000,
             'paid' => 0,
@@ -122,13 +122,13 @@ class PaymentHardeningTest extends TestCase
             'title' => 'Library Fee ' . rand(1000, 9999),
             'amount' => 1000,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 200,
             'balance' => 800,
             'paid' => 0,
@@ -166,13 +166,13 @@ class PaymentHardeningTest extends TestCase
             'title' => 'Tuition Installment ' . rand(1000, 9999),
             'amount' => 5000,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 0,
             'balance' => 5000,
             'paid' => 0,
@@ -253,13 +253,13 @@ class PaymentHardeningTest extends TestCase
             'title' => 'Tamper Test Fee ' . rand(1000, 9999),
             'amount' => 5000,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 0,
             'balance' => 5000,
             'paid' => 0,

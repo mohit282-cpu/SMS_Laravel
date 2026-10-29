@@ -93,7 +93,7 @@ class MarksAuthorizationTest extends TestCase
         $student = $this->getStudent();
 
         $unpublishedExam = Exam::create([
-            'name' => 'Draft Terminal Exam ' . rand(100, 999),
+            'name' => 'Draft Terminal Exam ' . uniqid(),
             'term' => 1,
             'year' => '2083/84 BS',
             'status' => 'draft',

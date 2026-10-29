@@ -153,7 +153,7 @@ class TimeTableSecurityTest extends TestCase
         [$student, $sr] = $this->getStudentWithRecord();
 
         $draftExam = Exam::create([
-            'name' => 'Midterm Secret Draft',
+            'name' => 'Midterm Secret Draft ' . uniqid(),
             'term' => 1,
             'year' => '2018-2019',
             'status' => 'draft',

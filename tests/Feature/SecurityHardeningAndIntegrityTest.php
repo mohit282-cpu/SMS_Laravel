@@ -175,7 +175,7 @@ class SecurityHardeningAndIntegrityTest extends TestCase
     {
         $student = $this->getStudent();
         $exam = Exam::create([
-            'name' => 'Unpublished Exam ' . rand(100, 999),
+            'name' => 'Unpublished Exam ' . uniqid(),
             'term' => 2,
             'year' => Qs::getCurrentSession(),
             'status' => 'draft',
@@ -221,13 +221,13 @@ class SecurityHardeningAndIntegrityTest extends TestCase
             'title' => 'Tuition Fee ' . rand(100, 999),
             'amount' => 5000,
             'year' => Qs::getCurrentSession(),
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 1000,
             'balance' => 4000,
             'paid' => 0,
@@ -295,13 +295,13 @@ class SecurityHardeningAndIntegrityTest extends TestCase
             'title' => 'Historical Fee ' . rand(100, 999),
             'amount' => 3000,
             'year' => $historicalYear,
-            'ref_no' => 'PAY_' . rand(1000, 9999),
+            'ref_no' => 'PAY_' . uniqid() . '_' . rand(100, 999),
         ]);
 
         $pr = PaymentRecord::create([
             'payment_id' => $payment->id,
             'student_id' => $student->id,
-            'ref_no' => 'REC_' . rand(1000, 9999),
+            'ref_no' => 'REC_' . uniqid() . '_' . rand(100, 999),
             'amt_paid' => 0,
             'balance' => 3000,
             'paid' => 0,
