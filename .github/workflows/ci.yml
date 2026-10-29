@@ -129,7 +129,15 @@ jobs:
           php artisan route:list
 
       - name: Run Test Suite
-        run: php artisan test
+        run: php artisan test --verbose --log-junit test-results.xml
+
+      - name: Diagnostic Output on Failure
+        if: failure()
+        run: |
+          echo "=== TEST RESULTS SUMMARY ==="
+          cat test-results.xml 2>/dev/null || true
+          echo "=== LARAVEL LOG ==="
+          cat storage/logs/laravel.log 2>/dev/null || true
 
   frontend-build:
     name: Frontend Asset Compilation
