@@ -35,6 +35,9 @@ jobs:
       - name: Validate composer.json
         run: composer validate --strict
 
+      - name: Composer Security Audit
+        run: composer audit || true
+
       - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
@@ -93,6 +96,9 @@ jobs:
 
       - name: Install NPM Dependencies
         run: npm ci
+
+      - name: NPM Dependency Audit
+        run: npm audit || true
 
       - name: Compile Production Assets
         run: npm run prod
