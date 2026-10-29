@@ -42,13 +42,13 @@ class MediaPhotoResolutionTest extends TestCase
      */
     public function test_student_record_photo_accessor()
     {
-        $user = User::where('user_type', 'student')->first();
-        if ($user) {
-            $sr = StudentRecord::where('user_id', $user->id)->first();
-            if ($sr) {
-                $this->assertEquals($user->photo, $sr->photo);
-            }
-        }
+        $srWithoutUser = new StudentRecord();
+        $this->assertStringContainsString('global_assets/images/user.png', $srWithoutUser->photo);
+
+        $user = new User(['photo' => 'http://example.com/photo.jpg']);
+        $srWithUser = new StudentRecord();
+        $srWithUser->setRelation('user', $user);
+        $this->assertEquals($user->photo, $srWithUser->photo);
     }
 
     /**
