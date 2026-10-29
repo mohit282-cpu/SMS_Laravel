@@ -27,6 +27,8 @@ class PwaPushNotificationTest extends TestCase
     {
         parent::setUp();
 
+        \Illuminate\Support\Facades\Cache::flush();
+
         $this->admin = User::where('user_type', 'admin')->first()
             ?? User::where('user_type', 'super_admin')->first();
         $this->student = User::where('user_type', 'student')->first();

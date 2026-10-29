@@ -206,33 +206,35 @@ class LandingController extends Controller
             $results = collect([$result]);
         }
 
+        $initialData = $result ? [
+            'id' => $result->id,
+            'batch_year' => $result->batch_year,
+            'exam_name' => $result->exam_name,
+            'class_name' => $result->class_name,
+            'section_name' => $result->section_name,
+            'symbol_no' => $result->symbol_no,
+            'roll_no' => $result->roll_no,
+            'student_name' => $result->student_name,
+            'attendance' => $result->attendance,
+            'gpa' => number_format((float)$result->gpa, 2),
+            'remarks' => $result->remarks,
+            'marks' => $result->marks,
+            'created_at' => (string)$result->created_at,
+        ] : null;
+
         if ($request->ajax() || $request->wantsJson()) {
             return response()->json([
                 'success' => true,
                 'status' => 'success',
-                'data' => [
-                    'id' => $result->id,
-                    'batch_year' => $result->batch_year,
-                    'exam_name' => $result->exam_name,
-                    'class_name' => $result->class_name,
-                    'section_name' => $result->section_name,
-                    'symbol_no' => $result->symbol_no,
-                    'roll_no' => $result->roll_no,
-                    'student_name' => $result->student_name,
-                    'attendance' => $result->attendance,
-                    'gpa' => number_format((float)$result->gpa, 2),
-                    'remarks' => $result->remarks,
-                    'marks' => $result->marks,
-                    'created_at' => (string)$result->created_at,
-                ]
+                'data' => $initialData
             ]);
         }
 
         $batches = EntranceResult::select('batch_year')->distinct()->orderBy('batch_year', 'desc')->pluck('batch_year');
         $exams = EntranceResult::select('exam_name')->distinct()->orderBy('exam_name', 'desc')->pluck('exam_name');
         $classes = EntranceResult::select('class_name')->distinct()->orderBy('class_name', 'asc')->pluck('class_name');
-        $settings = ['system_name' => Qs::getSystemName()];
+        $settings = $this->getCommonSettings();
 
-        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'results', 'settings', 'symbol'));
+        return view('landing.entrance_results', compact('batches', 'exams', 'classes', 'results', 'settings', 'symbol', 'isVisible', 'isSuperAdmin', 'initialData'));
     }
 }

@@ -76,6 +76,13 @@ class CreateEventsTable extends Migration
                     ]);
                 }
             }
+            // Track table ownership so rollback does not drop pre-existing tables
+            if (Schema::hasTable('settings')) {
+                DB::table('settings')->updateOrInsert(
+                    ['type' => 'migration_created_events_table'],
+                    ['description' => '1']
+                );
+            }
         }
     }
 
@@ -86,6 +93,17 @@ class CreateEventsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('events');
+        // Only drop if this migration created the table; preserve pre-existing tables
+        $created = false;
+        if (Schema::hasTable('settings')) {
+            $created = DB::table('settings')->where('type', 'migration_created_events_table')->value('description') === '1';
+        }
+
+        if ($created) {
+            Schema::dropIfExists('events');
+            if (Schema::hasTable('settings')) {
+                DB::table('settings')->where('type', 'migration_created_events_table')->delete();
+            }
+        }
     }
 }

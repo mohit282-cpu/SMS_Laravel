@@ -210,4 +210,38 @@ class PublicPortalSecurityTest extends TestCase
         $this->assertEquals('Updated SMS Portal', Setting::where('type', 'system_title')->value('description'));
         $this->assertNull(Setting::where('type', 'unauthorized_setting_key')->first());
     }
+
+    /**
+     * 6. Non-AJAX entrance result search renders blade view with all required variables.
+     */
+    public function test_non_ajax_entrance_result_search_flow_renders_view_with_expected_variables()
+    {
+        Setting::updateOrCreate(['type' => 'entrance_results_visible'], ['description' => '1']);
+
+        $symbol = 'NONAJAX' . rand(1000, 9999);
+        $studentName = 'Bibek Shrestha';
+
+        EntranceResult::create([
+            'batch_year' => '2083 B.S.',
+            'exam_name' => 'Entrance 2083',
+            'class_name' => 'Grade 11 Science',
+            'section_name' => 'GENERAL',
+            'symbol_no' => $symbol,
+            'roll_no' => '42',
+            'student_name' => $studentName,
+            'attendance' => 'PRESENT',
+            'gpa' => 3.90,
+            'remarks' => 'ELIGIBLE FOR ADMISSION',
+            'marks_json' => json_encode([['subject' => 'MATHEMATICS', 'gp' => 4.0, 'grade' => 'A+']]),
+        ]);
+
+        $response = $this->post(route('admissions.results.search'), [
+            'symbol_no' => $symbol,
+        ]);
+
+        $response->assertStatus(200);
+        $response->assertViewIs('landing.entrance_results');
+        $response->assertViewHas(['isVisible', 'isSuperAdmin', 'settings', 'results', 'symbol']);
+        $response->assertSee($studentName);
+    }
 }

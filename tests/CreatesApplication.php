@@ -17,6 +17,17 @@ trait CreatesApplication
 
         $app->make(Kernel::class)->bootstrap();
 
+        // Enforce testing environment explicitly
+        $app['env'] = 'testing';
+        $app['config']->set('app.env', 'testing');
+
+        // Enforce dedicated test database connection for testing
+        $testConnection = env('DB_CONNECTION') ?: 'mysql_test';
+        if ($testConnection === 'mysql') {
+            $testConnection = 'mysql_test';
+        }
+        $app['config']->set('database.default', $testConnection);
+
         return $app;
     }
 }

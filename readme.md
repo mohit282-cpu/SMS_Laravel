@@ -21,9 +21,9 @@ SMS Academy enforces strict role-based access control (RBAC) across seven distin
 ## Requirements
 
 - **PHP**: 8.1 or 8.2 (with `pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `gmp` or `bcmath` extensions)
-- **Database**: MySQL 5.7+ or MariaDB 10.3+
+- **Database**: MySQL 5.7+ or MariaDB 10.3+ (Test database: `sms_laravel_test` on `mysql_test` connection)
 - **Composer**: 2.x
-- **Node.js & NPM**: 16+ (for frontend asset compilation)
+- **Node.js & NPM**: Node 14.x for legacy Laravel Mix 2 asset compilation (`npm ci` & `npm run prod` via committed `package-lock.json`); modernization to Vite/Laravel Mix 6 planned in roadmap.
 
 ---
 

@@ -60,6 +60,12 @@ class IntegrateSchoolDemoAndBranding extends Migration
             Schema::table('events', function (Blueprint $table) {
                 $table->text('image_paths')->nullable()->after('description');
             });
+            if (Schema::hasTable('settings')) {
+                DB::table('settings')->updateOrInsert(
+                    ['type' => 'migration_created_events_image_paths'],
+                    ['description' => '1']
+                );
+            }
         }
 
         // 3. Create entrance_results table for New Admission Examination Verification
@@ -79,6 +85,12 @@ class IntegrateSchoolDemoAndBranding extends Migration
                 $table->longText('marks_json');
                 $table->timestamps();
             });
+            if (Schema::hasTable('settings')) {
+                DB::table('settings')->updateOrInsert(
+                    ['type' => 'migration_created_entrance_results'],
+                    ['description' => '1']
+                );
+            }
         }
 
         // 4. Create admission_inquiries table
@@ -94,6 +106,12 @@ class IntegrateSchoolDemoAndBranding extends Migration
                 $table->text('admin_notes')->nullable();
                 $table->timestamps();
             });
+            if (Schema::hasTable('settings')) {
+                DB::table('settings')->updateOrInsert(
+                    ['type' => 'migration_created_admission_inquiries'],
+                    ['description' => '1']
+                );
+            }
         }
     }
 
@@ -104,12 +122,25 @@ class IntegrateSchoolDemoAndBranding extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('entrance_results');
-        Schema::dropIfExists('admission_inquiries');
-        if (Schema::hasColumn('events', 'image_paths')) {
-            Schema::table('events', function (Blueprint $table) {
-                $table->dropColumn('image_paths');
-            });
+        if (Schema::hasTable('settings')) {
+            if (DB::table('settings')->where('type', 'migration_created_entrance_results')->value('description') === '1') {
+                Schema::dropIfExists('entrance_results');
+                DB::table('settings')->where('type', 'migration_created_entrance_results')->delete();
+            }
+
+            if (DB::table('settings')->where('type', 'migration_created_admission_inquiries')->value('description') === '1') {
+                Schema::dropIfExists('admission_inquiries');
+                DB::table('settings')->where('type', 'migration_created_admission_inquiries')->delete();
+            }
+
+            if (Schema::hasTable('events') && Schema::hasColumn('events', 'image_paths')) {
+                if (DB::table('settings')->where('type', 'migration_created_events_image_paths')->value('description') === '1') {
+                    Schema::table('events', function (Blueprint $table) {
+                        $table->dropColumn('image_paths');
+                    });
+                    DB::table('settings')->where('type', 'migration_created_events_image_paths')->delete();
+                }
+            }
         }
     }
 }

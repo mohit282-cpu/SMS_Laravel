@@ -154,7 +154,8 @@
                 <p class="text-sm text-slate-600 mt-1">Select your examination details and enter your symbol number or candidate name to fetch your verified marksheet.</p>
             </div>
 
-            <form id="searchForm" class="space-y-5">
+            <form id="searchForm" action="{{ route('admissions.results.search') }}" method="POST" class="space-y-5">
+                @csrf
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase text-slate-700 mb-1.5">Academic Batch <span class="text-rose-600">*</span></label>
@@ -477,6 +478,13 @@
             if (g === 'D') return 'text-orange-700';
             return 'text-rose-700';
         }
+
+        @if(isset($initialData) && $initialData)
+        document.addEventListener('DOMContentLoaded', function() {
+            const initialData = {!! json_encode($initialData) !!};
+            renderMarksheet(initialData);
+        });
+        @endif
     </script>
 </body>
 </html>
