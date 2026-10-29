@@ -25,6 +25,7 @@ class SettingUpdate extends FormRequest
             'address' => 'required|string|min:15',
             'system_email' => 'sometimes|nullable|email',
             'lock_exam' => 'required',
+            'calendar_display' => 'sometimes|nullable|in:bs,ad,both',
             'logo' => 'sometimes|nullable|image|mimes:jpeg,gif,png,jpg|max:2048',
 
         ];

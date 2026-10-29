@@ -84,6 +84,19 @@
                                     <span class="font-weight-bold font-italic text-info-800">{{ __('msg.lock_exam') }}</span>
                             </div>
                         </div>
+                        <div class="form-group row">
+                            <label for="calendar_display" class="col-lg-3 col-form-label font-weight-semibold">Calendar Display</label>
+                            <div class="col-lg-5">
+                                <select class="form-control select" name="calendar_display" id="calendar_display">
+                                    <option {{ ($s['calendar_display'] ?? 'both') == 'both' ? 'selected' : '' }} value="both">Both (BS & AD Dual Display)</option>
+                                    <option {{ ($s['calendar_display'] ?? '') == 'bs' ? 'selected' : '' }} value="bs">Bikram Sambat (BS Only)</option>
+                                    <option {{ ($s['calendar_display'] ?? '') == 'ad' ? 'selected' : '' }} value="ad">Gregorian (AD Only)</option>
+                                </select>
+                            </div>
+                            <div class="col-lg-4">
+                                <span class="font-weight-bold font-italic text-info-800">System-wide default date display mode</span>
+                            </div>
+                        </div>
                 </div>
                 <div class="col-md-6">
                     {{--Fees--}}

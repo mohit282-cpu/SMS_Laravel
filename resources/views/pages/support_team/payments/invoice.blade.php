@@ -64,7 +64,7 @@
                             {{--Receipt No--}}
                             <td>{{ $uc->ref_no }}</td>
 
-                            <td>{{ $uc->year }}</td>
+                            <td>{{ $uc->bs_month ? ($uc->bs_month_name . ' ' . $uc->bs_year . ' BS') : $uc->year }}</td>
 
                             {{--Action--}}
                             <td class="text-center">
@@ -119,7 +119,7 @@
                             {{--Receipt No--}}
                             <td>{{ $cl->ref_no }}</td>
 
-                            <td>{{ $cl->year }}</td>
+                            <td>{{ $cl->bs_month ? ($cl->bs_month_name . ' ' . $cl->bs_year . ' BS') : $cl->year }}</td>
 
                             {{--Action--}}
                             <td class="text-center">

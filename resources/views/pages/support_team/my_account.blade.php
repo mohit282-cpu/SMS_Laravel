@@ -123,6 +123,18 @@
                                     </div>
 
                                     <div class="form-group row">
+                                        <label for="calendar_display" class="col-lg-3 col-form-label font-weight-semibold">{{ __('Calendar Display') }} </label>
+                                        <div class="col-lg-9">
+                                            <select id="calendar_display" name="calendar_display" class="form-control select">
+                                                <option value="default" {{ (old('calendar_display', $my->calendar_display ?? 'default') == 'default') ? 'selected' : '' }}>{{ __('System Default') }}</option>
+                                                <option value="both" {{ (old('calendar_display', $my->calendar_display) == 'both') ? 'selected' : '' }}>{{ __('Both (BS & AD Dual Display)') }}</option>
+                                                <option value="bs" {{ (old('calendar_display', $my->calendar_display) == 'bs') ? 'selected' : '' }}>{{ __('Bikram Sambat (BS Only)') }}</option>
+                                                <option value="ad" {{ (old('calendar_display', $my->calendar_display) == 'ad') ? 'selected' : '' }}>{{ __('Gregorian (AD Only)') }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group row">
                                         <label class="col-lg-3 col-form-label font-weight-semibold">{{ __('Photo') }} </label>
                                         <div class="col-lg-9">
                                             <input accept="image/*" type="file" name="photo" class="form-input-styled" data-fouc>

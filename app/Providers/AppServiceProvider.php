@@ -28,6 +28,10 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isLocal() && class_exists(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class)) {
             $this->app->register(\Barryvdh\LaravelIdeHelper\IdeHelperServiceProvider::class);
         }
-        //
+        $this->app->singleton(\App\Services\NepaliDateService::class, function () {
+            return new \App\Services\NepaliDateService();
+        });
+        $this->app->alias(\App\Services\NepaliDateService::class, \App\Services\BikramSambatService::class);
+        $this->app->alias(\App\Services\NepaliDateService::class, 'nepali_date');
     }
 }

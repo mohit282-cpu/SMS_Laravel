@@ -161,5 +161,68 @@ class NepaliHelper
             return null;
         }
     }
+
+    /**
+     * Format a stored Gregorian AD date according to the active or specified calendar display preference.
+     * Modes: 'bs', 'ad', 'both'.
+     *
+     * @param string|\DateTimeInterface|null $adDate
+     * @param string|null $mode 'bs', 'ad', 'both', or null
+     * @param string|null $locale 'en', 'ne', or null
+     * @return string
+     */
+    public static function formatDisplayDate($adDate, $mode = null, $locale = null)
+    {
+        if (empty($adDate)) {
+            return '';
+        }
+
+        return app(\App\Services\NepaliDateService::class)->formatDisplayDate($adDate, $mode, $locale);
+    }
+
+    /**
+     * Resolve the active calendar display preference ('bs', 'ad', 'both').
+     *
+     * @param \App\User|null $user
+     * @return string
+     */
+    public static function getCalendarDisplay($user = null)
+    {
+        return app(\App\Services\NepaliDateService::class)->getDisplayMode($user);
+    }
+
+    /**
+     * Get all 12 Nepali calendar billing months (Baisakh to Chaitra).
+     *
+     * @return array
+     */
+    public static function getBsMonths()
+    {
+        return app(\App\Services\NepaliDateService::class)->getMonths();
+    }
+
+    /**
+     * Get the name of a BS month (1-12).
+     *
+     * @param int $month
+     * @param string $lang
+     * @return string
+     */
+    public static function getBsMonthName($month, $lang = 'en')
+    {
+        return app(\App\Services\NepaliDateService::class)->getBsMonthName($month, $lang);
+    }
+
+    /**
+     * Get exact AD start and end boundaries for a BS billing month.
+     *
+     * @param int $bsYear
+     * @param int $bsMonth
+     * @return array
+     */
+    public static function getBsMonthAdRange($bsYear, $bsMonth)
+    {
+        return app(\App\Services\NepaliDateService::class)->getBsMonthAdRange($bsYear, $bsMonth);
+    }
 }
 

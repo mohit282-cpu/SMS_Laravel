@@ -83,15 +83,21 @@
                 </tr>
                 <tr>
                     <td class="bold">AMOUNT:</td>
-                    <td>{{ $payment->amount }}</td>
-                    <td class="bold">DESCRIPTION:</td>
-                    <td>{{ $payment->description }}</td>
+                    <td>{{ \App\Helpers\NepaliHelper::formatNpr($payment->amount) }}</td>
+                    <td class="bold">PERIOD:</td>
+                    <td>{{ $pr->bs_month ? ($pr->bs_month_name . ' ' . $pr->bs_year . ' BS (' . $pr->bs_month_name_ne . ')') : ($payment->year ?? 'Academic Session') }}</td>
                 </tr>
+                @if($pr->due_date || $pr->due_date_bs)
+                <tr>
+                    <td class="bold">DUE DATE:</td>
+                    <td colspan="3">{{ $pr->due_date ? \App\Helpers\NepaliHelper::formatDisplayDate($pr->due_date) : ($pr->due_date_bs . ' BS') }}</td>
+                </tr>
+                @endif
             </table>
 
         {{-- Payment Desc --}}
         <div style="margin-top:5px; display: block; background-color: rgba(92, 172, 237, 0.12); padding: 5px; ">
-            <span style="font-weight:bold; font-size: 20px; color: #000; padding-left: 10px">DESCRIPTION</span>
+            <span style="font-weight:bold; font-size: 20px; color: #000; padding-left: 10px">PAYMENT TRANSACTIONS / DESCRIPTION</span>
         </div>
 
         <table class="td-left" style="font-size: 16px" width="100%" cellspacing="2" cellpadding="2">
@@ -105,9 +111,9 @@
             <tbody>
             @foreach($receipts as $r)
                 <tr>
-                    <td>{{ App\Helpers\NepaliHelper::formatDualDate($r->created_at) }}</td>
-                    <td>{{ App\Helpers\NepaliHelper::formatNpr($r->amt_paid) }}</td>
-                    <td>{{ App\Helpers\NepaliHelper::formatNpr($r->balance) }}</td>
+                    <td>{{ \App\Helpers\NepaliHelper::formatDisplayDate($r->created_at) }}</td>
+                    <td>{{ \App\Helpers\NepaliHelper::formatNpr($r->amt_paid) }}</td>
+                    <td>{{ \App\Helpers\NepaliHelper::formatNpr($r->balance) }}</td>
                 </tr>
                 @endforeach
             </tbody>

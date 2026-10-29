@@ -31,6 +31,7 @@ class UserUpdate extends FormRequest
             'photo' => 'sometimes|nullable|image|mimes:jpeg,gif,png,jpg|max:2048',
             'address' => 'required|string|min:6|max:120',
             'locale' => 'sometimes|nullable|in:ne,en',
+            'calendar_display' => 'sometimes|nullable|in:default,bs,ad,both',
         ];
     }
 

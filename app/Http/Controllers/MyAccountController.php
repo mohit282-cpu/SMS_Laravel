@@ -32,7 +32,7 @@ class MyAccountController extends Controller
             abort(401);
         }
 
-        $fields = ['email', 'phone', 'phone2', 'address', 'locale'];
+        $fields = ['email', 'phone', 'phone2', 'address', 'locale', 'calendar_display'];
         if (!$user->username) {
             $fields[] = 'username';
         }
@@ -41,6 +41,14 @@ class MyAccountController extends Controller
         if ($req->filled('locale') && in_array($req->locale, ['ne', 'en'], true)) {
             session()->put('locale', $req->locale);
             app()->setLocale($req->locale);
+        }
+
+        if ($req->filled('calendar_display') && in_array($req->calendar_display, ['default', 'bs', 'ad', 'both'], true)) {
+            if ($req->calendar_display === 'default') {
+                session()->forget('calendar_display');
+            } else {
+                session()->put('calendar_display', $req->calendar_display);
+            }
         }
 
         if (!$user->username && !$req->username && !$req->email) {

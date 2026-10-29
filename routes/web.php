@@ -109,6 +109,9 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         /*************** Payments *****************/
         Route::group(['prefix' => 'payments'], function(){
 
+            Route::get('monthly_billing', 'PaymentController@monthly_billing')->name('payments.monthly_billing');
+            Route::post('generate_monthly_invoices', 'PaymentController@generate_monthly_invoices')->name('payments.generate_monthly_invoices');
+            Route::get('reports', 'PaymentController@reports')->name('payments.reports');
             Route::get('manage/{class_id?}', 'PaymentController@manage')->name('payments.manage');
             Route::get('invoice/{id}/{year?}', 'PaymentController@invoice')->name('payments.invoice')->where('year', '.*');
             Route::get('receipts/{id}', 'PaymentController@receipts')->name('payments.receipts');

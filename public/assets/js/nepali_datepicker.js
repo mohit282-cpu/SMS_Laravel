@@ -356,6 +356,15 @@
                     e.stopPropagation();
                     showPopup(this);
                 });
+                input.addEventListener('input', function() {
+                    var val = this.value;
+                    var eng = val.replace(/[०-९]/g, function(d) {
+                        return '०१२३४५६७८९'.indexOf(d);
+                    });
+                    if (val !== eng) {
+                        this.value = eng;
+                    }
+                });
             }
         });
     }

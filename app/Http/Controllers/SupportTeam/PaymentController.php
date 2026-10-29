@@ -340,6 +340,11 @@ class PaymentController extends Controller
         $data = $req->all();
         $data['year'] = $this->year;
         $data['ref_no'] = Pay::genRefCode();
+
+        if (!empty($data['due_date_bs'])) {
+            $data['due_date'] = app(\App\Services\NepaliDateService::class)->toAdDateString($data['due_date_bs']);
+        }
+
         $this->pay->create($data);
 
         return Qs::jsonStoreOk();
@@ -397,5 +402,347 @@ class PaymentController extends Controller
 
             return back()->with('flash_success', __('msg.update_ok'));
         });
+    }
+    public function monthly_billing(Request $req)
+    {
+        $nepaliDate = app(\App\Services\NepaliDateService::class);
+        $todayBs = $nepaliDate->today();
+
+        $selectedYear = (int)$req->input('bs_year', $todayBs['year']);
+        $selectedMonth = (int)$req->input('bs_month', $todayBs['month']);
+        if ($selectedMonth < 1 || $selectedMonth > 12) {
+            $selectedMonth = 1;
+        }
+
+        $classId = $req->input('my_class_id');
+
+        $periodRange = $nepaliDate->getBsMonthAdRange($selectedYear, $selectedMonth);
+        $months = $nepaliDate->getMonths();
+
+        $query = \App\Models\PaymentRecord::where('bs_year', $selectedYear)
+            ->where('bs_month', $selectedMonth)
+            ->with(['payment', 'student']);
+
+        if ($classId) {
+            $query->whereHas('student.student_record', function($q) use ($classId) {
+                $q->where('my_class_id', $classId);
+            });
+        }
+
+        $records = $query->get();
+
+        $totalBilled = $records->sum(function($r) {
+            return (float) ($r->payment ? $r->payment->amount : 0);
+        });
+        $totalCollected = $records->sum(function($r) {
+            return (float) $r->amt_paid;
+        });
+        $totalBalance = $records->sum(function($r) {
+            return (float) $r->balance;
+        });
+        $totalDiscount = $records->sum(function($r) {
+            return (float) ($r->discount_amt ?? 0);
+        });
+
+        $clearedCount = $records->where('paid', 1)->count();
+        $unclearedCount = $records->where('paid', 0)->count();
+
+        // Eligible students count for current filter
+        $studentQuery = \App\Models\StudentRecord::query();
+        if ($classId) {
+            $studentQuery->where('my_class_id', $classId);
+        }
+        $eligibleStudentsCount = $studentQuery->count();
+
+        $d = [
+            'bs_year' => $selectedYear,
+            'bs_month' => $selectedMonth,
+            'my_class_id' => $classId,
+            'my_classes' => $this->my_class->all(),
+            'months' => $months,
+            'periodRange' => $periodRange,
+            'records' => $records,
+            'totalBilled' => $totalBilled,
+            'totalCollected' => $totalCollected,
+            'totalBalance' => $totalBalance,
+            'totalDiscount' => $totalDiscount,
+            'clearedCount' => $clearedCount,
+            'unclearedCount' => $unclearedCount,
+            'eligibleStudentsCount' => $eligibleStudentsCount,
+        ];
+
+        return view('pages.support_team.payments.monthly_billing', $d);
+    }
+
+    public function generate_monthly_invoices(Request $req)
+    {
+        $this->validate($req, [
+            'bs_year' => 'required|integer|between:2000,2090',
+            'bs_month' => 'required|integer|between:1,12',
+            'my_class_id' => 'nullable|exists:my_classes,id',
+            'fee_category' => 'required|string|in:tuition,transport,hostel,computer_lab,all',
+            'amount' => 'nullable|numeric|min:0|max:10000000',
+            'due_day' => 'nullable|integer|between:1,32',
+        ], [], [
+            'bs_year' => 'BS Year',
+            'bs_month' => 'BS Month',
+            'my_class_id' => 'Class',
+            'fee_category' => 'Fee Category',
+            'amount' => 'Amount',
+            'due_day' => 'Due Day',
+        ]);
+
+        $nepaliDate = app(\App\Services\NepaliDateService::class);
+        $bsYear = (int)$req->input('bs_year');
+        $bsMonth = (int)$req->input('bs_month');
+        $classId = $req->input('my_class_id');
+        $category = $req->input('fee_category');
+        $customAmount = $req->filled('amount') ? (float)$req->input('amount') : null;
+
+        $daysInMonth = $nepaliDate->getDaysInBsMonth($bsYear, $bsMonth);
+        $dueDay = (int)($req->input('due_day') ?: 15);
+        if ($dueDay > $daysInMonth) {
+            $dueDay = $daysInMonth;
+        }
+
+        // Calculate AD due date
+        $dueDateConv = $nepaliDate->bsToAd($bsYear, $bsMonth, $dueDay);
+        $dueDateAd = $dueDateConv['ad_date'];
+        $dueDateBs = sprintf('%04d-%02d-%02d', $bsYear, $bsMonth, $dueDay);
+
+        $monthName = $nepaliDate->getBsMonthName($bsMonth, 'en');
+        $monthNameNe = $nepaliDate->getBsMonthName($bsMonth, 'ne');
+
+        // Classes to process
+        $classes = $classId ? $this->my_class->find($classId) : $this->my_class->all();
+        if ($classId && !($classes instanceof \Illuminate\Database\Eloquent\Collection)) {
+            $classes = collect([$classes]);
+        }
+
+        // Fee categories to process
+        $categories = ($category === 'all')
+            ? ['tuition', 'transport', 'hostel', 'computer_lab']
+            : [$category];
+
+        $sessionYear = $this->year;
+
+        $stats = \Illuminate\Support\Facades\DB::transaction(function() use (
+            $classes, $categories, $bsYear, $bsMonth, $monthName, $monthNameNe,
+            $dueDateAd, $dueDateBs, $customAmount, $sessionYear
+        ) {
+            $createdCount = 0;
+            $skippedCount = 0;
+
+            foreach ($classes as $cls) {
+                // Determine eligible active students in this class
+                $students = \App\Models\StudentRecord::where('my_class_id', $cls->id)
+                    ->with('user')
+                    ->get();
+
+                if ($students->isEmpty()) {
+                    continue;
+                }
+
+                foreach ($categories as $cat) {
+                    $catTitle = ucfirst(str_replace('_', ' ', $cat));
+                    $paymentTitle = "Monthly {$catTitle} Fee - {$monthName} {$bsYear} BS ({$monthNameNe})";
+
+                    // Determine amount for this class and category
+                    if ($customAmount !== null) {
+                        $feeAmount = $customAmount;
+                    } else {
+                        // Fetch from class type or default settings
+                        $clsType = $cls->class_type ? strtolower($cls->class_type->code) : 'c';
+                        $settingKey = 'next_term_fees_' . $clsType;
+                        $defaultFee = \App\Models\Setting::where('type', $settingKey)->value('description');
+                        $feeAmount = $defaultFee ? (float)$defaultFee : 2500.00;
+                    }
+
+                    // Find or create recurring Payment fee structure for this class, period, and category
+                    $payment = \App\Models\Payment::firstOrCreate(
+                        [
+                            'my_class_id' => $cls->id,
+                            'period_type' => 'monthly',
+                            'fee_category' => $cat,
+                            'bs_year' => $bsYear,
+                            'bs_month' => $bsMonth,
+                        ],
+                        [
+                            'title' => $paymentTitle,
+                            'amount' => $feeAmount,
+                            'ref_no' => \App\Helpers\Pay::genRefCode(),
+                            'method' => 'cash',
+                            'description' => "Monthly {$catTitle} charge for {$monthName} {$bsYear} BS",
+                            'year' => $sessionYear,
+                            'due_date' => $dueDateAd,
+                            'due_date_bs' => $dueDateBs,
+                        ]
+                    );
+
+                    // For each student in the class, generate PaymentRecord invoice idempotently
+                    foreach ($students as $st) {
+                        $existing = \App\Models\PaymentRecord::where('payment_id', $payment->id)
+                            ->where('student_id', $st->user_id)
+                            ->first();
+
+                        if ($existing) {
+                            $skippedCount++;
+                            continue;
+                        }
+
+                        $pr = new \App\Models\PaymentRecord();
+                        $pr->payment_id = $payment->id;
+                        $pr->student_id = $st->user_id;
+                        $pr->ref_no = mt_rand(10000000, 99999999);
+                        $pr->amt_paid = 0.00;
+                        $pr->balance = (float)$payment->amount;
+                        $pr->paid = 0;
+                        $pr->year = $payment->year;
+                        $pr->bs_year = $bsYear;
+                        $pr->bs_month = $bsMonth;
+                        $pr->due_date = $dueDateAd;
+                        $pr->due_date_bs = $dueDateBs;
+                        $pr->discount_amt = 0.00;
+                        $pr->save();
+
+                        $createdCount++;
+                    }
+                }
+            }
+
+            return ['created' => $createdCount, 'skipped' => $skippedCount];
+        });
+
+        $msg = __('Successfully generated :created monthly fee invoice(s). (:skipped already existed)', [
+            'created' => $stats['created'],
+            'skipped' => $stats['skipped'],
+        ]);
+
+        if ($req->ajax()) {
+            return response()->json([
+                'ok' => true,
+                'msg' => $msg,
+                'created' => $stats['created'],
+                'skipped' => $stats['skipped'],
+            ]);
+        }
+
+        return redirect()->route('payments.monthly_billing', [
+            'bs_year' => $bsYear,
+            'bs_month' => $bsMonth,
+            'my_class_id' => $classId,
+        ])->with('flash_success', $msg);
+    }
+
+    public function reports(Request $req)
+    {
+        $nepaliDate = app(\App\Services\NepaliDateService::class);
+        $todayBs = $nepaliDate->today();
+
+        $selectedYear = (int)$req->input('bs_year', $todayBs['year']);
+        $classId = $req->input('my_class_id');
+
+        $months = $nepaliDate->getMonths();
+
+        // Calculate summary for each of the 12 BS months
+        $monthlySummaries = [];
+        $grandTotalBilled = 0;
+        $grandTotalCollected = 0;
+        $grandTotalBalance = 0;
+
+        foreach ($months as $mNum => $mInfo) {
+            $range = $nepaliDate->getBsMonthAdRange($selectedYear, $mNum);
+
+            $query = \App\Models\PaymentRecord::where('bs_year', $selectedYear)
+                ->where('bs_month', $mNum)
+                ->with('payment');
+
+            if ($classId) {
+                $query->whereHas('student.student_record', function($q) use ($classId) {
+                    $q->where('my_class_id', $classId);
+                });
+            }
+
+            $records = $query->get();
+
+            $billed = $records->sum(function($r) {
+                return (float) ($r->payment ? $r->payment->amount : 0);
+            });
+            $collected = $records->sum(function($r) {
+                return (float) $r->amt_paid;
+            });
+            $balance = $records->sum(function($r) {
+                return (float) $r->balance;
+            });
+            $invoiceCount = $records->count();
+            $paidCount = $records->where('paid', 1)->count();
+
+            $rate = ($billed > 0) ? round(($collected / $billed) * 100, 1) : 0;
+
+            $grandTotalBilled += $billed;
+            $grandTotalCollected += $collected;
+            $grandTotalBalance += $balance;
+
+            $monthlySummaries[$mNum] = [
+                'month_num' => $mNum,
+                'name_en' => $mInfo['en'],
+                'name_ne' => $mInfo['ne'],
+                'start_ad' => $range['start_ad'],
+                'end_ad' => $range['end_ad'],
+                'days' => $range['days'],
+                'billed' => $billed,
+                'collected' => $collected,
+                'balance' => $balance,
+                'invoice_count' => $invoiceCount,
+                'paid_count' => $paidCount,
+                'rate' => $rate,
+            ];
+        }
+
+        // Class-wise breakdown for selected year
+        $classBreakdown = [];
+        $classes = $this->my_class->all();
+        foreach ($classes as $cls) {
+            $clsQuery = \App\Models\PaymentRecord::where('bs_year', $selectedYear)
+                ->whereHas('student.student_record', function($q) use ($cls) {
+                    $q->where('my_class_id', $cls->id);
+                })
+                ->with('payment');
+
+            $clsRecords = $clsQuery->get();
+            $clsBilled = $clsRecords->sum(function($r) {
+                return (float) ($r->payment ? $r->payment->amount : 0);
+            });
+            $clsCollected = $clsRecords->sum(function($r) {
+                return (float) $r->amt_paid;
+            });
+            $clsBalance = $clsRecords->sum(function($r) {
+                return (float) $r->balance;
+            });
+
+            $classBreakdown[] = [
+                'class_name' => $cls->name,
+                'billed' => $clsBilled,
+                'collected' => $clsCollected,
+                'balance' => $clsBalance,
+                'invoices' => $clsRecords->count(),
+            ];
+        }
+
+        $overallRate = ($grandTotalBilled > 0) ? round(($grandTotalCollected / $grandTotalBilled) * 100, 1) : 0;
+
+        $d = [
+            'bs_year' => $selectedYear,
+            'my_class_id' => $classId,
+            'my_classes' => $classes,
+            'monthlySummaries' => $monthlySummaries,
+            'classBreakdown' => $classBreakdown,
+            'grandTotalBilled' => $grandTotalBilled,
+            'grandTotalCollected' => $grandTotalCollected,
+            'grandTotalBalance' => $grandTotalBalance,
+            'overallRate' => $overallRate,
+        ];
+
+        return view('pages.support_team.payments.reports', $d);
     }
 }

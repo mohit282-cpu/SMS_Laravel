@@ -56,6 +56,10 @@ class SetLocale
 
         App::setLocale($locale);
 
+        if ($request->hasSession() && Auth::check() && !empty(Auth::user()->calendar_display) && Auth::user()->calendar_display !== 'default' && !$request->session()->has('calendar_display')) {
+            $request->session()->put('calendar_display', Auth::user()->calendar_display);
+        }
+
         return $next($request);
     }
 }
