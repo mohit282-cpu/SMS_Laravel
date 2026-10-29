@@ -9,6 +9,7 @@ use App\Models\EntranceResult;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class LandingSettingsController extends Controller
 {
@@ -25,10 +26,13 @@ class LandingSettingsController extends Controller
     {
         $settings = Setting::all()->pluck('description', 'type');
 
-        $inquiryCount = AdmissionInquiry::where('status', 'pending')->count();
-        $totalInquiries = AdmissionInquiry::count();
-        $totalEntranceResults = EntranceResult::count();
-        $batchesCount = EntranceResult::select('batch_year')->distinct()->count();
+        $hasInquiriesTable = Schema::hasTable('admission_inquiries');
+        $hasResultsTable = Schema::hasTable('entrance_results');
+
+        $inquiryCount = $hasInquiriesTable ? AdmissionInquiry::where('status', 'pending')->count() : 0;
+        $totalInquiries = $hasInquiriesTable ? AdmissionInquiry::count() : 0;
+        $totalEntranceResults = $hasResultsTable ? EntranceResult::count() : 0;
+        $batchesCount = $hasResultsTable ? EntranceResult::select('batch_year')->distinct()->count() : 0;
 
         return view('pages.support_team.landing_settings.index', compact(
             'settings',
@@ -69,6 +73,11 @@ class LandingSettingsController extends Controller
     public function inquiries(Request $request)
     {
         $status = $request->input('status');
+
+        if (!Schema::hasTable('admission_inquiries')) {
+            $inquiries = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 20);
+            return view('pages.support_team.landing_settings.inquiries', compact('inquiries', 'status'));
+        }
 
         $query = AdmissionInquiry::query()->orderBy('id', 'desc');
         if (!empty($status)) {
@@ -117,6 +126,20 @@ class LandingSettingsController extends Controller
         $batch = $request->input('batch_year');
         $class = $request->input('class_name');
         $search = $request->input('search');
+
+        if (!Schema::hasTable('entrance_results')) {
+            $results = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25);
+            $batches = collect();
+            $classes = collect();
+            return view('pages.support_team.landing_settings.entrance_results', compact(
+                'results',
+                'batches',
+                'classes',
+                'batch',
+                'class',
+                'search'
+            ));
+        }
 
         $query = EntranceResult::query()->orderBy('id', 'desc');
 
