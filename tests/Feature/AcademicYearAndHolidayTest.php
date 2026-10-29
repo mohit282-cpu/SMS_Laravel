@@ -132,8 +132,34 @@ class AcademicYearAndHolidayTest extends TestCase
     public function test_admin_can_activate_and_close_academic_year()
     {
         $admin = $this->getAdminUser();
-        $ay = AcademicYear::where('is_closed', false)->first() ?? AcademicYear::first();
-        if ($ay && $ay->is_closed) {
+
+        $ay1 = AcademicYear::firstOrCreate(
+            ['year_bs' => 2083],
+            [
+                'name' => '2083/84 BS',
+                'start_date' => '2026-04-14',
+                'end_date' => '2027-04-13',
+                'start_date_bs' => '2083-01-01',
+                'end_date_bs' => '2083-12-30',
+                'is_active' => true,
+                'is_closed' => false,
+            ]
+        );
+        $ay2 = AcademicYear::firstOrCreate(
+            ['year_bs' => 2084],
+            [
+                'name' => '2084/85 BS',
+                'start_date' => '2027-04-14',
+                'end_date' => '2028-04-13',
+                'start_date_bs' => '2084-01-01',
+                'end_date_bs' => '2084-12-30',
+                'is_active' => false,
+                'is_closed' => false,
+            ]
+        );
+
+        $ay = $ay1;
+        if ($ay->is_closed) {
             $ay->update(['is_closed' => false]);
         }
 

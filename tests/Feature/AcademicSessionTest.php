@@ -15,8 +15,40 @@ class AcademicSessionTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->ensureBaselineSessionsExist();
         $curr = AcademicYear::current();
         $this->initialActiveSessionId = $curr ? $curr->id : null;
+    }
+
+    protected function ensureBaselineSessionsExist(): void
+    {
+        AcademicYear::firstOrCreate(
+            ['year_bs' => 2083],
+            [
+                'name' => '2083/84 BS',
+                'start_date' => '2026-04-14',
+                'end_date' => '2027-04-13',
+                'start_date_bs' => '2083-01-01',
+                'end_date_bs' => '2083-12-30',
+                'is_active' => true,
+                'is_closed' => false,
+                'description' => 'Baseline Academic Year 2083/84',
+            ]
+        );
+
+        AcademicYear::firstOrCreate(
+            ['year_bs' => 2082],
+            [
+                'name' => '2082/83 BS',
+                'start_date' => '2025-04-14',
+                'end_date' => '2026-04-13',
+                'start_date_bs' => '2082-01-01',
+                'end_date_bs' => '2082-12-30',
+                'is_active' => false,
+                'is_closed' => true,
+                'description' => 'Baseline Academic Year 2082/83',
+            ]
+        );
     }
 
     protected function tearDown(): void
@@ -147,6 +179,21 @@ class AcademicSessionTest extends TestCase
     {
         $admin = $this->getAdminUser();
 
+        // Ensure an open alternate session exists to receive the active status when $ay is closed
+        $openSession = AcademicYear::where('is_closed', false)->where('is_active', false)->first();
+        if (!$openSession) {
+            $openSession = AcademicYear::create([
+                'name' => 'Open Fallback ' . uniqid(),
+                'year_bs' => 2085,
+                'start_date' => '2028-04-14',
+                'end_date' => '2029-04-13',
+                'start_date_bs' => '2085-01-01',
+                'end_date_bs' => '2085-12-30',
+                'is_active' => false,
+                'is_closed' => false,
+            ]);
+        }
+
         $ay = AcademicYear::create([
             'name' => 'Session To Close ' . uniqid(),
             'year_bs' => 2086,
@@ -196,6 +243,11 @@ class AcademicSessionTest extends TestCase
         $admin = $this->getAdminUser();
 
         $currentSession = AcademicYear::current();
+        if (!$currentSession) {
+            $this->ensureBaselineSessionsExist();
+            AcademicYear::where('year_bs', 2083)->update(['is_active' => true, 'is_closed' => false]);
+            $currentSession = AcademicYear::current();
+        }
         $this->assertNotNull($currentSession);
 
         // Active session cannot be deleted

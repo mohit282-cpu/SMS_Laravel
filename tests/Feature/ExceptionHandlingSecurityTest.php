@@ -17,7 +17,20 @@ class ExceptionHandlingSecurityTest extends TestCase
     public function test_raw_exception_is_not_exposed_to_user_on_unexpected_failure()
     {
         $student = User::where('user_type', 'student')->first();
-        $book = Book::first();
+        $class = \App\Models\MyClass::first();
+        $book = Book::firstOrCreate(
+            ['name' => 'Security Exception Test Book'],
+            [
+                'my_class_id' => $class ? $class->id : 1,
+                'description' => 'Security Exception Test Book Description',
+                'author' => 'Security Test Author',
+                'book_type' => 'Standard',
+                'url' => null,
+                'location' => 'Shelf SEC-1',
+                'total_copies' => 5,
+                'issued_copies' => 0,
+            ]
+        );
 
         // Mock LibraryService to throw an unexpected database-level exception with sensitive SQL/schema
         $mockService = $this->createMock(LibraryService::class);

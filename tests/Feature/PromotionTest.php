@@ -53,27 +53,27 @@ class PromotionTest extends TestCase
         }
 
         $ayCurrent = AcademicYear::create([
-            'name' => '2081/82 BS',
-            'year_bs' => 2081,
-            'start_date' => '2024-04-13',
-            'end_date' => '2025-04-13',
-            'start_date_bs' => '2081-01-01',
-            'end_date_bs' => '2081-12-30',
+            'name' => '2070/71 BS',
+            'year_bs' => 2070,
+            'start_date' => '2013-04-14',
+            'end_date' => '2014-04-13',
+            'start_date_bs' => '2070-01-01',
+            'end_date_bs' => '2070-12-30',
             'is_active' => true,
         ]);
 
         $ayNext = AcademicYear::create([
-            'name' => '2082/83 BS Target',
-            'year_bs' => 2082,
-            'start_date' => '2025-04-14',
-            'end_date' => '2026-04-13',
-            'start_date_bs' => '2082-01-01',
-            'end_date_bs' => '2082-12-30',
+            'name' => '2071/72 BS Target',
+            'year_bs' => 2071,
+            'start_date' => '2014-04-14',
+            'end_date' => '2015-04-13',
+            'start_date_bs' => '2071-01-01',
+            'end_date_bs' => '2071-12-30',
             'is_active' => false,
         ]);
 
-        $this->assertEquals('2081/82 BS', Qs::getCurrentSession());
-        $this->assertEquals('2082/83 BS Target', Qs::getNextSession());
+        $this->assertEquals('2070/71 BS', Qs::getCurrentSession());
+        $this->assertEquals('2071/72 BS Target', Qs::getNextSession());
 
         // Clean up test records
         $ayNext->delete();

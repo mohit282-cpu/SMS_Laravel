@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
         $this->call(StatesTableSeeder::class);
         $this->call(LgasTableSeeder::class);
         $this->call(SettingsTableSeeder::class);
+        $this->call(AcademicYearsTableSeeder::class);
         $this->call(UsersTableSeeder::class);
         if (app()->environment('local', 'testing')) {
             $this->call(DemoUsersSeeder::class);
