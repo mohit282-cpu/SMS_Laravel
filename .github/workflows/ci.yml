@@ -1,176 +1,216 @@
-name: CI Pipeline
+name: CI
 
 on:
   push:
     branches: [ main, testing ]
   pull_request:
     branches: [ main, testing ]
+  workflow_dispatch:
 
+# Cancel superseded runs on the same branch/PR, but never cancel a run on the
+# default branch that may already be reporting a protection-gate result.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 permissions:
   contents: read
 
-jobs:
-  laravel-tests:
-    name: PHP Tests & Linting
-    runs-on: ubuntu-latest
+env:
+  COMPOSER_NO_INTERACTION: "1"
 
-    env:
-      DB_CONNECTION: mysql_test
-      DB_TEST_DATABASE: sms_laravel_test
-      DB_TEST_USERNAME: root
-      DB_TEST_PASSWORD: root
-      DB_TEST_HOST: 127.0.0.1
-      DB_TEST_PORT: 3306
-      DB_DATABASE: sms_laravel_test
-      DB_USERNAME: root
-      DB_PASSWORD: root
-      DB_HOST: 127.0.0.1
-      DB_PORT: 3306
+jobs:
+  php-tests:
+    name: PHP 8.2 / Tests
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
 
     services:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_ROOT_PASSWORD: root
+          MYSQL_ROOT_PASSWORD: ci_root_password
           MYSQL_DATABASE: sms_laravel_test
         ports:
           - 3306:3306
-        options: --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval=10s --health-timeout=5s --health-retries=5
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -pci_root_password --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+          --health-start-period=30s
+
+    env:
+      APP_ENV: testing
+      APP_DEBUG: "false"
+      DB_CONNECTION: mysql_test
+      DB_TEST_HOST: 127.0.0.1
+      DB_TEST_PORT: "3306"
+      DB_TEST_DATABASE: sms_laravel_test
+      DB_TEST_USERNAME: root
+      DB_TEST_PASSWORD: ci_root_password
+      DB_HOST: 127.0.0.1
+      DB_PORT: "3306"
+      DB_DATABASE: sms_laravel_test
+      DB_USERNAME: root
+      DB_PASSWORD: ci_root_password
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Setup PHP
-        uses: shivammathur/setup-php@v2
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
         with:
           php-version: '8.2'
-          extensions: mbstring, xml, ctype, iconv, pdo_mysql, mysqli, sqlite, pdo_sqlite, gmp, bcmath, gd, zip
+          extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, sqlite, pdo_sqlite, gmp
           coverage: none
           tools: composer:v2
+          cache: composer
 
-      - name: Validate composer.json
+      - name: Validate Composer manifest
         run: composer validate --strict
 
-      - name: Setup Application Environment
-        run: |
-          cp .env.example .env
-          sed -i 's/DB_DATABASE=sms_laravel/DB_DATABASE=sms_laravel_test/g' .env
-          sed -i 's/DB_PASSWORD=/DB_PASSWORD=root/g' .env
-
-      - name: Get Composer Cache Directory
-        id: composer-cache
-        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
-
-      - name: Cache Composer Dependencies
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.composer-cache.outputs.dir }}
-          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
-          restore-keys: ${{ runner.os }}-composer-
-
-      - name: Install Composer Dependencies
+      - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Generate Application Key
-        run: php artisan key:generate
-
-      - name: Verify Isolated Test Environment
-        run: |
-          if [ "$DB_DATABASE" = "sms_laravel" ] || [ "$DB_TEST_DATABASE" = "sms_laravel" ]; then
-            echo "::error::CI test environment is targeting production database name 'sms_laravel'! Aborting."
-            exit 1
-          fi
-          echo "Test environment database isolation verified ($DB_TEST_DATABASE)."
-
-      - name: Composer Security Audit Gate
+      - name: Composer security audit gate
         run: php .github/scripts/audit-checker.php
 
-      - name: PHP Syntax Linting
+      - name: PHP syntax lint
         run: |
+          set -euo pipefail
           errors=0
           while IFS= read -r -d '' file; do
             if ! php -l "$file" > /dev/null 2>&1; then
-              echo "Syntax error in $file"
+              echo "::error file=$file::PHP syntax error"
               php -l "$file"
               errors=$((errors + 1))
             fi
-          done < <(find app bootstrap config database routes tests -type f -name "*.php" -print0)
-          if [ $errors -ne 0 ]; then
-            echo "$errors PHP syntax errors found!"
+          done < <(find app bootstrap config database routes tests -type f -name '*.php' -print0)
+
+          if [ "$errors" -ne 0 ]; then
+            echo "::error::$errors PHP file(s) failed syntax linting."
             exit 1
           fi
           echo "All PHP files passed syntax linting."
 
-      - name: Verify MySQL Connection
+      - name: Prepare application environment
         run: |
-          php -r "
-            \$retries = 15;
-            while (\$retries > 0) {
-              try {
-                new PDO('mysql:host=127.0.0.1;port=3306;dbname=sms_laravel_test', 'root', 'root');
-                echo 'MySQL service is connected and ready.' . PHP_EOL;
-                exit(0);
-              } catch (Exception \$e) {
-                echo 'Waiting for MySQL... (' . \$e->getMessage() . ')' . PHP_EOL;
-                sleep(2);
-                \$retries--;
-              }
-            }
-            echo 'Unable to connect to MySQL service container.' . PHP_EOL;
-            exit(1);
-          "
+          set -euo pipefail
+          cp .env.example .env
+          php artisan key:generate --ansi
+          php artisan config:clear
 
-      - name: Run Migrations on Isolated Test Database
+      - name: Verify configuration can be cached
         run: |
+          set -euo pipefail
+          php artisan config:cache
+          php artisan config:clear
+
+      - name: Verify routes load
+        run: php artisan route:list
+
+      - name: Verify disposable CI database
+        run: php .github/scripts/verify-ci-database.php --connection=mysql_test
+
+      - name: Verify migration rollback and re-apply
+        run: |
+          set -euo pipefail
+          php artisan migrate:fresh --force --database=mysql_test
+          php artisan migrate:rollback --force --database=mysql_test
           php artisan migrate --force --database=mysql_test
           php artisan db:seed --force --database=mysql_test
 
-      - name: Verify Laravel Configuration & Routes
+      - name: Run test suite
         run: |
-          php artisan config:clear
-          php artisan route:list
+          set -euo pipefail
+          mkdir -p build/reports
+          vendor/bin/phpunit --verbose --log-junit build/reports/junit.xml
 
-      - name: Run Test Suite
-        run: php artisan test --verbose --log-junit test-results.xml
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: php-test-reports
+          path: |
+            build/reports/junit.xml
+            storage/logs/laravel.log
+          if-no-files-found: ignore
+          retention-days: 14
 
-      - name: Diagnostic Output on Failure
+      - name: Diagnostic output on failure
         if: failure()
         run: |
-          echo "=== TEST RESULTS SUMMARY ==="
-          cat test-results.xml 2>/dev/null || true
-          echo "=== LARAVEL LOG ==="
-          cat storage/logs/laravel.log 2>/dev/null || true
+          echo "::group::PHP version"
+          php -v || true
+          echo "::group::Composer audit"
+          composer audit --locked --format=plain || true
+          echo "::group::Migration status"
+          php artisan migrate:status --database=mysql_test || true
+          echo "::group::Laravel log"
+          tail -n 200 storage/logs/laravel.log || true
 
   frontend-build:
-    name: Frontend Asset Compilation
+    name: Frontend build (Node 14)
     runs-on: ubuntu-22.04
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Node.js 14
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
-          node-version: 14
-          cache: 'npm'
+          # Legacy Laravel Mix 2 / Webpack 3 / node-sass 4 stack. Do not bump
+          # this until the Vue 3 + Vite migration in docs/frontend-modernization.md.
+          node-version: '14'
+          cache: npm
 
-      - name: Install NPM Dependencies
+      - name: Install npm dependencies
         run: npm ci
 
-      - name: NPM Dependency Audit Gate
-        run: node .github/scripts/npm-audit-checker.js
-
-      - name: Compile Production Assets
+      - name: Compile production assets
         run: npm run prod
 
-      - name: Verify Compiled Assets
+      - name: Verify compiled assets
         run: |
-          test -f public/js/app.js || { echo "public/js/app.js is missing!"; exit 1; }
-          test -f public/css/app.css || { echo "public/css/app.css is missing!"; exit 1; }
-          echo "Frontend assets compiled successfully."
+          set -euo pipefail
+          test -f public/js/app.js || { echo "::error::public/js/app.js is missing"; exit 1; }
+          test -f public/css/app.css || { echo "::error::public/css/app.css is missing"; exit 1; }
+          ls -lh public/js/app.js public/css/app.css
+
+      - name: Upload compiled assets
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: frontend-assets
+          path: |
+            public/js/app.js
+            public/css/app.css
+            public/mix-manifest.json
+          if-no-files-found: error
+          retention-days: 7
+
+  npm-audit:
+    name: npm audit gate (Node 22)
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          # The audit gate runs on a current npm because npm 6 does not emit
+          # stable machine-readable audit output. This job does not build
+          # assets; the Node 14 build job above owns compilation.
+          node-version: '22'
+
+      - name: Run npm audit gate
+        run: |
+          node --version
+          npm --version
+          node .github/scripts/npm-audit-checker.js

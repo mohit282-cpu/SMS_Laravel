@@ -2,6 +2,7 @@
 
 namespace Tests;
 
+use App\Support\Testing\DatabaseSafetyGuard;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
@@ -14,22 +15,9 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutMiddleware(\App\Http\Middleware\VerifyCsrfToken::class);
 
-        $connection = config('database.default');
+        $connection = (string) config('database.default');
         $database = (string) config("database.connections.{$connection}.database");
 
-        // Refuse to execute tests in production environment
-        if (app()->environment('production')) {
-            throw new \RuntimeException("Safety Guard: Refusing to execute test suite in production environment!");
-        }
-
-        // Verify the database is explicitly designated for testing
-        $isDisposableTestDb = str_contains($database, 'test')
-            || str_contains($database, 'sqlite')
-            || $connection === 'mysql_test'
-            || app()->runningUnitTests();
-
-        if (!$isDisposableTestDb || $database === 'sms_laravel' || $database === 'production') {
-            throw new \RuntimeException("Safety Guard: Target database '{$database}' on connection '{$connection}' is not a designated disposable test database!");
-        }
+        DatabaseSafetyGuard::assertSafe((string) app()->environment(), $connection, $database);
     }
 }

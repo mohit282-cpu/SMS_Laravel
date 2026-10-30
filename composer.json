@@ -5,7 +5,7 @@
     "license": "MIT",
     "type": "project",
     "require": {
-        "php": "^7.2||^8.0||^8.1||^8.2||^8.3",
+        "php": "^8.2",
         "barryvdh/laravel-dompdf": "^2.0",
         "ernilambar/nepali-date": "^1.0",
         "fakerphp/faker": "^1.14",

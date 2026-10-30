@@ -463,9 +463,17 @@ class ParentAccountManagementTest extends TestCase
             'session' => '2024-2025',
         ]);
 
-        // Attach an exam record so exam years exist for Student A
+        // Attach an exam record so exam years exist for Student A.
+        // exam_records.exam_id has a foreign key to exams.id, so the parent
+        // exam row must be created instead of assuming a seeded exam exists.
+        $exam = \App\Models\Exam::create([
+            'name' => 'Terminal Exam ' . $unique,
+            'term' => 1,
+            'year' => '2024-2025',
+        ]);
+
         \App\Models\ExamRecord::create([
-            'exam_id' => 1,
+            'exam_id' => $exam->id,
             'student_id' => $studentUserA->id,
             'my_class_id' => $this->myClass->id,
             'section_id' => $this->section->id,

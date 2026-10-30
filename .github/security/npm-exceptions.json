@@ -1,0 +1,899 @@
+{
+    "policy": "npm-build-dependency-exceptions",
+    "version": 1,
+    "description": "Version-pinned risk acceptance for high/critical advisories in the legacy Laravel Mix 2 / Webpack 3 / Vue 2 build toolchain. All entries are devDependencies: they compile static assets on CI and are never shipped to browsers or executed in production. The audit gate fails on any new, changed, or fixed finding, so this file cannot silently grow",
+    "owner": "Repository owner (mohit282-cpu)",
+    "reviewDue": "2026-12-31",
+    "reason": "The frontend toolchain is pinned to laravel-mix 2.1.14 / webpack 3 / node-sass 4.14 / Vue 2.7. node-sass 4.x has no prebuilt binaries for Node versions newer than 14 and Laravel Mix 2 depends on Webpack 3, so the build cannot move to a supported Node LTS without a dedicated toolchain migration. All affected packages are build-time devDependencies; no npm package is served to users.",
+    "mitigations": [
+        "package.json declares zero runtime dependencies, so the accepted findings cannot reach a user browser or production runtime.",
+        "CI installs strictly from the committed package-lock.json with npm ci on an isolated ephemeral runner.",
+        "The legacy webpack-dev-server / hot-reload mode is never exposed by CI or production.",
+        "Every entry is version-pinned; any dependency change, new advisory, or removed advisory fails the gate and requires a documented re-review.",
+        "docs/frontend-modernization.md defines the migration to Vite or Laravel Mix 6 on a supported Node LTS with an exit review date."
+    ],
+    "accepted": [
+        {
+            "package": "ansi-html",
+            "version": "0.0.7",
+            "severity": "high",
+            "advisories": [
+                "GHSA-WHGM-JR23-G3J9"
+            ],
+            "via": []
+        },
+        {
+            "package": "autoprefixer",
+            "version": "7.2.6",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "browserslist",
+                "postcss"
+            ]
+        },
+        {
+            "package": "axios",
+            "version": "0.18.1",
+            "severity": "high",
+            "advisories": [
+                "GHSA-3P68-RC4W-QGX5",
+                "GHSA-43FC-JF86-J433",
+                "GHSA-4W2V-Q235-VP99",
+                "GHSA-5C9X-8GCM-MPGX",
+                "GHSA-62HF-57XW-28J9",
+                "GHSA-6CHQ-WFR3-2HJ9",
+                "GHSA-7Q8Q-RJ6J-MHJQ",
+                "GHSA-898C-Q2CR-XWHG",
+                "GHSA-CPH5-M8F7-6C5X",
+                "GHSA-FVCV-3M26-PCQX",
+                "GHSA-HFXV-24RG-XRQF",
+                "GHSA-J5F8-GRM9-P9FC",
+                "GHSA-JR5F-V2JV-69X6",
+                "GHSA-M7PR-HJQH-92CM",
+                "GHSA-MMX7-HFXF-JPPX",
+                "GHSA-P92Q-9VQR-4J8V",
+                "GHSA-PF86-5X62-JRWF",
+                "GHSA-PJWM-PJ3P-43MV",
+                "GHSA-PMWG-CVHR-8VH7",
+                "GHSA-VF2M-468P-8V99",
+                "GHSA-W9J2-PVGH-6H63",
+                "GHSA-WF5P-G6VW-RHXX",
+                "GHSA-XHJH-PMCV-23JW",
+                "GHSA-XX6V-RP6X-Q39C"
+            ],
+            "via": [
+                "follow-redirects"
+            ]
+        },
+        {
+            "package": "babel-core",
+            "version": "6.26.3",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helpers",
+                "babel-register",
+                "babel-template",
+                "babel-traverse",
+                "json5"
+            ]
+        },
+        {
+            "package": "babel-helper-builder-binary-assignment-operator-visitor",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-explode-assignable-expression"
+            ]
+        },
+        {
+            "package": "babel-helper-call-delegate",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-helper-define-map",
+            "version": "6.26.0",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-function-name"
+            ]
+        },
+        {
+            "package": "babel-helper-explode-assignable-expression",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-helper-function-name",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-helper-remap-async-to-generator",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-function-name",
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-helper-replace-supers",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-helpers",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-loader",
+            "version": "7.1.5",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-core"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-async-to-generator",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-remap-async-to-generator"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-block-scoping",
+            "version": "6.26.0",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-classes",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-define-map",
+                "babel-helper-function-name",
+                "babel-helper-replace-supers",
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-computed-properties",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-function-name",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-function-name"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-modules-amd",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-plugin-transform-es2015-modules-commonjs",
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-modules-commonjs",
+            "version": "6.26.2",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-modules-systemjs",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-modules-umd",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-plugin-transform-es2015-modules-amd",
+                "babel-template"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-object-super",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-replace-supers"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-es2015-parameters",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-call-delegate",
+                "babel-template",
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-plugin-transform-exponentiation-operator",
+            "version": "6.24.1",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-helper-builder-binary-assignment-operator-visitor"
+            ]
+        },
+        {
+            "package": "babel-preset-env",
+            "version": "1.7.0",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-plugin-transform-async-to-generator",
+                "babel-plugin-transform-es2015-block-scoping",
+                "babel-plugin-transform-es2015-classes",
+                "babel-plugin-transform-es2015-computed-properties",
+                "babel-plugin-transform-es2015-function-name",
+                "babel-plugin-transform-es2015-modules-amd",
+                "babel-plugin-transform-es2015-modules-commonjs",
+                "babel-plugin-transform-es2015-modules-systemjs",
+                "babel-plugin-transform-es2015-modules-umd",
+                "babel-plugin-transform-es2015-object-super",
+                "babel-plugin-transform-es2015-parameters",
+                "babel-plugin-transform-exponentiation-operator",
+                "browserslist"
+            ]
+        },
+        {
+            "package": "babel-register",
+            "version": "6.26.0",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-core"
+            ]
+        },
+        {
+            "package": "babel-template",
+            "version": "6.26.0",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "babel-traverse"
+            ]
+        },
+        {
+            "package": "babel-traverse",
+            "version": "6.26.0",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-67HX-6X53-JW92"
+            ],
+            "via": []
+        },
+        {
+            "package": "braces",
+            "version": "2.3.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-GRV7-FG5C-XMJG"
+            ],
+            "via": []
+        },
+        {
+            "package": "browserslist",
+            "version": "2.11.3",
+            "severity": "high",
+            "advisories": [
+                "GHSA-73WF-GQ98-2V4G",
+                "GHSA-C83G-RGW3-J3CX"
+            ],
+            "via": []
+        },
+        {
+            "package": "cacache",
+            "version": "10.0.4",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "ssri"
+            ]
+        },
+        {
+            "package": "caniuse-api",
+            "version": "1.6.1",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "browserslist"
+            ]
+        },
+        {
+            "package": "chokidar",
+            "version": "2.1.8",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "anymatch",
+                "braces",
+                "readdirp"
+            ]
+        },
+        {
+            "package": "cross-spawn",
+            "version": "6.0.6",
+            "severity": "high",
+            "advisories": [
+                "GHSA-3XGQ-45JJ-V275"
+            ],
+            "via": []
+        },
+        {
+            "package": "css",
+            "version": "2.2.4",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "source-map-resolve"
+            ]
+        },
+        {
+            "package": "decode-uri-component",
+            "version": "0.2.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-QR28-FPJM-WQ7F",
+                "GHSA-VCC3-GHJQ-M6FR"
+            ],
+            "via": []
+        },
+        {
+            "package": "eventsource",
+            "version": "0.1.6",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-6H5X-7C5M-7CR7"
+            ],
+            "via": []
+        },
+        {
+            "package": "execa",
+            "version": "0.7.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "cross-spawn"
+            ]
+        },
+        {
+            "package": "extract-text-webpack-plugin",
+            "version": "3.0.2",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "schema-utils",
+                "webpack"
+            ]
+        },
+        {
+            "package": "follow-redirects",
+            "version": "1.5.10",
+            "severity": "high",
+            "advisories": [
+                "GHSA-74FJ-2J2H-C42Q",
+                "GHSA-CXJH-PQWP-8MFP",
+                "GHSA-JCHW-25XP-JWWC",
+                "GHSA-PW2R-VQ6V-HR8C",
+                "GHSA-R4Q5-VMMM-2653"
+            ],
+            "via": []
+        },
+        {
+            "package": "form-data",
+            "version": "2.3.3",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-FJXV-7RQG-78G4",
+                "GHSA-HMW2-7CC7-3QXX"
+            ],
+            "via": []
+        },
+        {
+            "package": "gaze",
+            "version": "1.1.3",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "globule"
+            ]
+        },
+        {
+            "package": "globule",
+            "version": "1.3.4",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "minimatch"
+            ]
+        },
+        {
+            "package": "html-loader",
+            "version": "0.4.5",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "html-minifier"
+            ]
+        },
+        {
+            "package": "html-minifier",
+            "version": "3.5.21",
+            "severity": "high",
+            "advisories": [
+                "GHSA-PFQ8-RQ6V-VF5M"
+            ],
+            "via": []
+        },
+        {
+            "package": "http-proxy-middleware",
+            "version": "0.19.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-64MM-VXMG-Q3VJ",
+                "GHSA-C7QV-Q95Q-8V27"
+            ],
+            "via": [
+                "micromatch"
+            ]
+        },
+        {
+            "package": "ip",
+            "version": "1.1.9",
+            "severity": "high",
+            "advisories": [
+                "GHSA-2P57-RM9W-GVFP"
+            ],
+            "via": []
+        },
+        {
+            "package": "is-svg",
+            "version": "2.1.0",
+            "severity": "high",
+            "advisories": [
+                "GHSA-7R28-3M3F-R2PR",
+                "GHSA-R8J5-H5CX-65GG"
+            ],
+            "via": []
+        },
+        {
+            "package": "js-yaml",
+            "version": "3.15.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-2883-XCG3-V3HH",
+                "GHSA-2PR6-76VF-7546",
+                "GHSA-52CP-R559-CP3M",
+                "GHSA-5P4M-2WFM-XMQJ",
+                "GHSA-8J8C-7JFH-H6HX",
+                "GHSA-H67P-54HQ-RP68",
+                "GHSA-MH29-5H37-FV8M"
+            ],
+            "via": []
+        },
+        {
+            "package": "json5",
+            "version": "0.5.1",
+            "severity": "high",
+            "advisories": [
+                "GHSA-9C47-M6QQ-7P4H"
+            ],
+            "via": []
+        },
+        {
+            "package": "laravel-mix",
+            "version": "2.1.14",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "autoprefixer",
+                "babel-core",
+                "babel-preset-env",
+                "chokidar",
+                "css-loader",
+                "extract-text-webpack-plugin",
+                "html-loader",
+                "node-sass",
+                "postcss-loader",
+                "resolve-url-loader",
+                "sass-loader",
+                "style-loader",
+                "uglifyjs-webpack-plugin",
+                "vue-loader",
+                "vue-template-compiler",
+                "webpack",
+                "webpack-dev-server",
+                "yargs"
+            ]
+        },
+        {
+            "package": "meow",
+            "version": "3.7.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "trim-newlines"
+            ]
+        },
+        {
+            "package": "micromatch",
+            "version": "3.1.10",
+            "severity": "high",
+            "advisories": [
+                "GHSA-952P-6RRQ-RCJV"
+            ],
+            "via": [
+                "braces"
+            ]
+        },
+        {
+            "package": "minimatch",
+            "version": "3.1.5",
+            "severity": "high",
+            "advisories": [
+                "GHSA-23C5-XMQV-RM74",
+                "GHSA-3PPC-4F35-3M26",
+                "GHSA-7R86-CG39-JMMJ"
+            ],
+            "via": []
+        },
+        {
+            "package": "node-forge",
+            "version": "0.10.0",
+            "severity": "high",
+            "advisories": [
+                "GHSA-2328-F5F3-GJ25",
+                "GHSA-2R2C-G63R-VCCR",
+                "GHSA-554W-WPV2-VW27",
+                "GHSA-5GFM-WPXJ-WJGQ",
+                "GHSA-5M6Q-G25R-MVWX",
+                "GHSA-5RRQ-PXF6-6JX5",
+                "GHSA-65CH-62R8-G69G",
+                "GHSA-86W9-CPQP-85RV",
+                "GHSA-8FR3-HFG3-GPGP",
+                "GHSA-CFM4-QJH2-4765",
+                "GHSA-GF8Q-JRPM-JVXQ",
+                "GHSA-PPP5-5V6C-4JWP",
+                "GHSA-Q67F-28XG-22RW",
+                "GHSA-X4JG-MJRX-434G"
+            ],
+            "via": []
+        },
+        {
+            "package": "node-gyp",
+            "version": "3.8.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "request",
+                "semver",
+                "tar"
+            ]
+        },
+        {
+            "package": "node-sass",
+            "version": "4.14.1",
+            "severity": "high",
+            "advisories": [
+                "GHSA-R8F7-9PFQ-MJMV"
+            ],
+            "via": [
+                "cross-spawn",
+                "gaze",
+                "meow",
+                "node-gyp",
+                "request",
+                "sass-graph"
+            ]
+        },
+        {
+            "package": "object-path",
+            "version": "0.9.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-8V63-CQQC-6R2C",
+                "GHSA-CWX2-736X-MF6W",
+                "GHSA-V39P-96QG-C8RF"
+            ],
+            "via": []
+        },
+        {
+            "package": "os-locale",
+            "version": "2.1.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "execa",
+                "mem"
+            ]
+        },
+        {
+            "package": "postcss",
+            "version": "6.0.23",
+            "severity": "high",
+            "advisories": [
+                "GHSA-566M-QJ78-RWW5",
+                "GHSA-6G55-P6WH-862Q",
+                "GHSA-7FH5-64P2-3V2J",
+                "GHSA-FXQJ-RQCC-2CMP",
+                "GHSA-QX2V-QP2M-JG93",
+                "GHSA-R28C-9Q8G-F849"
+            ],
+            "via": []
+        },
+        {
+            "package": "postcss-merge-rules",
+            "version": "2.1.2",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "browserslist",
+                "caniuse-api",
+                "postcss",
+                "postcss-selector-parser"
+            ]
+        },
+        {
+            "package": "request",
+            "version": "2.88.2",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-P8P7-X288-28G6"
+            ],
+            "via": [
+                "form-data",
+                "qs",
+                "tough-cookie",
+                "uuid"
+            ]
+        },
+        {
+            "package": "sass-graph",
+            "version": "2.2.5",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "scss-tokenizer"
+            ]
+        },
+        {
+            "package": "scss-tokenizer",
+            "version": "0.2.3",
+            "severity": "high",
+            "advisories": [
+                "GHSA-7MWH-4PQV-WMR8"
+            ],
+            "via": []
+        },
+        {
+            "package": "selfsigned",
+            "version": "1.10.14",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "node-forge"
+            ]
+        },
+        {
+            "package": "semver",
+            "version": "5.7.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-C2QF-RXJJ-QQGW"
+            ],
+            "via": []
+        },
+        {
+            "package": "serialize-javascript",
+            "version": "1.9.1",
+            "severity": "high",
+            "advisories": [
+                "GHSA-5C6J-R48X-RMVQ",
+                "GHSA-H9RV-JMMF-4PGX",
+                "GHSA-HXCC-F52P-WC94",
+                "GHSA-M5MM-P8H7-M29V"
+            ],
+            "via": []
+        },
+        {
+            "package": "sockjs-client",
+            "version": "1.1.5",
+            "severity": "critical",
+            "advisories": [],
+            "via": [
+                "eventsource"
+            ]
+        },
+        {
+            "package": "source-map-resolve",
+            "version": "0.5.3",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "decode-uri-component"
+            ]
+        },
+        {
+            "package": "ssri",
+            "version": "5.3.0",
+            "severity": "high",
+            "advisories": [
+                "GHSA-VX3P-948G-6VHQ"
+            ],
+            "via": []
+        },
+        {
+            "package": "tar",
+            "version": "2.2.2",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-23HP-3JRH-7FPW",
+                "GHSA-34X7-HFP2-RC4V",
+                "GHSA-3JFQ-G458-7QM9",
+                "GHSA-5955-9WPR-37JH",
+                "GHSA-83G3-92JG-28CX",
+                "GHSA-8QQ5-RM4J-MR97",
+                "GHSA-8X88-C5MF-7J5W",
+                "GHSA-9PPJ-QMQM-Q256",
+                "GHSA-F5X3-32G6-XQ36",
+                "GHSA-GVWX-54WH-QM9J",
+                "GHSA-QFFP-2RHF-9H96",
+                "GHSA-R292-9MHP-454M",
+                "GHSA-R6Q2-HW4H-H46W",
+                "GHSA-VMF3-W455-68VH",
+                "GHSA-W8WR-V893-VJVP"
+            ],
+            "via": []
+        },
+        {
+            "package": "trim-newlines",
+            "version": "1.0.0",
+            "severity": "high",
+            "advisories": [
+                "GHSA-7P7H-4MM5-852V"
+            ],
+            "via": []
+        },
+        {
+            "package": "uglifyjs-webpack-plugin",
+            "version": "1.3.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "cacache",
+                "serialize-javascript"
+            ]
+        },
+        {
+            "package": "watchpack",
+            "version": "1.7.5",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "watchpack-chokidar2"
+            ]
+        },
+        {
+            "package": "watchpack-chokidar2",
+            "version": "2.0.1",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "chokidar"
+            ]
+        },
+        {
+            "package": "webpack",
+            "version": "3.12.0",
+            "severity": "high",
+            "advisories": [],
+            "via": [
+                "json5",
+                "node-libs-browser",
+                "yargs"
+            ]
+        },
+        {
+            "package": "webpack-dev-middleware",
+            "version": "1.12.2",
+            "severity": "high",
+            "advisories": [
+                "GHSA-G84C-RXFJ-3J2C",
+                "GHSA-WR3J-PWJ9-HQQ6"
+            ],
+            "via": []
+        },
+        {
+            "package": "webpack-dev-server",
+            "version": "2.11.5",
+            "severity": "critical",
+            "advisories": [
+                "GHSA-4V9V-HFQ4-RM2V",
+                "GHSA-79CF-XCQC-C78W",
+                "GHSA-9JGG-88MC-972H",
+                "GHSA-CF66-XWFP-GVC4",
+                "GHSA-F5VJ-F2HX-8M93",
+                "GHSA-M28W-2PQF-7QGJ",
+                "GHSA-MX8G-39Q3-5C79"
+            ],
+            "via": [
+                "ansi-html",
+                "chokidar",
+                "http-proxy-middleware",
+                "ip",
+                "selfsigned",
+                "sockjs",
+                "sockjs-client",
+                "webpack-dev-middleware",
+                "yargs"
+            ]
+        }
+    ]
+}

@@ -2,6 +2,7 @@
 /node_modules
 /public/storage
 /public/hot
+/build
 /storage/*.key
 .env
 .env.backup

@@ -20,10 +20,10 @@ SMS Academy enforces strict role-based access control (RBAC) across seven distin
 
 ## Requirements
 
-- **PHP**: 8.1 or 8.2 (with `pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `gmp` or `bcmath` extensions)
-- **Database**: MySQL 5.7+ or MariaDB 10.3+ (Test database: `sms_laravel_test` on `mysql_test` connection)
+- **PHP**: 8.2 only (with `pdo`, `mbstring`, `openssl`, `tokenizer`, `xml`, `ctype`, `json`, `gmp` or `bcmath` extensions). `composer.lock` requires PHP >= 8.2 (for example `minishlink/web-push` 11 and `brick/math`), so PHP 8.1 is not supported even though older docs claimed it was.
+- **Database**: MySQL 8.0+ (CI) or MariaDB 10.4+ (local development). Test database: `sms_laravel_test` on the `mysql_test` connection.
 - **Composer**: 2.x
-- **Node.js & NPM**: Node 14.x for legacy Laravel Mix 2 asset compilation (`npm ci` & `npm run prod` via committed `package-lock.json`); modernization to Vite/Laravel Mix 6 planned in roadmap.
+- **Node.js & NPM**: Node 14.x for legacy Laravel Mix 2 asset compilation (`npm ci` & `npm run prod` via committed `package-lock.json`). Node 14 is end-of-life; it is required only because of the Mix 2 / Webpack 3 / node-sass 4 toolchain. Modernization to Vite is tracked in [`docs/frontend-modernization.md`](docs/frontend-modernization.md).
 
 ---
 
@@ -103,6 +103,19 @@ SMS Academy uses an isolated, disposable test database connection (`mysql_test`)
    ```bash
    php artisan test
    ```
+
+---
+
+## Continuous Integration & Deployment
+
+CI is defined in `.github/workflows/ci.yml` and runs on pushes and pull requests to `main` and `testing`, plus manual dispatch. It runs the PHP 8.2 test suite against a disposable MySQL 8.0 service, verifies the full migration → rollback → re-apply lifecycle, enforces fail-closed Composer and npm security gates, and compiles the legacy frontend on Node 14.
+
+- Security policy and accepted-risk dates: `.github/security/`
+- Full audit and defect register: [`docs/ci-cd-audit.md`](docs/ci-cd-audit.md)
+- Frontend toolchain migration plan: [`docs/frontend-modernization.md`](docs/frontend-modernization.md)
+- **Deployment is not configured.** See [`docs/deployment.md`](docs/deployment.md) for the missing hosting information and the recommended manual deployment shape.
+
+No workflow deploys automatically. A push to `testing` never deploys to production.
 
 ---
 

@@ -138,6 +138,15 @@ class CreateLibraryModuleTables extends Migration
     {
         if (Schema::hasTable('book_requests')) {
             Schema::table('book_requests', function (Blueprint $table) {
+                // Foreign keys must be dropped before their columns, otherwise
+                // MySQL/MariaDB refuses with "Cannot drop index ... needed in a
+                // foreign key constraint" and rollbacks become impossible.
+                foreach (['approved_by', 'issued_by', 'returned_by_staff'] as $foreignColumn) {
+                    if (Schema::hasColumn('book_requests', $foreignColumn)) {
+                        $table->dropForeign([$foreignColumn]);
+                    }
+                }
+
                 $columns = ['borrower_type', 'request_date', 'issue_date', 'due_date', 'return_date', 'approved_by', 'issued_by', 'returned_by_staff', 'fine_amount', 'fine_paid', 'notes'];
                 foreach ($columns as $col) {
                     if (Schema::hasColumn('book_requests', $col)) {

@@ -1,0 +1,135 @@
+{
+    "policy": "composer-advisory-exceptions",
+    "version": 1,
+    "description": "Documented, time-bound risk acceptance for Composer advisories that cannot be remediated without a framework major-version upgrade. Every entry names the advisory IDs it covers, the affected package, the owner, an expiry date, and the compensating control that keeps the residual risk acceptable. The CI gate fails for any advisory not covered here, for expired entries, and for stale entries that no longer match a live advisory.",
+    "owner": "Repository owner (mohit282-cpu)",
+    "reviewDue": "2026-12-31",
+    "exceptions": [
+        {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-b41t-wbzk-9q51",
+                "CVE-2026-114509",
+                "GHSA-f9x3-7vq9-cph6"
+            ],
+            "severity": "critical",
+            "scope": "runtime",
+            "reason": "TokenGuard authentication bypass via non-string API credentials. The installed laravel/framework line is 8.83.29, the final Laravel 8 release; no 8.x patch exists. PHP 8.2 support in this application depends on the Laravel 8 line, and an upgrade to Laravel 9+ is tracked as a separate, tested migration.",
+            "compensatingControl": "The application does not issue API tokens: there is no api_token column, no token issuance endpoint, and the only auth:api route (/api/user) is unauthenticated-guarded. Tests/Feature/ApiGuardSecurityTest.php enforces this invariant and fails CI if a token column or token issuance path is introduced.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-3r5d-mb8f-1qw9",
+                "GHSA-5vg9-5847-vvmq"
+            ],
+            "severity": "high",
+            "scope": "runtime",
+            "reason": "CRLF injection in the default email validation rule. No Laravel 8.x patch is available; remediation requires the Laravel 9+ validation rewrite that is part of the framework modernization plan.",
+            "compensatingControl": "User-controlled values are used as validated e-mail payloads, not as raw SMTP header names or addresses injected into transport headers. User-facing forms rely on framework e-mail validation plus length limits. CI runs the full authentication and profile test suites on every change.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-m5cs-t1y6-qpcs",
+                "GHSA-crmm-hgp2-wgrp"
+            ],
+            "severity": "medium",
+            "scope": "runtime",
+            "reason": "Temporary signed URL path confusion. No Laravel 8.x patch is available.",
+            "compensatingControl": "No signed routes are registered: the codebase contains no signedRoute(), temporarySignedRoute(), or hasValidSignature() usage (enforced by Tests/Feature/ApiGuardSecurityTest.php).",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-8qx3-n5y5-vvnd",
+                "CVE-2025-27515",
+                "GHSA-78fx-h6xr-vch4"
+            ],
+            "severity": "medium",
+            "scope": "runtime",
+            "reason": "File validation bypass in the framework's file rules. No Laravel 8.x patch is available.",
+            "compensatingControl": "Study-material uploads are additionally restricted with extension and MIME validation; Tests/Feature/StudyMaterialSecurityTest.php covers dangerous-extension rejection and cross-class/section access.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-d5tc-s1qs-h781",
+                "CVE-2026-102279",
+                "GHSA-jh5r-qr3c-85q8"
+            ],
+            "severity": "low",
+            "scope": "runtime",
+            "reason": "XSS in the debug error page. No Laravel 8.x patch is available.",
+            "compensatingControl": "Production deployments must set APP_DEBUG=false (documented in .env.example and docs/deployment.md). The CI environment never exposes the debug page to untrusted users.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "dompdf/dompdf",
+            "advisoryIds": [
+                "PKSA-cv56-2228-pzr6",
+                "CVE-2026-59943",
+                "GHSA-j8qw-6jw8-r297",
+                "PKSA-6r8f-nxsb-67bq",
+                "CVE-2026-59942",
+                "GHSA-f5gf-2cj8-52g2",
+                "PKSA-gh7h-hhy4-byg7",
+                "CVE-2026-59941",
+                "GHSA-8hg6-c449-896m",
+                "PKSA-mwt3-h9tv-kx78",
+                "CVE-2026-56722",
+                "GHSA-cx96-42px-69fm",
+                "PKSA-hp6n-n4kz-21wk",
+                "CVE-2026-55555",
+                "GHSA-7x2p-4jvh-6384",
+                "PKSA-mckv-s5hg-868k",
+                "CVE-2026-55554",
+                "GHSA-wvh6-f5jh-8gw4"
+            ],
+            "severity": "medium",
+            "scope": "runtime",
+            "reason": "Six dompdf advisories affecting versions < 3.1.6. The installed barryvdh/laravel-dompdf 2.2.0 supports dompdf ^1.2|^2.0 only; dompdf 3.x requires laravel-dompdf 3.x, which in turn requires Laravel 9+. The framework upgrade is the remediation path.",
+            "compensatingControl": "PDFs are rendered from server-side Blade templates with application-controlled data; no user-supplied HTML, SVG data-URIs, BMPs, or external image URLs are passed to dompdf. Marksheet/receipt rendering is covered by the exam and payment test suites.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "league/flysystem",
+            "advisoryIds": [
+                "PKSA-w9tt-7782-78jx",
+                "CVE-2026-102601",
+                "GHSA-cxf4-7mrp-vvpr"
+            ],
+            "severity": "low",
+            "scope": "runtime",
+            "reason": "Path normalization bypass in flysystem 1.x, which is the version required by Laravel 8. Remediation requires the Laravel 9 filesystem upgrade.",
+            "compensatingControl": "Uploaded files are stored under application-generated random names and are never addressed through user-supplied path segments; Tests/Feature/StudyMaterialSecurityTest.php covers unauthorized downloads.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
+            "package": "symfony/mime",
+            "advisoryIds": [
+                "PKSA-wtxr-p26d-nn42",
+                "CVE-2026-45070",
+                "GHSA-vqc8-7275-q272",
+                "symfony/mime/CVE-2026-45070.yaml"
+            ],
+            "severity": "medium",
+            "scope": "runtime",
+            "reason": "E-mail header injection via non-token characters in MIME parameter names. The advisory affects the Symfony MIME component shipped with the Laravel 8 dependency set; no compatible patched release is installable without the framework upgrade.",
+            "compensatingControl": "The application does not build MIME parameter names from user input; outbound mail uses fixed framework/Symfony generated parameters. Templates and subjects are server-controlled.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        }
+    ]
+}
