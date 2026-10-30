@@ -24,6 +24,13 @@ class PaymentRecord extends Eloquent
         'waiver_reason',
     ];
 
+    protected $casts = [
+        'amt_paid' => 'float',
+        'balance' => 'float',
+        'discount_amt' => 'float',
+        'paid' => 'integer',
+    ];
+
     public function payment()
     {
         return $this->belongsTo(Payment::class);

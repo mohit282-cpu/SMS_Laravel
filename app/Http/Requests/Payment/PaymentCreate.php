@@ -21,7 +21,7 @@ class PaymentCreate extends FormRequest
     {
         return [
             'title' => 'required|string|min:3',
-            'amount' => 'required|numeric|min:0',
+            'amount' => 'required|numeric|min:0.01|max:999999999.99',
             'period_type' => 'sometimes|nullable|in:one_time,monthly',
             'fee_category' => 'sometimes|nullable|string|max:50',
             'bs_year' => 'sometimes|nullable|integer|between:2000,2090',

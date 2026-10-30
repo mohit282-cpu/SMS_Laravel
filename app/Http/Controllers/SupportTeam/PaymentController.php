@@ -171,25 +171,98 @@ class PaymentController extends Controller
         }
 
         $idempotencyKey = $req->input('idempotency_key') ?: $req->header('X-Idempotency-Key');
-        $cacheKey = null;
+        $userId = (int)(\Illuminate\Support\Facades\Auth::id() ?? 0);
+        $operation = 'payment.pay_now';
+        $canonicalPayload = ['pr_id' => (int)$pr_id, 'amt_paid' => number_format((float)$rawAmt, 2, '.', '')];
+        $payloadHash = hash('sha256', json_encode($canonicalPayload));
+
         if (!empty($idempotencyKey)) {
-            $cacheKey = 'pay_idem_' . md5($idempotencyKey);
-            $cached = \Illuminate\Support\Facades\Cache::get($cacheKey);
-            if ($cached) {
-                if ($cached['pr_id'] != $pr_id || abs((float)$cached['amt_paid'] - (float)$rawAmt) > 0.001) {
+            $idempotencyKey = substr((string)$idempotencyKey, 0, 120);
+
+            // Fast pre-check against database idempotency table
+            $existingIdem = \Illuminate\Support\Facades\DB::table('payment_idempotency_keys')
+                ->where('user_id', $userId)
+                ->where('operation', $operation)
+                ->where('idempotency_key', $idempotencyKey)
+                ->first();
+
+            if ($existingIdem) {
+                if ($existingIdem->payload_hash !== $payloadHash) {
                     return response()->json([
                         'msg' => __('Idempotency key has already been used with different payment parameters.')
                     ], 422);
                 }
-                return response()->json([
-                    'ok' => true,
-                    'msg' => __('Payment already processed.'),
-                    'duplicate' => true,
-                ], 200);
+
+                if ($existingIdem->status === 'completed') {
+                    $savedBody = json_decode($existingIdem->response_body, true);
+                    return response()->json($savedBody ?: [
+                        'ok' => true,
+                        'msg' => __('Payment already processed.'),
+                        'duplicate' => true,
+                    ], $existingIdem->response_code ?: 200);
+                }
+
+                if ($existingIdem->status === 'processing') {
+                    return response()->json([
+                        'msg' => __('A payment with this idempotency key is currently being processed. Please wait.')
+                    ], 409);
+                }
             }
         }
 
-        return \Illuminate\Support\Facades\DB::transaction(function() use ($req, $pr_id, $rawAmt, $cacheKey) {
+        return \Illuminate\Support\Facades\DB::transaction(function() use ($req, $pr_id, $rawAmt, $idempotencyKey, $userId, $operation, $payloadHash) {
+            $payAmt = round((float)$rawAmt, 2);
+            if ($payAmt <= 0 || !is_finite($payAmt)) {
+                return response()->json(['msg' => __('Payment amount must be a positive number.')], 422);
+            }
+
+            // Database-backed atomic claim of idempotency key
+            $idemId = null;
+            if (!empty($idempotencyKey)) {
+                try {
+                    $idemId = \Illuminate\Support\Facades\DB::table('payment_idempotency_keys')->insertGetId([
+                        'user_id' => $userId,
+                        'operation' => $operation,
+                        'idempotency_key' => $idempotencyKey,
+                        'payload_hash' => $payloadHash,
+                        'status' => 'processing',
+                        'payment_record_id' => $pr_id,
+                        'amount' => $payAmt,
+                        'response_code' => 200,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } catch (\Illuminate\Database\QueryException $qe) {
+                    // Unique constraint violation (duplicate key) under concurrent simultaneous requests
+                    $conflict = \Illuminate\Support\Facades\DB::table('payment_idempotency_keys')
+                        ->where('user_id', $userId)
+                        ->where('operation', $operation)
+                        ->where('idempotency_key', $idempotencyKey)
+                        ->first();
+
+                    if ($conflict) {
+                        if ($conflict->payload_hash !== $payloadHash) {
+                            return response()->json([
+                                'msg' => __('Idempotency key has already been used with different payment parameters.')
+                            ], 422);
+                        }
+
+                        if ($conflict->status === 'completed') {
+                            $savedBody = json_decode($conflict->response_body, true);
+                            return response()->json($savedBody ?: [
+                                'ok' => true,
+                                'msg' => __('Payment already processed.'),
+                                'duplicate' => true,
+                            ], $conflict->response_code ?: 200);
+                        }
+                    }
+
+                    return response()->json([
+                        'msg' => __('Concurrent payment request detected. Please retry.')
+                    ], 409);
+                }
+            }
+
             $pr = \App\Models\PaymentRecord::where('id', $pr_id)->lockForUpdate()->first();
             if(!$pr) {
                 return response()->json(['msg' => __('msg.rnf')], 404);
@@ -204,22 +277,14 @@ class PaymentController extends Controller
                 return response()->json(['msg' => __('msg.rnf')], 404);
             }
 
-            $payAmt = (float)$rawAmt;
-            if ($payAmt <= 0 || !is_finite($payAmt)) {
-                return response()->json(['msg' => __('Payment amount must be a positive number.')], 422);
-            }
-
-            // Round to 2 decimal places to match currency schema
-            $payAmt = round($payAmt, 2);
-
-            // Authoritative outstanding balance
-            $totalInvoiceAmount = (float)$payment->amount;
+            // Authoritative outstanding balance accounting for discounts
+            $totalInvoiceAmount = max(0, round((float)$payment->amount - (float)($pr->discount_amt ?? 0), 2));
             $currentPaid = (float)$pr->amt_paid;
             $outstanding = max(0, round($totalInvoiceAmount - $currentPaid, 2));
 
             if ($outstanding <= 0) {
                 if (!$pr->paid) {
-                    $this->pay->updateRecord($pr_id, ['paid' => 1, 'balance' => 0]);
+                    $this->pay->updateRecord($pr_id, ['paid' => 1, 'balance' => 0.00]);
                 }
                 return response()->json(['msg' => __('This invoice has already been fully paid.')], 422);
             }
@@ -234,7 +299,7 @@ class PaymentController extends Controller
             $newAmtPaid = round($currentPaid + $payAmt, 2);
             if ($newAmtPaid >= $totalInvoiceAmount) {
                 $newAmtPaid = $totalInvoiceAmount;
-                $newBalance = 0.0;
+                $newBalance = 0.00;
                 $isPaid = 1;
             } else {
                 $newBalance = max(0, round($totalInvoiceAmount - $newAmtPaid, 2));
@@ -257,8 +322,27 @@ class PaymentController extends Controller
                 throw new \RuntimeException('Failed to create receipt record.');
             }
 
-            if ($cacheKey) {
-                \Illuminate\Support\Facades\Cache::put($cacheKey, [
+            $responsePayload = [
+                'ok' => true,
+                'msg' => __('msg.update_ok'),
+                'duplicate' => true,
+            ];
+
+            // Mark database idempotency record as completed with stored response
+            if ($idemId) {
+                \Illuminate\Support\Facades\DB::table('payment_idempotency_keys')
+                    ->where('id', $idemId)
+                    ->update([
+                        'status' => 'completed',
+                        'response_code' => 200,
+                        'response_body' => json_encode($responsePayload),
+                        'updated_at' => now(),
+                    ]);
+            }
+
+            // Invalidate/refresh fast cache
+            if (!empty($idempotencyKey)) {
+                \Illuminate\Support\Facades\Cache::put('pay_idem_' . md5($idempotencyKey), [
                     'pr_id' => $pr_id,
                     'amt_paid' => (float)$payAmt,
                 ], now()->addMinutes(30));

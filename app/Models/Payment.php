@@ -23,6 +23,10 @@ class Payment extends Eloquent
         'due_date_bs',
     ];
 
+    protected $casts = [
+        'amount' => 'float',
+    ];
+
     public function my_class()
     {
         return $this->belongsTo(MyClass::class);
