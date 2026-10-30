@@ -45,6 +45,11 @@ class Notice extends Model
         return $this->belongsTo(Section::class, 'section_id');
     }
 
+    public function scopePublished($query)
+    {
+        return $query->where('is_published', true);
+    }
+
     public function scopeVisibleTo($query, $user)
     {
         if (!$user) {

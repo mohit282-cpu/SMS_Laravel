@@ -106,7 +106,7 @@ class Qs
 
     public static function getStudentData($remove = [])
     {
-        $data = ['my_class_id', 'section_id', 'my_parent_id', 'dorm_id', 'dorm_room_no', 'year_admitted', 'house', 'age'];
+        $data = ['my_class_id', 'section_id', 'my_parent_id', 'parent_relationship', 'dorm_id', 'dorm_room_no', 'year_admitted', 'house', 'age'];
 
         return $remove ? array_values(array_diff($data, $remove)) : $data;
 
@@ -483,6 +483,39 @@ class Qs
     public static function getLocale()
     {
         return app()->getLocale();
+    }
+
+    /**
+     * Normalize a phone or mobile number for consistent comparison and storage.
+     * Strips whitespace, non-digits, and handles country code (+977) and trunk prefixes.
+     *
+     * @param string|null $phone
+     * @return string|null
+     */
+    public static function normalizePhone(?string $phone): ?string
+    {
+        if (empty($phone)) {
+            return null;
+        }
+
+        $clean = trim($phone);
+        $digits = preg_replace('/[^0-9]/', '', $clean);
+
+        if (empty($digits)) {
+            return null;
+        }
+
+        // Nepal country code prefix (977) followed by 10-digit mobile number (total 13 digits)
+        if (strlen($digits) === 13 && str_starts_with($digits, '977')) {
+            $digits = substr($digits, 3);
+        }
+
+        // Trunk prefix (0) followed by 10-digit mobile number (total 11 digits starting with 09)
+        if (strlen($digits) === 11 && str_starts_with($digits, '09')) {
+            $digits = substr($digits, 1);
+        }
+
+        return $digits;
     }
 
 }

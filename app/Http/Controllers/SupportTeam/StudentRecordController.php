@@ -13,6 +13,8 @@ use App\Repositories\UserRepo;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
 use App\Models\StudentRecord;
+use App\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -104,8 +106,6 @@ class StudentRecordController extends Controller
         }
 
         $ct = $this->my_class->findTypeByClass($req->my_class_id)->code;
-       /* $ct = ($ct == 'J') ? 'JSS' : $ct;
-        $ct = ($ct == 'S') ? 'SS' : $ct;*/
 
         $data['user_type'] = 'student';
         $data['name'] = ucwords($req->name);
@@ -133,25 +133,135 @@ class StudentRecordController extends Controller
             }
         }
 
-        $user = $this->user->create($data); // Create User
+        return DB::transaction(function () use ($data, $sr, $req) {
+            // 1. Resolve or automatically create Parent account
+            $parentId = null;
+            $parentAccountAction = 'none';
+            $parentUser = null;
+            $activationToken = null;
 
-        $sr['adm_no'] = $data['username'];
-        $sr['user_id'] = $user->id;
-        $sr['session'] = Qs::getCurrentSession();
+            // Priority A: Explicitly chosen existing parent from dropdown
+            if (!empty($req->my_parent_id)) {
+                $selectedParent = User::where('id', $req->my_parent_id)->where('user_type', 'parent')->first();
+                if ($selectedParent) {
+                    $parentId = $selectedParent->id;
+                    $parentUser = $selectedParent;
+                    $parentAccountAction = 'associated_existing';
+                }
+            }
 
-        $this->student->createRecord($sr); // Create Student
+            // Priority B: Parent information fields entered
+            $normPhone = Qs::normalizePhone($req->parent_phone);
+            $parentEmail = $req->filled('parent_email') ? strtolower(trim($req->parent_email)) : null;
+            $parentName = $req->filled('parent_name') ? ucwords(trim($req->parent_name)) : null;
 
-        app(\App\Services\AuditLogService::class)->log(
-            'student.admit',
-            'students',
-            "Student admitted: '{$user->name}' (Adm No: {$sr['adm_no']})",
-            $user,
-            [],
-            ['name' => $user->name, 'adm_no' => $sr['adm_no'], 'my_class_id' => $sr['my_class_id'], 'session' => $sr['session']],
-            'success'
-        );
+            if (!$parentId && ($normPhone || $parentEmail || $parentName)) {
+                // Duplicate prevention: check if a verified parent account with matching phone or email already exists
+                $matchedParent = null;
+                if ($normPhone) {
+                    $matchedParent = User::where('user_type', 'parent')
+                        ->where(function ($q) use ($normPhone) {
+                            $q->where('phone', $normPhone)
+                              ->orWhere('phone2', $normPhone);
+                        })->first();
+                }
 
-        return Qs::jsonStoreOk();
+                if (!$matchedParent && $parentEmail) {
+                    $matchedParent = User::where('user_type', 'parent')
+                        ->where('email', $parentEmail)
+                        ->first();
+                }
+
+                if ($matchedParent) {
+                    // Reuse existing parent account - prevent duplicate parent identities
+                    $parentId = $matchedParent->id;
+                    $parentUser = $matchedParent;
+                    $parentAccountAction = 'associated_existing';
+                } elseif ($parentName) {
+                    // Automatically create new Parent account
+                    $parentCode = strtoupper(Str::random(10));
+                    $tempParentPassword = Str::random(32); // Secure non-predictable password
+                    $activationToken = Str::random(64);
+                    $tokenExpiresAt = now()->addDays(7);
+
+                    $baseUsername = $normPhone ? 'p_' . $normPhone : 'p_' . Str::slug($parentName, '_');
+                    $pUsername = $baseUsername;
+                    $counter = 1;
+                    while (User::where('username', $pUsername)->exists()) {
+                        $pUsername = $baseUsername . '_' . $counter++;
+                    }
+
+                    $newParent = User::create([
+                        'name' => $parentName,
+                        'email' => $parentEmail,
+                        'phone' => $normPhone,
+                        'phone2' => null,
+                        'user_type' => 'parent',
+                        'username' => $pUsername,
+                        'password' => Hash::make($tempParentPassword),
+                        'code' => $parentCode,
+                        'photo' => Qs::getDefaultUserImage(),
+                        'address' => $req->parent_address ?: ($data['address'] ?? null),
+                        'state_id' => $data['state_id'] ?? null,
+                        'lga_id' => $data['lga_id'] ?? null,
+                        'nal_id' => $data['nal_id'] ?? null,
+                        'activation_token' => $activationToken,
+                        'activation_token_expires_at' => $tokenExpiresAt,
+                        'is_active' => true,
+                    ]);
+
+                    $parentId = $newParent->id;
+                    $parentUser = $newParent;
+                    $parentAccountAction = 'created_new';
+
+                    app(\App\Services\AuditLogService::class)->log(
+                        'parent.auto_create',
+                        'users',
+                        "Automatically created parent account '{$newParent->name}' (Username: {$newParent->username}, Phone: {$newParent->phone})",
+                        $newParent,
+                        [],
+                        ['parent_id' => $newParent->id, 'phone' => $newParent->phone, 'username' => $newParent->username],
+                        'success'
+                    );
+                }
+            }
+
+            // 2. Create student user
+            $user = $this->user->create($data);
+
+            // 3. Create student record
+            $sr['adm_no'] = $data['username'];
+            $sr['user_id'] = $user->id;
+            $sr['session'] = Qs::getCurrentSession();
+            $sr['my_parent_id'] = $parentId;
+            if ($req->filled('parent_relationship')) {
+                $sr['parent_relationship'] = ucwords(strtolower(trim($req->parent_relationship)));
+            }
+
+            $this->student->createRecord($sr);
+
+            app(\App\Services\AuditLogService::class)->log(
+                'student.admit',
+                'students',
+                "Student admitted: '{$user->name}' (Adm No: {$sr['adm_no']})",
+                $user,
+                [],
+                ['name' => $user->name, 'adm_no' => $sr['adm_no'], 'my_class_id' => $sr['my_class_id'], 'session' => $sr['session'], 'parent_id' => $parentId],
+                'success'
+            );
+
+            // Flash feedback and activation information to session
+            if ($parentAccountAction === 'created_new' && $parentUser) {
+                $activationUrl = route('parent.activate', $activationToken);
+                session()->flash('parent_created_msg', __('Parent account automatically created for :name.', ['name' => $parentUser->name]));
+                session()->flash('parent_activation_url', $activationUrl);
+                session()->flash('parent_username', $parentUser->username);
+            } elseif ($parentAccountAction === 'associated_existing' && $parentUser) {
+                session()->flash('parent_linked_msg', __('Student successfully linked to existing parent account (:name).', ['name' => $parentUser->name]));
+            }
+
+            return Qs::jsonStoreOk();
+        });
     }
 
     public function listByClass($class_id)
@@ -211,6 +321,9 @@ class StudentRecordController extends Controller
 
         /* Prevent Other Students/Parents from viewing Profile of others */
         if(Auth::user()->id != $data['sr']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['sr']->user_id, Auth::user()->id)){
+            if (Qs::userIsParent() || request()->expectsJson()) {
+                abort(403, __('msg.denied'));
+            }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 

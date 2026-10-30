@@ -23,7 +23,17 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'username', 'email', 'phone', 'phone2', 'dob', 'gender', 'photo', 'address', 'bg_id', 'password', 'nal_id', 'state_id', 'lga_id', 'code', 'user_type', 'email_verified_at', 'locale', 'calendar_display'
+        'name', 'username', 'email', 'phone', 'phone2', 'dob', 'gender', 'photo', 'address', 'bg_id', 'password', 'nal_id', 'state_id', 'lga_id', 'code', 'user_type', 'email_verified_at', 'locale', 'calendar_display', 'activation_token', 'activation_token_expires_at', 'is_active'
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'is_active' => 'boolean',
+        'activation_token_expires_at' => 'datetime',
     ];
 
     /**
@@ -32,12 +42,17 @@ class User extends Authenticatable
      * @var array
      */
     protected $hidden = [
-        'password', 'remember_token',
+        'password', 'remember_token', 'activation_token',
     ];
 
     public function student_record()
     {
         return $this->hasOne(StudentRecord::class);
+    }
+
+    public function children()
+    {
+        return $this->hasMany(StudentRecord::class, 'my_parent_id');
     }
 
     public function lga()

@@ -37,6 +37,11 @@ class StudentRecordCreate extends FormRequest
             'section_id' => 'required',
             'my_parent_id' => 'sometimes|nullable',
             'dorm_id' => 'sometimes|nullable',
+            'parent_name' => 'sometimes|nullable|string|min:3|max:100',
+            'parent_phone' => 'sometimes|nullable|string|min:6|max:25',
+            'parent_email' => 'sometimes|nullable|email|max:100',
+            'parent_relationship' => 'sometimes|nullable|string|in:Father,Mother,Guardian,Other,father,mother,guardian,other',
+            'parent_address' => 'sometimes|nullable|string|min:3|max:255',
         ];
     }
 
@@ -51,6 +56,11 @@ class StudentRecordCreate extends FormRequest
             'lga_id' => 'LGA',
             'bg_id' => 'Blood Group',
             'my_parent_id' => 'Parent',
+            'parent_name' => 'Parent Full Name',
+            'parent_phone' => 'Parent Mobile Number',
+            'parent_email' => 'Parent Email',
+            'parent_relationship' => 'Parent Relationship',
+            'parent_address' => 'Parent Address',
         ];
     }
 
@@ -58,7 +68,7 @@ class StudentRecordCreate extends FormRequest
     {
         $input = $this->all();
 
-        $input['my_parent_id'] = !empty($input['my_parent_id']) ? Qs::decodeHash($input['my_parent_id']) : NULL;
+        $input['my_parent_id'] = !empty($input['my_parent_id']) ? (Qs::decodeHash($input['my_parent_id']) ?: (is_numeric($input['my_parent_id']) ? (int)$input['my_parent_id'] : null)) : null;
 
         $this->getInputSource()->replace($input);
 

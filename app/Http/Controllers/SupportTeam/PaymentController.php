@@ -268,6 +268,18 @@ class PaymentController extends Controller
                 return response()->json(['msg' => __('msg.rnf')], 404);
             }
 
+            if (!Qs::userIsTeamAccount()) {
+                if (Qs::userIsStudent() && \Illuminate\Support\Facades\Auth::id() != $pr->student_id) {
+                    abort(403);
+                }
+                if (Qs::userIsParent() && !Qs::userIsMyChild($pr->student_id, \Illuminate\Support\Facades\Auth::id())) {
+                    abort(403);
+                }
+                if (!Qs::userIsStudent() && !Qs::userIsParent()) {
+                    abort(403);
+                }
+            }
+
             if ($pr->paid) {
                 return response()->json(['msg' => __('This invoice has already been fully paid.')], 422);
             }

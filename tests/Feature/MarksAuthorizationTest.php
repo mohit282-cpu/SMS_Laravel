@@ -76,8 +76,8 @@ class MarksAuthorizationTest extends TestCase
         // Create a teacher with no classes or sections assigned
         $unassignedTeacher = User::factory()->create([
             'user_type' => 'teacher',
-            'username' => 'unassigned_' . rand(100, 999),
-            'email' => 'unassigned_' . rand(100, 999) . '@test.com',
+            'username' => 'unassigned_' . uniqid(),
+            'email' => 'unassigned_' . uniqid() . '@test.com',
         ]);
 
         $response = $this->actingAs($unassignedTeacher)->get(route('marks.year_selector', Qs::hash($student->id)));

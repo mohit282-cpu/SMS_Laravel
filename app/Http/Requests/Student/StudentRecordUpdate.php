@@ -34,6 +34,7 @@ class StudentRecordUpdate extends FormRequest
             'lga_id' => 'required',
             'nal_id' => 'required',
             'my_parent_id' => 'sometimes|nullable',
+            'parent_relationship' => 'sometimes|nullable|string|in:Father,Mother,Guardian,Other,father,mother,guardian,other',
             'dorm_id' => 'sometimes|nullable',
         ];
     }
@@ -47,6 +48,7 @@ class StudentRecordUpdate extends FormRequest
             'lga_id' => 'LGA',
             'bg_id' => 'Blood Group',
             'my_parent_id' => 'Parent',
+            'parent_relationship' => 'Parent Relationship',
             'my_class_id' => 'Class',
             'section_id' => 'Section',
         ];
@@ -56,7 +58,7 @@ class StudentRecordUpdate extends FormRequest
     {
         $input = $this->all();
 
-        $input['my_parent_id'] = !empty($input['my_parent_id']) ? Qs::decodeHash($input['my_parent_id']) : NULL;
+        $input['my_parent_id'] = !empty($input['my_parent_id']) ? (Qs::decodeHash($input['my_parent_id']) ?: (is_numeric($input['my_parent_id']) ? (int)$input['my_parent_id'] : null)) : null;
 
         $this->getInputSource()->replace($input);
 

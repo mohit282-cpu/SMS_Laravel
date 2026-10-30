@@ -1,6 +1,8 @@
 <?php
 Route::group(['middleware' => 'no_store'], function () {
     Auth::routes(['register' => false]);
+    Route::get('/parent/activate/{token}', 'Auth\ParentActivationController@showActivateForm')->name('parent.activate');
+    Route::post('/parent/activate/{token}', 'Auth\ParentActivationController@activate')->name('parent.activate.submit')->middleware('throttle:6,1');
 });
 
 //Route::get('/test', 'TestController@index')->name('test');
@@ -63,6 +65,19 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         /*************** Users *****************/
         Route::group(['prefix' => 'users'], function(){
             Route::post('reset_pass/{id}', 'UserController@reset_pass')->name('users.reset_pass')->middleware('super_admin');
+        });
+
+        /*************** Parents (Admin Management) *****************/
+        Route::group(['prefix' => 'parents', 'middleware' => 'teamSA'], function(){
+            Route::get('/', 'ParentController@index')->name('parents.index');
+            Route::post('/', 'ParentController@store')->name('parents.store');
+            Route::get('/{id}', 'ParentController@show')->name('parents.show');
+            Route::put('/{id}', 'ParentController@update')->name('parents.update');
+            Route::delete('/{id}', 'ParentController@destroy')->name('parents.destroy')->middleware('super_admin');
+            Route::post('/{id}/reset_access', 'ParentController@reset_access')->name('parents.reset_access');
+            Route::post('/{id}/toggle_active', 'ParentController@toggle_active')->name('parents.toggle_active');
+            Route::post('/{id}/link_student', 'ParentController@link_student')->name('parents.link_student');
+            Route::post('/{parent_id}/unlink_student/{student_id}', 'ParentController@unlink_student')->name('parents.unlink_student');
         });
 
         /*************** TimeTables *****************/

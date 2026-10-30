@@ -63,6 +63,10 @@ class LoginController extends Controller
      */
     protected function validateLogin(Request $request)
     {
+        if ($request->has('login') && !$request->has('identity')) {
+            $request->merge(['identity' => $request->input('login')]);
+        }
+
         $validated = $request->validate([
             'identity' => ['required', 'string', 'max:100'],
             'password' => ['required', 'string', 'max:255'],
@@ -70,11 +74,17 @@ class LoginController extends Controller
 
         $identity = trim($validated['identity']);
         $isEmail = filter_var($identity, FILTER_VALIDATE_EMAIL) !== false;
-        $field = $isEmail ? 'email' : 'username';
+        $normPhone = \App\Helpers\Qs::normalizePhone($identity);
+        $isPhone = $normPhone && \App\User::where(function($q) use ($normPhone) {
+            $q->where('phone', $normPhone)->orWhere('phone2', $normPhone);
+        })->exists();
+
+        $field = $isEmail ? 'email' : ($isPhone ? 'phone' : 'username');
+        $val = $isPhone ? $normPhone : $identity;
 
         $request->merge([
             'identity' => $identity,
-            $field => $identity,
+            $field => $val,
         ]);
     }
 
@@ -86,13 +96,44 @@ class LoginController extends Controller
      */
     protected function credentials(Request $request)
     {
-        $field = $this->username();
-        $identity = trim(str_replace(["\0", "\x00"], '', (string) $request->input($field, '')));
+        $rawIdentity = trim((string) ($request->input('identity') ?: $request->input('login', '')));
+        $rawIdentity = str_replace(["\0", "\x00"], '', $rawIdentity);
+        $password = (string) $request->input('password', '');
+
+        if (filter_var($rawIdentity, FILTER_VALIDATE_EMAIL)) {
+            return ['email' => $rawIdentity, 'password' => $password];
+        }
+
+        $normPhone = \App\Helpers\Qs::normalizePhone($rawIdentity);
+        if ($normPhone && \App\User::where(function($q) use ($normPhone) {
+            $q->where('phone', $normPhone)->orWhere('phone2', $normPhone);
+        })->exists()) {
+            return ['phone' => $normPhone, 'password' => $password];
+        }
 
         return [
-            $field => $identity,
-            'password' => (string) $request->input('password', ''),
+            'username' => $rawIdentity,
+            'password' => $password,
         ];
+    }
+
+    /**
+     * Check if the authenticated user account is active.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  mixed  $user
+     * @return mixed
+     */
+    protected function authenticated(Request $request, $user)
+    {
+        if (isset($user->is_active) && !$user->is_active) {
+            auth()->logout();
+            return redirect()->route('login')->withErrors([
+                'identity' => __('Your account has been deactivated or requires activation. Please contact the administration.'),
+            ]);
+        }
+
+        return redirect()->intended($this->redirectPath());
     }
 
     /**
@@ -103,7 +144,16 @@ class LoginController extends Controller
     public function username()
     {
         $identity = trim((string) request()->input('identity', ''));
-        return filter_var($identity, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        if (filter_var($identity, FILTER_VALIDATE_EMAIL)) {
+            return 'email';
+        }
+        $normPhone = \App\Helpers\Qs::normalizePhone($identity);
+        if ($normPhone && \App\User::where(function($q) use ($normPhone) {
+            $q->where('phone', $normPhone)->orWhere('phone2', $normPhone);
+        })->exists()) {
+            return 'phone';
+        }
+        return 'username';
     }
 
     /**

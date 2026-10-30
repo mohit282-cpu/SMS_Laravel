@@ -261,44 +261,221 @@
 
     {{-- Parent Dashboard Cards --}}
     @if(Qs::userIsParent())
-        <div class="card shadow-sm mb-4">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
-                    <i class="icon-users4 mr-2" style="color: #FF5700;"></i>{{ __('My Enrolled Children') }}
-                </h2>
+        <div class="card shadow-sm mb-4" style="border-radius: 16px; border: 1px solid rgba(255, 87, 0, 0.15);">
+            <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between py-3" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <div class="d-flex align-items-center">
+                    <div class="d-inline-flex align-items-center justify-content-center mr-3" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 87, 0, 0.1);">
+                        <i class="icon-users4 icon-2x" style="color: #FF5700;"></i>
+                    </div>
+                    <div>
+                        <h2 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.15rem;">{{ __('Parent Portal — My Children') }}</h2>
+                        <span class="text-muted font-size-sm">{{ __('Overview of academic progress, attendance, and fee status for your linked students') }}</span>
+                    </div>
+                </div>
+
+                @if(!empty($children) && $children->count() > 1)
+                    <div class="mt-2 mt-md-0">
+                        <span class="badge badge-primary py-1 px-2" style="font-size: 0.82rem;">
+                            <i class="icon-user-check mr-1"></i>{{ __(':count Children Linked', ['count' => $children->count()]) }}
+                        </span>
+                    </div>
+                @endif
             </div>
+
             <div class="card-body">
-                <div class="row">
-                    @forelse($children ?? [] as $ch)
-                        <div class="col-md-6 col-lg-4 mb-3">
-                            <div class="card border h-100 shadow-sm" style="border-radius: 16px;">
-                                <div class="card-body">
-                                    <div class="d-flex align-items-center mb-3">
-                                        <img src="{{ $ch->user->photo }}" class="rounded-circle mr-3" style="width: 52px; height: 52px; object-fit: cover; border: 2px solid #FF5700;" alt="{{ $ch->user->name }}">
-                                        <div>
-                                            <h6 class="font-weight-bold mb-0 text-dark">{{ $ch->user->name }}</h6>
-                                            <span class="badge badge-primary">{{ $ch->my_class->name ?? '' }} ({{ $ch->section->name ?? '' }})</span>
-                                            <div class="text-muted font-size-xs mt-1">{{ __('ADM') }}: <strong>{{ $ch->adm_no }}</strong></div>
+                @if(empty($children) || $children->isEmpty())
+                    <div class="text-center py-5">
+                        <div class="d-inline-flex align-items-center justify-content-center mb-3" style="width: 72px; height: 72px; border-radius: 50%; background: rgba(108, 117, 125, 0.1);">
+                            <i class="icon-user-cancel icon-2x text-muted"></i>
+                        </div>
+                        <h5 class="font-weight-bold text-dark mb-1">{{ __('No Linked Students Found') }}</h5>
+                        <p class="text-muted max-w-500 mx-auto mb-3" style="max-width: 480px;">
+                            {{ __('Your parent account currently has no students associated with it. If your child is enrolled at SMS Academy, please contact the administration office with your registered mobile number or email to link your account.') }}
+                        </p>
+                        <a href="mailto:admin@smsacademy.edu.np" class="btn btn-outline-primary btn-sm">
+                            <i class="icon-envelop mr-1"></i>{{ __('Contact School Administration') }}
+                        </a>
+                    </div>
+                @else
+                    {{-- Multi-Student Selector Pills if more than 1 student --}}
+                    @if($children->count() > 1)
+                        <div class="mb-4">
+                            <label class="font-weight-bold text-uppercase text-muted font-size-xs mb-2 d-block">{{ __('Select Student') }}:</label>
+                            <ul class="nav nav-pills nav-pills-bordered" id="parent-student-tabs" role="tablist">
+                                @foreach($children as $idx => $ch)
+                                    <li class="nav-item">
+                                        <a class="nav-link {{ $loop->first ? 'active' : '' }} font-weight-semibold" id="tab-student-{{ $ch->id }}" data-toggle="pill" href="#pane-student-{{ $ch->id }}" role="tab">
+                                            <i class="icon-user mr-1"></i>{{ $ch->user->name }}
+                                            <span class="badge badge-light ml-1">{{ $ch->my_class->name ?? '' }}</span>
+                                        </a>
+                                    </li>
+                                @endforeach
+                            </ul>
+                        </div>
+                    @endif
+
+                    <div class="tab-content" id="parent-student-content">
+                        @foreach($children as $ch)
+                            <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="pane-student-{{ $ch->id }}" role="tabpanel">
+                                {{-- Student Header Card --}}
+                                <div class="p-3 mb-4 rounded" style="background: linear-gradient(135deg, rgba(255, 87, 0, 0.05) 0%, rgba(255, 87, 0, 0.01) 100%); border: 1px solid rgba(255, 87, 0, 0.12);">
+                                    <div class="d-flex flex-wrap align-items-center justify-content-between">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ $ch->user->photo }}" class="rounded-circle mr-3" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #FF5700; box-shadow: 0 2px 8px rgba(255,87,0,0.2);" alt="{{ $ch->user->name }}">
+                                            <div>
+                                                <h4 class="font-weight-bold text-dark mb-0">{{ $ch->user->name }}</h4>
+                                                <div class="d-flex flex-wrap align-items-center mt-1 gap-2 font-size-sm">
+                                                    <span class="badge badge-primary py-1 px-2 mr-2">
+                                                        <i class="icon-graduation2 mr-1"></i>{{ $ch->my_class->name ?? 'Class' }} - {{ $ch->section->name ?? 'Section' }}
+                                                    </span>
+                                                    <span class="text-muted mr-3"><strong>{{ __('ADM') }}:</strong> {{ $ch->adm_no }}</span>
+                                                    @if($ch->parent_relationship)
+                                                        <span class="badge badge-light border text-dark">
+                                                            <i class="icon-heart6 text-danger mr-1"></i>{{ $ch->parent_relationship }}
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 mt-md-0">
+                                            <a href="{{ route('students.show', Qs::hash($ch->id)) }}" class="btn btn-sm btn-outline-secondary">
+                                                <i class="icon-eye mr-1"></i>{{ __('Full Student Profile') }}
+                                            </a>
                                         </div>
                                     </div>
-                                    <div class="d-flex flex-wrap pt-2 border-top gap-1">
-                                        <a href="{{ route('marks.year_selector', Qs::hash($ch->user->id)) }}" class="btn btn-outline-primary btn-sm mr-1 mb-1"><i class="icon-check mr-1"></i>{{ __('Marksheet') }}</a>
-                                        <a href="{{ route('payments.invoice', [Qs::hash($ch->user->id), Qs::getCurrentSession()]) }}" class="btn btn-outline-success btn-sm mr-1 mb-1"><i class="icon-cash mr-1"></i>{{ __('Fees') }}</a>
-                                        <a href="{{ route('tt.student_timetable', Qs::hash($ch->user->id)) }}" class="btn btn-light btn-sm mr-1 mb-1"><i class="icon-calendar mr-1"></i>{{ __('Timetable') }}</a>
-                                        <a href="{{ route('attendance.student_history', $ch->user_id) }}" class="btn btn-light btn-sm mb-1"><i class="icon-alarm mr-1"></i>{{ __('Attendance') }}</a>
+                                </div>
+
+                                {{-- Three Key Performance Tiles --}}
+                                <div class="row mb-4">
+                                    {{-- Attendance Summary Tile --}}
+                                    <div class="col-md-4 mb-3 mb-md-0">
+                                        <div class="card border h-100 shadow-none mb-0" style="border-radius: 12px; background: #FAFAFA;">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="text-uppercase text-muted font-weight-bold font-size-xs">{{ __('Attendance (BS)') }}</span>
+                                                    <span class="badge {{ ($ch->attendance_pct ?? 0) >= 75 ? 'badge-success' : 'badge-warning' }} py-1 px-2">
+                                                        {{ $ch->attendance_pct !== null ? $ch->attendance_pct . '%' : __('No records') }}
+                                                    </span>
+                                                </div>
+                                                <h3 class="font-weight-bold text-dark mb-1">
+                                                    {{ $ch->attendance_present ?? 0 }} <span class="font-size-sm text-muted">/ {{ $ch->attendance_total ?? 0 }} {{ __('Days Present') }}</span>
+                                                </h3>
+                                                <div class="progress mt-2" style="height: 6px;">
+                                                    <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, $ch->attendance_pct ?? 0) }}%"></div>
+                                                </div>
+                                                <div class="mt-2 text-right">
+                                                    <a href="{{ route('attendance.student_history', $ch->user_id) }}" class="font-size-xs font-weight-semibold text-primary">
+                                                        {{ __('Detailed History') }} <i class="icon-arrow-right5 ml-1"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Fee Balance Tile --}}
+                                    <div class="col-md-4 mb-3 mb-md-0">
+                                        <div class="card border h-100 shadow-none mb-0" style="border-radius: 12px; background: #FAFAFA;">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="text-uppercase text-muted font-weight-bold font-size-xs">{{ __('Outstanding Fees') }}</span>
+                                                    @if(($ch->outstanding_fees ?? 0) <= 0)
+                                                        <span class="badge badge-success py-1 px-2"><i class="icon-checkmark-circle mr-1"></i>{{ __('Cleared') }}</span>
+                                                    @else
+                                                        <span class="badge badge-danger py-1 px-2">{{ __('Due') }}</span>
+                                                    @endif
+                                                </div>
+                                                <h3 class="font-weight-bold {{ ($ch->outstanding_fees ?? 0) > 0 ? 'text-danger' : 'text-success' }} mb-1">
+                                                    {{ Qs::formatMoney($ch->outstanding_fees ?? 0) }}
+                                                </h3>
+                                                <p class="font-size-xs text-muted mb-2">{{ __('Current Academic Session Fees') }}</p>
+                                                <div class="mt-2 text-right">
+                                                    <a href="{{ route('payments.invoice', [Qs::hash($ch->user->id), Qs::getCurrentSession()]) }}" class="font-size-xs font-weight-semibold text-primary">
+                                                        {{ __('View Invoices & Receipts') }} <i class="icon-arrow-right5 ml-1"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {{-- Academic Performance Tile --}}
+                                    <div class="col-md-4">
+                                        <div class="card border h-100 shadow-none mb-0" style="border-radius: 12px; background: #FAFAFA;">
+                                            <div class="card-body p-3">
+                                                <div class="d-flex align-items-center justify-content-between mb-2">
+                                                    <span class="text-uppercase text-muted font-weight-bold font-size-xs">{{ __('Academic Results') }}</span>
+                                                    @if($ch->latest_grade)
+                                                        <span class="badge badge-primary py-1 px-2">{{ __('Grade :g', ['g' => $ch->latest_grade]) }}</span>
+                                                    @endif
+                                                </div>
+                                                <h3 class="font-weight-bold text-dark mb-1">
+                                                    @if($ch->latest_gpa !== null)
+                                                        {{ number_format((float)$ch->latest_gpa, 2) }} <span class="font-size-sm text-muted">GPA</span>
+                                                    @else
+                                                        <span class="text-muted font-size-base">{{ __('Pending Exams') }}</span>
+                                                    @endif
+                                                </h3>
+                                                <p class="font-size-xs text-muted mb-2">{{ __('Latest Published Examination') }}</p>
+                                                <div class="mt-2 text-right">
+                                                    <a href="{{ route('marks.year_selector', Qs::hash($ch->user->id)) }}" class="font-size-xs font-weight-semibold text-primary">
+                                                        {{ __('View Official Marksheets') }} <i class="icon-arrow-right5 ml-1"></i>
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
+
+                                {{-- Quick Action Shortcuts Bar --}}
+                                <div class="d-flex flex-wrap align-items-center p-3 rounded" style="background: rgba(0,0,0,0.02); border: 1px dashed rgba(0,0,0,0.1);">
+                                    <span class="font-weight-bold text-dark mr-3 mb-2 mb-md-0 font-size-sm"><i class="icon-grid mr-1"></i>{{ __('Direct Student Actions') }}:</span>
+                                    <a href="{{ route('marks.year_selector', Qs::hash($ch->user->id)) }}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                                        <i class="icon-file-text mr-1"></i>{{ __('Marksheets') }}
+                                    </a>
+                                    <a href="{{ route('payments.invoice', [Qs::hash($ch->user->id), Qs::getCurrentSession()]) }}" class="btn btn-outline-success btn-sm mr-2 mb-2">
+                                        <i class="icon-cash3 mr-1"></i>{{ __('Fees & Receipts') }}
+                                    </a>
+                                    <a href="{{ route('tt.student_timetable', Qs::hash($ch->user->id)) }}" class="btn btn-outline-info btn-sm mr-2 mb-2">
+                                        <i class="icon-calendar mr-1"></i>{{ __('Class Timetable') }}
+                                    </a>
+                                    <a href="{{ route('attendance.student_history', $ch->user_id) }}" class="btn btn-outline-secondary btn-sm mb-2">
+                                        <i class="icon-alarm mr-1"></i>{{ __('Attendance Record') }}
+                                    </a>
+                                </div>
                             </div>
-                        </div>
-                    @empty
-                        <div class="col-12 text-center text-muted py-4">
-                            <i class="icon-user-cancel icon-2x mb-2 d-block text-muted"></i>
-                            {{ __('No children currently linked to this parent account.') }}
-                        </div>
-                    @endforelse
-                </div>
+                        @endforeach
+                    </div>
+                @endif
             </div>
         </div>
+
+        {{-- Recent School Notices for Parents --}}
+        @if(!empty($recent_notices) && $recent_notices->isNotEmpty())
+            <div class="card shadow-sm mb-4" style="border-radius: 16px;">
+                <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
+                    <h5 class="font-weight-bold mb-0 text-dark"><i class="icon-newspaper mr-2" style="color: #FF5700;"></i>{{ __('Recent School Notices & Circulars') }}</h5>
+                    <a href="{{ route('notices.index') }}" class="btn btn-sm btn-link text-primary font-weight-semibold">{{ __('View All Notices') }} <i class="icon-arrow-right5 ml-1"></i></a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach($recent_notices as $nt)
+                            <div class="list-group-item d-flex align-items-center justify-content-between py-3">
+                                <div class="d-flex align-items-center">
+                                    <div class="mr-3 text-center" style="min-width: 50px;">
+                                        <span class="badge badge-light border d-block py-1 px-2 font-size-xs text-uppercase font-weight-bold">{{ $nt->notice_type ?? 'General' }}</span>
+                                    </div>
+                                    <div>
+                                        <h6 class="font-weight-semibold text-dark mb-0">{{ $nt->title }}</h6>
+                                        <span class="text-muted font-size-xs"><i class="icon-calendar2 mr-1"></i>{{ $nt->publish_date_bs ?: $nt->publish_date }}</span>
+                                    </div>
+                                </div>
+                                <a href="{{ route('notices.show', $nt->id) }}" class="btn btn-outline-light btn-sm text-dark">{{ __('Read') }}</a>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            </div>
+        @endif
     @endif
 
     {{-- Events Calendar Card (Bikram Sambat BS) --}}

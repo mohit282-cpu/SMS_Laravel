@@ -129,7 +129,7 @@
                 <h6>Student Data</h6>
                 <fieldset>
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="my_class_id">Class: <span class="text-danger">*</span></label>
                                 <select onchange="getClassSections(this.value)" data-placeholder="Choose..." required name="my_class_id" id="my_class_id" class="select-search form-control">
@@ -138,10 +138,10 @@
                                         <option {{ (old('my_class_id') == $c->id ? 'selected' : '') }} value="{{ $c->id }}">{{ $c->name }}</option>
                                         @endforeach
                                 </select>
-                        </div>
                             </div>
+                        </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="section_id">Section: <span class="text-danger">*</span></label>
                                 <select data-placeholder="Select Class First" required name="section_id" id="section_id" class="select-search form-control">
@@ -150,19 +150,7 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="my_parent_id">Parent: </label>
-                                <select data-placeholder="Choose..."  name="my_parent_id" id="my_parent_id" class="select-search form-control">
-                                    <option  value=""></option>
-                                    @foreach($parents as $p)
-                                        <option {{ (old('my_parent_id') == Qs::hash($p->id)) ? 'selected' : '' }} value="{{ Qs::hash($p->id) }}">{{ $p->name }}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="col-md-3">
+                        <div class="col-md-4">
                             <div class="form-group">
                                 <label for="year_admitted">Year Admitted: <span class="text-danger">*</span></label>
                                 <select data-placeholder="Choose..." required name="year_admitted" id="year_admitted" class="select-search form-control">
@@ -205,6 +193,77 @@
                             <div class="form-group">
                                 <label>Admission Number:</label>
                                 <input type="text" name="adm_no" placeholder="Admission Number" class="form-control" value="{{ old('adm_no') }}">
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+
+                <h6>Parent / Guardian</h6>
+                <fieldset>
+                    <div class="alert alert-info border-0 mb-3" style="background: rgba(255, 87, 0, 0.08); border-left: 4px solid #FF5700 !important;">
+                        <h6 class="font-weight-bold mb-1" style="color: #1A1A1A;"><i class="icon-info22 mr-2" style="color: #FF5700;"></i>{{ __('Automatic Parent Portal Account Creation') }}</h6>
+                        <p class="mb-0 text-muted font-size-sm">
+                            {{ __('Enter parent contact information to automatically provision a secure Parent Portal account with a single-use activation link. If a parent with this phone number or email is already registered, the student will automatically be linked to their account without creating duplicate identities.') }}
+                        </p>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="my_parent_id">{{ __('Link Existing Registered Parent') }}: </label>
+                                <select data-placeholder="Choose Existing Parent..." name="my_parent_id" id="my_parent_id" class="select-search form-control">
+                                    <option value=""></option>
+                                    @foreach($parents as $p)
+                                        <option {{ (old('my_parent_id') == Qs::hash($p->id)) ? 'selected' : '' }} value="{{ Qs::hash($p->id) }}">{{ $p->name }} ({{ $p->phone ?: $p->email }})</option>
+                                    @endforeach
+                                </select>
+                                <span class="form-text text-muted">{{ __('Select only if the parent is already registered in the system.') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="parent_relationship">{{ __('Relationship to Student') }}: </label>
+                                <select data-placeholder="Select Relationship..." name="parent_relationship" id="parent_relationship" class="select form-control">
+                                    <option value=""></option>
+                                    <option {{ old('parent_relationship') == 'Father' ? 'selected' : '' }} value="Father">{{ __('Father') }}</option>
+                                    <option {{ old('parent_relationship') == 'Mother' ? 'selected' : '' }} value="Mother">{{ __('Mother') }}</option>
+                                    <option {{ old('parent_relationship') == 'Guardian' ? 'selected' : '' }} value="Guardian">{{ __('Guardian') }}</option>
+                                    <option {{ old('parent_relationship') == 'Other' ? 'selected' : '' }} value="Other">{{ __('Other') }}</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>{{ __('Parent Full Name') }}: </label>
+                                <input type="text" name="parent_name" class="form-control" placeholder="{{ __('e.g. Ramesh Sharma') }}" value="{{ old('parent_name') }}">
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>{{ __('Parent Mobile Number') }}: </label>
+                                <input type="text" name="parent_phone" class="form-control" placeholder="{{ __('e.g. 9841234567') }}" value="{{ old('parent_phone') }}">
+                                <span class="form-text text-muted">{{ __('Normalized automatically. Used for parent login and SMS notifications.') }}</span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label>{{ __('Parent Email Address') }}: </label>
+                                <input type="email" name="parent_email" class="form-control" placeholder="{{ __('e.g. parent@example.com') }}" value="{{ old('parent_email') }}">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label>{{ __('Parent Address') }}: </label>
+                                <input type="text" name="parent_address" class="form-control" placeholder="{{ __('Leave blank to inherit student address') }}" value="{{ old('parent_address') }}">
                             </div>
                         </div>
                     </div>

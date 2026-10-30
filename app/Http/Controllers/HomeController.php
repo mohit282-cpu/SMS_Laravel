@@ -65,7 +65,38 @@ class HomeController extends Controller
             $d['my_books'] = \App\Models\BookRequest::where('user_id', $user->id)->where('returned', 0)->with('book')->get();
             $d['my_materials_count'] = \App\Models\StudyMaterial::visibleTo($user)->count();
         } elseif (Qs::userIsParent()) {
-            $d['children'] = \App\Models\StudentRecord::where('my_parent_id', $user->id)->with(['user', 'my_class', 'section'])->get();
+            $children = \App\Models\StudentRecord::where('my_parent_id', $user->id)
+                ->with(['user', 'my_class', 'section'])
+                ->get();
+
+            $session = Qs::getCurrentSession();
+
+            foreach ($children as $ch) {
+                // Outstanding fee balance for current session
+                $ch->outstanding_fees = (float) \App\Models\PaymentRecord::where('student_id', $ch->user_id)
+                    ->where('year', $session)
+                    ->where('paid', 0)
+                    ->sum('balance');
+
+                // Attendance summary
+                $attRecords = \App\Models\StudentAttendance::where('student_record_id', $ch->id)->get();
+                $totalAtt = $attRecords->count();
+                $presentAtt = $attRecords->whereIn('status', ['present', 'late'])->count();
+                $ch->attendance_pct = $totalAtt > 0 ? round(($presentAtt / $totalAtt) * 100, 1) : null;
+                $ch->attendance_total = $totalAtt;
+                $ch->attendance_present = $presentAtt;
+
+                // Latest published exam result
+                $latestExamRecord = \App\Models\ExamRecord::where('student_id', $ch->user_id)
+                    ->where('year', $session)
+                    ->orderBy('id', 'desc')
+                    ->first();
+                $ch->latest_gpa = $latestExamRecord ? $latestExamRecord->gpa : null;
+                $ch->latest_grade = $latestExamRecord ? $latestExamRecord->grade : null;
+            }
+
+            $d['children'] = $children;
+            $d['recent_notices'] = \App\Models\Notice::visibleTo(auth()->user())->orderBy('notice_date', 'desc')->take(5)->get();
         }
 
         return view('pages.support_team.dashboard', $d);

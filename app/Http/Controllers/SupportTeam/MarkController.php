@@ -51,6 +51,9 @@ class MarkController extends Controller
 
         /* Prevent unauthorized access */
         if(!$this->canAccessStudentRecord($st_id)){
+            if (Qs::userIsParent() || request()->expectsJson()) {
+                abort(403, __('msg.denied'));
+            }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -63,6 +66,9 @@ class MarkController extends Controller
 
         /* Prevent unauthorized access */
         if(!$this->canAccessStudentRecord($st_id)){
+            if (Qs::userIsParent() || request()->expectsJson()) {
+                abort(403, __('msg.denied'));
+            }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -79,6 +85,9 @@ class MarkController extends Controller
 
         /* Prevent unauthorized access */
         if(!$this->canAccessStudentRecord($st_id)){
+            if (Qs::userIsParent() || request()->expectsJson()) {
+                abort(403, __('msg.denied'));
+            }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 
@@ -159,6 +168,9 @@ class MarkController extends Controller
 
         /* Prevent unauthorized access */
         if(!$this->canAccessStudentRecord($st_id)){
+            if (Qs::userIsParent() || request()->expectsJson()) {
+                abort(403, __('msg.denied'));
+            }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));
         }
 

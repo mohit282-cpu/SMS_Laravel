@@ -136,6 +136,11 @@
                         <a href="{{ route('users.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['users.index', 'users.show', 'users.edit']) ? 'active' : '' }}"><i class="icon-users4"></i> <span> {{ __('Users') }}</span></a>
                     </li>
 
+                    {{--Manage Parents--}}
+                    <li class="nav-item">
+                        <a href="{{ route('parents.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['parents.index', 'parents.show']) ? 'active' : '' }}"><i class="icon-user-tie"></i> <span> {{ __('Parents') }}</span></a>
+                    </li>
+
                     {{--Manage Classes--}}
                     <li class="nav-item">
                         <a href="{{ route('classes.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['classes.index','classes.edit']) ? 'active' : '' }}"><i class="icon-windows2"></i> <span> {{ __('Classes') }}</span></a>
