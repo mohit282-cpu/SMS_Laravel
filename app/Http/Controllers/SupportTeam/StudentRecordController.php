@@ -79,7 +79,7 @@ class StudentRecordController extends Controller
             'success'
         );
 
-        return back()->with('flash_success', __('msg.p_reset') . ' New temporary password: ' . $tempPass)
+        return back()->with('flash_success', __('msg.p_reset'))
             ->with('temp_password', $tempPass);
     }
 
@@ -399,24 +399,60 @@ class StudentRecordController extends Controller
 
     public function destroy($st_id)
     {
-        $st_id = Qs::decodeHash($st_id);
-        if(!$st_id){return Qs::goWithDanger();}
+        $st_id = Qs::decodeHash($st_id) ?: (is_numeric($st_id) ? (int)$st_id : null);
+        if (!$st_id) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
 
         $sr = $this->student->getRecord(['user_id' => $st_id])->first();
-        $studentName = $sr && $sr->user ? $sr->user->name : "Student #{$st_id}";
-        $path = Qs::getUploadPath('student').$sr->user->code;
-        Storage::exists($path) ? Storage::deleteDirectory($path) : false;
-        $this->user->delete($sr->user->id);
+        $studentUser = $this->user->find($st_id);
 
-        app(\App\Services\AuditLogService::class)->log(
-            'student.delete',
-            'students',
-            "Deleted student '{$studentName}' (User ID: {$st_id})",
-            null,
-            ['user_id' => $st_id, 'name' => $studentName],
-            [],
-            'success'
-        );
+        if (!$sr && !$studentUser) {
+            return back()->with('flash_danger', __('msg.rnf'));
+        }
+
+        // Data Retention Policy: Prevent deletion if student has financial or academic records
+        if (\App\Models\PaymentRecord::where('student_id', $st_id)->exists()) {
+            return back()->with('flash_danger', __('Cannot delete student with existing payment or financial records. Please graduate or archive the record.'));
+        }
+
+        if (\App\Models\Mark::where('student_id', $st_id)->exists() || \App\Models\ExamRecord::where('student_id', $st_id)->exists()) {
+            return back()->with('flash_danger', __('Cannot delete student with existing examination marks or academic history. Please graduate or archive the record.'));
+        }
+
+        $studentName = $studentUser ? $studentUser->name : ($sr && $sr->user ? $sr->user->name : "Student #{$st_id}");
+        $studentCode = $studentUser ? $studentUser->code : ($sr && $sr->user ? $sr->user->code : null);
+
+        DB::transaction(function () use ($sr, $studentUser, $st_id, $studentName, $studentCode) {
+            if ($sr) {
+                $sr->delete();
+            }
+
+            if (class_exists(\App\Models\StudentAttendance::class)) {
+                \App\Models\StudentAttendance::where('user_id', $st_id)->delete();
+            }
+
+            if ($studentCode) {
+                $path = Qs::getUploadPath('student') . $studentCode;
+                if (Storage::exists($path)) {
+                    Storage::deleteDirectory($path);
+                }
+            }
+
+            if ($studentUser) {
+                $this->user->delete($studentUser->id);
+            }
+
+            app(\App\Services\AuditLogService::class)->log(
+                'student.delete',
+                'students',
+                "Deleted student '{$studentName}' (User ID: {$st_id})",
+                null,
+                ['user_id' => $st_id, 'name' => $studentName, 'code' => $studentCode],
+                [],
+                'success'
+            );
+        });
 
         return back()->with('flash_success', __('msg.del_ok'));
     }

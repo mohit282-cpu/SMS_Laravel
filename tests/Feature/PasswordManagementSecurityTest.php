@@ -83,6 +83,7 @@ class PasswordManagementSecurityTest extends TestCase
 
         $response = $this->actingAs($admin)->post(route('st.reset_pass', $hashedId));
         $response->assertSessionHas('flash_success');
+        $this->assertStringNotContainsString('New temporary password:', session('flash_success'));
         $response->assertSessionHas('temp_password');
 
         $tempPassword = session('temp_password');
@@ -104,6 +105,7 @@ class PasswordManagementSecurityTest extends TestCase
 
         $response = $this->actingAs($superAdmin)->post(route('users.reset_pass', $hashedId));
         $response->assertSessionHas('flash_success');
+        $this->assertStringNotContainsString('New temporary password:', session('flash_success'));
         $response->assertSessionHas('temp_password');
 
         $tempPassword = session('temp_password');

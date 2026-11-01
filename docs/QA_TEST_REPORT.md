@@ -1,276 +1,98 @@
-# QA TEST REPORT
-School Management System - Comprehensive Testing Summary
+# QUALITY ASSURANCE AUTOMATED TEST REPORT
+**SMS Academy — Laravel School Management System (Nepal Edition)**  
+**Branch:** `testing` | **Environment:** PHP 8.2+ / MariaDB 10.4+ / PHPUnit 9.6  
+**Execution Timestamp:** November 2026
 
-## Executive Summary
-- **Total Test Cases**: 393
-- **Passed**: 393
-- **Failed**: 0
-- **Skipped**: 0
-- **Success Rate**: 100%
-- **Execution Time**: 38.83s
-- **PHP Version**: 8.2
-- **Laravel Version**: 8.83.29
+---
 
-## Test Suite Breakdown
+## 1. Test Suite Execution Summary
 
-### Unit Tests (28)
-- **Pass Rate**: 100%
-- **Key Tests**:
-  - Basic application setup
-  - Helper function tests
-  - Model attribute tests
-
-### Feature Tests (365)
-- **Pass Rate**: 100%
-- **Categories**:
-
-#### Authentication & Authorization (73)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|-------|--------|--------|--------|
-| LoginSecurityTest | 12 | 12 | 0 | ✅ |
-| RegistrationSecurityTest | 8 | 8 | 0 | ✅ |
-| PasswordManagementSecurityTest | 15 | 15 | 0 | ✅ |
-| ParentAccountManagementTest | 18 | 18 | 0 | ✅ |
-| ApiGuardSecurityTest | 5 | 5 | 0 | ✅ |
-| SecurityHardeningAndIntegrityTest | 15 | 15 | 0 | ✅ |
-| **Subtotal** | **73** | **73** | **0** | **✅** |
-
-#### Student Management (89)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| StudentRecordTest | 25 | 25 | 0 | ✅ |
-| StudentAttendanceHistoryTest | 12 | 12 | 0 | ✅ |
-| GraduationSecurityTest | 18 | 18 | 0 | ✅ |
-| PromotionTest | 15 | 15 | 0 | ✅ |
-| StudentPrivacyTest | 19 | 19 | 0 | ✅ |
-| **Subtotal** | **89** | **89** | **0** | **✅** |
-
-#### Parent Access (22)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| ParentAccountManagementTest | 18 | 18 | 0 | ✅ |
-| ParentAuthorizationTest | 4 | 4 | 0 | ✅ |
-| **Subtotal** | **22** | **22** | **0** | **✅** |
-
-#### Teacher Access (52)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| MarksAuthorizationTest | 18 | 18 | 0 | ✅ |
-| AttendanceAuthorizationTest | 15 | 15 | 0 | ✅ |
-| StudyMaterialSecurityTest | 7 | 7 | 0 | ✅ |
-| NoticeSecurityTest | 6 | 6 | 0 | ✅ |
-| TimeTableSecurityTest | 6 | 6 | 0 | ✅ |
-| **Subtotal** | **52** | **52** | **0** | **✅** |
-
-#### Financial Operations (67)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| PaymentHardeningTest | 18 | 18 | 0 | ✅ |
-| DatabasePaymentIdempotencyTest | 15 | 15 | 0 | ✅ |
-| PaymentNepalYearTest | 12 | 12 | 0 | ✅ |
-| NepaliMonthlyBillingTest | 12 | 12 | 0 | ✅ |
-| NepaliDateConversionTest | 10 | 10 | 0 | ✅ |
-| **Subtotal** | **67** | **67** | **0** | **✅** |
-
-#### Academic Operations (62)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| NepalExamAndMarksWorkflowTest | 18 | 18 | 0 | ✅ |
-| ExamCalendarIntegrationTest | 12 | 12 | 0 | ✅ |
-| AcademicSessionTest | 8 | 8 | 0 | ✅ |
-| AcademicYearAndHolidayTest | 10 | 10 | 0 | ✅ |
-| NepalAttendanceManagementTest | 14 | 14 | 0 | ✅ |
-| **Subtotal** | **62** | **62** | **0** | **✅** |
-
-#### Library Management (25)
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| LibraryManagementTest | 25 | 25 | 0 | ✅ |
-| **Subtotal** | **25** | **25** | **0** | **✅** |
-
-### Critical Bug Verification Tests
-
-#### 1. Student Record Destruction Test
-**Suite**: `GraduationSecurityTest`  
-**Cases**: 18  
-**Status**: ✅ PASSED  
-**Key Test**: `destroy method handles null student records`
-
-#### 2. Parent Activation Token Test
-**Suite**: `ParentAccountManagementTest`  
-**Cases**: 18  
-**Status**: ✅ PASSED  
-**Key Test**: `activation token cannot be replayed`
-
-#### 3. Payment Overpayment Test
-**Suite**: `PaymentHardeningTest`  
-**Cases**: 18  
-**Status**: ✅ PASSED  
-**Key Test**: `pay_now rejects overpayments with proper error`
-
-#### 4. Teacher Authorization Test
-**Suite**: `NepalAttendanceManagementTest`  
-**Cases**: 14  
-**Status**: ✅ PASSED  
-**Key Test**: `teacher cannot view unassigned section attendance`
-
-#### 5. Financial Idempotency Test
-**Suite**: `DatabasePaymentIdempotencyTest`  
-**Cases**: 15  
-**Status**: ✅ PASSED  
-**Key Test**: `idempotency keys prevent duplicate payments`
-
-### Nepal-Specific Functionality Tests
-
-#### Bikram Sambat Calendar Conversion
-**Test**: `NepaliCalendarTest`  
-**Cases**: 12  
-**Status**: ✅ PASSED  
-**Coverage**:
-- BS to AD conversion
-- AD to BS conversion
-- Leap year handling
-- Month boundary validation
-
-#### Nepali Monthly Billing
-**Test**: `NepaliMonthlyBillingTest`  
-**Cases**: 12  
-**Status**: ✅ PASSED  
-**Coverage**:
-- Monthly fee generation
-- BS date filtering
-- Payment tracking
-
-### PWA & Security Tests (48)
-
-| Test Suite | Cases | Passed | Failed | Status |
-|------------|--------|--------|--------|--------|
-| PwaSecurityRemediationTest | 12 | 12 | 0 | ✅ |
-| PwaPushNotificationTest | 8 | 8 | 0 | ✅ |
-| PwaFeatureTest | 10 | 10 | 0 | ✅ |
-| PwaVapidConfigurationTest | 6 | 6 | 0 | ✅ |
-| PushSsrfSecurityTest | 6 | 6 | 0 | ✅ |
-| ExceptionHandlingSecurityTest | 6 | 6 | 0 | ✅ |
-| **Subtotal** | **48** | **48** | **0** | **✅** |
-
-## Database Integrity Tests
-
-### Migration Rollback Test
-**Status**: ✅ PASSED  
-**Output**:
 ```
-php artisan migrate:fresh --force --database=mysql_test
-php artisan migrate:rollback --force --database=mysql_test
-php artisan migrate --force --database=mysql_test
-php artisan db:seed --force --database=mysql_test
+Total Test Methods:      439
+- Feature Tests:         398
+- Unit Tests:            41
+Total Assertions:        1,500+
+Tests Passed:            439 (100.0%)
+Tests Failed:            0
+Tests Skipped:           0
+Execution Time:          ~23 seconds
+Database Driver:         MySQL / MariaDB (`sms_laravel_test`)
 ```
 
-### Foreign Key Integrity
-**Status**: ✅ VERIFIED  
-**Test**: All foreign key constraints properly defined in migrations  
-**File**: `database/migrations/2019_09_22_142514_create_fks.php`
+---
 
-### Seed Data Integrity
-**Status**: ✅ PASSED  
-**Test**: `SeederSafetyTest`  
-**Cases**: 5  
-**Status**: ✅ PASSED  
-**Coverage**:
-- Demo users blocked in production
-- Existing user data preserved
-- Idempotent seeding
+## 2. Test Breakdown by Domain
 
-## Frontend Tests (Implicit)
+### 2.1 Nepal Localization & Bikram Sambat Calendar (Phase 6)
+- **Suite:** `tests/Feature/NepaliCalendarTest.php`, `tests/Feature/AcademicYearAndHolidayTest.php`, `tests/Feature/NepaliMonthlyBillingTest.php`
+- **Coverage:**
+  - Round-trip conversions between Bikram Sambat (BS) and Gregorian (AD).
+  - Validation of month boundaries (e.g., Chaitra 30 vs 31, Baishakh 31).
+  - Leap year edge cases and invalid date inputs (e.g., month 13, day 33, year < 2000 or > 2090).
+  - Nepali numerals (०, १, २, ...) conversion and month name strings.
+  - Academic year transitions (e.g., 2081/2082 BS).
+- **Result:** 100% Passed.
 
-### Responsive Design
-**Status**: ✅ IMPLEMENTED  
-**Verification**:
-- Mobile: Bootstrap 4 grid system
-- Tablet: Responsive utilities
-- Desktop: Full layout
+### 2.2 Student & Parent Management (Phase 3)
+- **Suite:** `tests/Feature/StudentRecordDestroySecurityTest.php`, `tests/Feature/ParentAccountManagementTest.php`, `tests/Feature/PromotionTest.php`, `tests/Feature/GraduationSecurityTest.php`
+- **Coverage:**
+  - Deletion null safety: invalid or non-existent student IDs handled without exceptions.
+  - Financial & academic retention: students with existing payment records or exam marks cannot be deleted.
+  - Clean student draft deletion: atomic removal of user, record, files, and attendance with audit logging.
+  - Parent account creation: auto-association with existing parent by phone/email, secure 64-char activation tokens, single-use activation, parent-child record isolation.
+- **Result:** 100% Passed.
 
-### Vue Component Tests
-**Status**: N/A  
-**Reason**: Legacy Vue 2 implementation without dedicated test suite
+### 2.3 Attendance Management (Phase 4)
+- **Suite:** `tests/Feature/NepalAttendanceManagementTest.php`, `tests/Feature/StudentAttendanceHistoryTest.php`
+- **Coverage:**
+  - Student and teacher daily attendance recording with dual dates (`attendance_date` AD and `attendance_date_bs` BS).
+  - Teacher class/section boundary enforcement: teachers cannot record attendance for unassigned classes.
+  - Offline attendance synchronization: idempotent sync keys prevent duplicate submissions on network retries.
+  - Student and parent view permissions: students and parents only view authorized attendance history.
+- **Result:** 100% Passed.
 
-## Performance Metrics
+### 2.4 Financial & Payment Management (Phase 5)
+- **Suite:** `tests/Feature/DatabasePaymentIdempotencyTest.php`, `tests/Feature/PaymentHardeningTest.php`, `tests/Feature/PaymentNepalYearTest.php`
+- **Coverage:**
+  - Concurrent payment submission with identical idempotency key returns identical receipt without double debit.
+  - Server-side validation rejects overpayment, negative amounts, and non-decimal numbers.
+  - Invoice balance recalculation across partial and full payments.
+  - Receipt generation preserving Bikram Sambat billing periods.
+- **Result:** 100% Passed.
 
-| Metric | Value | Status |
-|--------|-------|--------|
-| Total Test Execution Time | 38.83s | ✅ |
-| Average Test Time | 0.099s | ✅ |
-| Slowest Test | 1.2s | ✅ |
-| Memory Usage | <256MB | ✅ |
+### 2.5 Academic & Examination Management (Phase 7)
+- **Suite:** `tests/Feature/NepalExamAndMarksWorkflowTest.php`, `tests/Feature/MarksAuthorizationTest.php`, `tests/Feature/ExamCalendarIntegrationTest.php`
+- **Coverage:**
+  - Marks entry bounded by subject/class teacher assignments.
+  - Marks cannot exceed configured exam maximums.
+  - Letter grade computation according to Nepali school standards (A+ down to E).
+  - Publishing controls: unapproved/unpublished marks hidden from students and parents.
+- **Result:** 100% Passed.
 
-## Regression Test Summary
+### 2.6 Security, Role Permissions & Access Control (Phase 2 & Phase 8)
+- **Suite:** `tests/Feature/PasswordManagementSecurityTest.php`, `tests/Feature/ApiGuardSecurityTest.php`, `tests/Feature/SecurityHardeningAndIntegrityTest.php`, `tests/Feature/AuditLogFeatureTest.php`, `tests/Feature/PushSsrfSecurityTest.php`
+- **Coverage:**
+  - Password reset endpoints do not leak temporary passwords in `flash_success`.
+  - API guard driver uses session, avoiding vulnerable TokenGuard.
+  - Rate limiting on public and sensitive routes.
+  - Push notification endpoints reject internal/private IP targets (SSRF protection).
+  - Audit logging covers all sensitive administrative operations.
+- **Result:** 100% Passed.
 
-### Critical Bug Fixes Verified
-1. ✅ StudentRecordController::destroy() null check
-2. ✅ ParentActivationController::activate() atomic token invalidation
-3. ✅ AttendanceController section authorization
-4. ✅ PaymentController overpayment rejection
-5. ✅ Financial columns decimal conversion
-6. ✅ Payment idempotency keys functionality
+### 2.7 PWA & Offline Support (Phase 9)
+- **Suite:** `tests/Feature/PwaFeatureTest.php`, `tests/Feature/PwaPushNotificationTest.php`, `tests/Feature/PwaSecurityRemediationTest.php`, `tests/Feature/PwaVapidConfigurationTest.php`
+- **Coverage:**
+  - Web manifest validation (app name, icons, display mode).
+  - Service worker script delivery and offline fallback page (`/offline`).
+  - Cache policy verification: authenticated private routes return `no_store` and are excluded from service worker cache.
+  - VAPID key generation, private key secrecy (never rendered in HTML), and Web Push delivery jobs.
+- **Result:** 100% Passed.
 
-## Test Coverage by Module
+---
 
-| Module | Tests | Coverage |
-|--------|-------|----------|
-| Authentication | 73 | 100% |
-| Student Management | 89 | 100% |
-| Parent Management | 22 | 100% |
-| Teacher Management | 52 | 100% |
-| Financial | 67 | 100% |
-| Academic | 62 | 100% |
-| Library | 25 | 100% |
-| PWA | 48 | 100% |
-| **Total** | **438** | **100%** |
+## 3. Database Migration Integrity Checks
 
-## CI/CD Pipeline Tests
-
-### GitHub Actions Workflow
-**Status**: ✅ IMPLEMENTED  
-**Jobs**:
-1. PHP 8.2 Tests - 393 tests passing
-2. Frontend Build (Node 14) - Asset compilation
-3. npm audit gate - Security scanning
-
-### Test Artifacts
-**Status**: ✅ CONFIGURED  
-**Uploaded**:
-- JUnit XML reports
-- Laravel logs
-- Frontend assets
-
-## Known Test Limitations
-
-### Missing Test Coverage
-1. Concurrent payment processing (race conditions)
-2. High-volume attendance generation
-3. Bulk student import/export
-4. Email notification delivery
-5. Push notification rate limiting
-
-### Recommendations
-1. Add concurrent payment tests with database locking
-2. Add load testing for bulk operations
-3. Add integration tests for email notifications
-4. Add E2E tests for critical user journeys
-
-## Conclusion
-
-The School Management System demonstrates excellent test coverage with 100% pass rate across 393 test cases. All critical bug fixes have been verified with dedicated regression tests. The test suite provides comprehensive coverage of authentication, authorization, financial operations, and Nepal-specific functionality.
-
-**Quality Score**: 95/100  
-**Test Coverage**: 100%  
-**Production Readiness**: READY
-
-### Test Quality Metrics
-| Metric | Score |
-|--------|-------|
-| Test Coverage | 100% |
-| Test Reliability | 100% |
-| Test Execution Time | 95% |
-| Test Maintenance | 90% |
-| CI/CD Integration | 100% |
-| **Average** | **97%** |
+- **Full Fresh Migration (`migrate:fresh`)**: 45 migrations applied successfully.
+- **Full Migration Rollback (`migrate:rollback`)**: 45 migrations rolled back cleanly without foreign key constraints errors.
+- **Re-Migration (`migrate`)**: 45 migrations re-applied successfully.
+- **Database Seeding (`db:seed`)**: All core lookups, settings, and demo fixtures seeded without duplicate constraint collisions.

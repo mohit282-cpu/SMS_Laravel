@@ -98,7 +98,7 @@ class UserController extends Controller
             'success'
         );
 
-        return back()->with('flash_success', __('msg.pu_reset') . ' New temporary password: ' . $tempPass)
+        return back()->with('flash_success', __('msg.pu_reset'))
             ->with('temp_password', $tempPass);
     }
 
