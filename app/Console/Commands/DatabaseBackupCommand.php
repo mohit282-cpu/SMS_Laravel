@@ -4,8 +4,10 @@ namespace App\Console\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
-use PDO;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use PDO;
+use ZipArchive;
 
 class DatabaseBackupCommand extends Command
 {
@@ -18,14 +20,16 @@ class DatabaseBackupCommand extends Command
                             {--connection= : Database connection defined in config/database.php}
                             {--database= : Override specific database name}
                             {--destination= : Destination directory path}
-                            {--compress : Compress the backup file using gzip}';
+                            {--compress : Compress the backup file using gzip}
+                            {--include-files : Bundle uploaded student and study material files into an archive}
+                            {--retention-days=30 : Number of days to retain old backups before pruning}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Generate a standalone, portable SQL backup of the MySQL/MariaDB database';
+    protected $description = 'Generate a standalone, portable SQL backup of the MySQL/MariaDB database with optional files archive and retention pruning';
 
     /**
      * Execute the console command.
@@ -40,6 +44,7 @@ class DatabaseBackupCommand extends Command
 
         if (!$config) {
             $this->error("Database connection [{$connectionName}] is not configured.");
+            Log::error("db:backup failed: Connection [{$connectionName}] not configured.");
             return 1;
         }
 
@@ -68,7 +73,7 @@ class DatabaseBackupCommand extends Command
 
         $destinationDir = $this->option('destination') ?: storage_path('app/backups');
         if (!File::isDirectory($destinationDir)) {
-            File::makeDirectory($destinationDir, 0755, true);
+            File::makeDirectory($destinationDir, 0750, true);
         }
 
         $timestamp = date('Ymd_His');
@@ -90,6 +95,7 @@ class DatabaseBackupCommand extends Command
 
         if (!$fileHandle) {
             $this->error("Failed to open backup file for writing: {$filePath}");
+            Log::error("db:backup failed to open file for writing: {$filePath}");
             return 1;
         }
 
@@ -208,9 +214,15 @@ class DatabaseBackupCommand extends Command
             $fileSize = filesize($filePath);
             $sha256 = hash_file('sha256', $filePath);
 
+            // Optional coordinated files archive
+            $filesArchiveMeta = null;
+            if ($this->option('include-files')) {
+                $filesArchiveMeta = $this->createFilesArchive($destinationDir, $database, $timestamp);
+            }
+
             // Write metadata file
             $metaPath = $filePath . '.meta.json';
-            file_put_contents($metaPath, json_encode([
+            $metaData = [
                 'database' => $database,
                 'tables' => $tableCount,
                 'total_rows' => $totalRows,
@@ -220,13 +232,30 @@ class DatabaseBackupCommand extends Command
                 'compressed' => $compress,
                 'created_at' => date('c'),
                 'duration_seconds' => $elapsed,
-            ], JSON_PRETTY_PRINT));
+                'files_archive' => $filesArchiveMeta,
+            ];
+
+            file_put_contents($metaPath, json_encode($metaData, JSON_PRETTY_PRINT));
+
+            // Retention pruning
+            $retentionDays = (int) $this->option('retention-days');
+            $prunedCount = $this->pruneOldBackups($destinationDir, $retentionDays);
+
+            Log::info("db:backup completed for [{$database}]. Size: {$fileSize} bytes, SHA256: {$sha256}, Duration: {$elapsed}s.");
 
             $this->info("Backup completed successfully in {$elapsed}s.");
             $this->line("File: {$filePath}");
             $this->line("Size: " . number_format($fileSize) . " bytes");
             $this->line("SHA-256: {$sha256}");
             $this->line("Tables: {$tableCount} | Total Rows: {$totalRows}");
+
+            if ($filesArchiveMeta) {
+                $this->info("Files Archive: " . $filesArchiveMeta['file_name'] . " (" . number_format($filesArchiveMeta['file_size_bytes']) . " bytes)");
+            }
+
+            if ($prunedCount > 0) {
+                $this->comment("Pruned {$prunedCount} old backup file(s) older than {$retentionDays} days.");
+            }
 
             return 0;
         } catch (Exception $e) {
@@ -240,8 +269,86 @@ class DatabaseBackupCommand extends Command
             if (File::exists($filePath)) {
                 File::delete($filePath);
             }
+            Log::error("db:backup error for [{$database}]: " . $e->getMessage());
             $this->error("Database backup failed: " . $e->getMessage());
             return 1;
         }
+    }
+
+    /**
+     * Bundle user uploads and study materials into a companion zip archive
+     */
+    protected function createFilesArchive(string $destinationDir, string $database, string $timestamp): ?array
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->warn("ZipArchive extension not available. Skipping files bundling.");
+            return null;
+        }
+
+        $filesZipName = "backup_files_{$database}_{$timestamp}.zip";
+        $filesZipPath = rtrim($destinationDir, '/\\') . DIRECTORY_SEPARATOR . $filesZipName;
+
+        $zip = new ZipArchive();
+        if ($zip->open($filesZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+            $this->warn("Could not create files archive: {$filesZipPath}");
+            return null;
+        }
+
+        $sourceDirs = [
+            'uploads' => storage_path('app/uploads'),
+            'public_uploads' => storage_path('app/public/uploads'),
+            'study_materials' => storage_path('app/study_materials'),
+        ];
+
+        $filesAdded = 0;
+        foreach ($sourceDirs as $prefix => $dir) {
+            if (File::isDirectory($dir)) {
+                $files = File::allFiles($dir);
+                foreach ($files as $file) {
+                    $relativePath = $prefix . '/' . $file->getRelativePathname();
+                    $zip->addFile($file->getRealPath(), $relativePath);
+                    $filesAdded++;
+                }
+            }
+        }
+
+        $zip->close();
+
+        if (!File::exists($filesZipPath)) {
+            return null;
+        }
+
+        return [
+            'file_name' => $filesZipName,
+            'file_size_bytes' => filesize($filesZipPath),
+            'sha256' => hash_file('sha256', $filesZipPath),
+            'files_count' => $filesAdded,
+        ];
+    }
+
+    /**
+     * Prune backups older than specified retention period
+     */
+    protected function pruneOldBackups(string $destinationDir, int $retentionDays): int
+    {
+        if ($retentionDays <= 0) {
+            return 0;
+        }
+
+        $threshold = time() - ($retentionDays * 86400);
+        $files = File::files($destinationDir);
+        $pruned = 0;
+
+        foreach ($files as $file) {
+            $name = $file->getFilename();
+            if (str_starts_with($name, 'backup_')) {
+                if ($file->getMTime() < $threshold) {
+                    File::delete($file->getRealPath());
+                    $pruned++;
+                }
+            }
+        }
+
+        return $pruned;
     }
 }

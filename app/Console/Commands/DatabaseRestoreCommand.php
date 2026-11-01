@@ -4,8 +4,10 @@ namespace App\Console\Commands;
 
 use Exception;
 use Illuminate\Console\Command;
-use PDO;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use PDO;
+use ZipArchive;
 
 class DatabaseRestoreCommand extends Command
 {
@@ -18,14 +20,17 @@ class DatabaseRestoreCommand extends Command
                             {file : Path to .sql or .sql.gz backup file}
                             {--connection= : Database connection defined in config/database.php}
                             {--target-db= : Destination database name to restore into}
-                            {--force : Force restoration without confirmation}';
+                            {--force : Force restoration without interactive prompt}
+                            {--confirm-production : Explicitly confirm restoring into a production database}
+                            {--verify-checksum : Strictly verify SHA-256 checksum from metadata before restoring}
+                            {--restore-files : Restore companion files archive if available}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Safely restore a MySQL/MariaDB database from a .sql or .sql.gz backup file';
+    protected $description = 'Safely restore a MySQL/MariaDB database from a verified backup archive';
 
     /**
      * Execute the console command.
@@ -35,10 +40,27 @@ class DatabaseRestoreCommand extends Command
     public function handle()
     {
         $startTime = microtime(true);
-        $filePath = $this->argument('file');
+        $rawFilePath = $this->argument('file');
 
-        if (!File::exists($filePath)) {
-            $this->error("Backup file not found at: {$filePath}");
+        // Path safety & traversal prevention
+        if (str_contains($rawFilePath, "\0")) {
+            $this->error("Invalid file path: null byte detected.");
+            return 1;
+        }
+
+        $realPath = realpath($rawFilePath);
+        if (!$realPath || !File::exists($realPath)) {
+            $this->error("Backup file not found at: {$rawFilePath}");
+            Log::error("db:restore failed: File not found at {$rawFilePath}");
+            return 1;
+        }
+
+        $extension = strtolower(pathinfo($realPath, PATHINFO_EXTENSION));
+        $isGzip = str_ends_with(strtolower($realPath), '.sql.gz') || $extension === 'gz';
+        $isSql = str_ends_with(strtolower($realPath), '.sql') || $extension === 'sql';
+
+        if (!$isGzip && !$isSql) {
+            $this->error("Invalid file type. Restore only accepts .sql or .sql.gz backup files.");
             return 1;
         }
 
@@ -65,6 +87,41 @@ class DatabaseRestoreCommand extends Command
         if (!preg_match('/^[a-zA-Z0-9_\-]+$/', $targetDb)) {
             $this->error("Invalid target database name [{$targetDb}]. Only alphanumeric, underscores and hyphens allowed.");
             return 1;
+        }
+
+        // Production database safety guard
+        $configuredProdDb = config('database.connections.mysql.database');
+        $isProductionEnv = app()->environment('production') || config('app.env') === 'production';
+        $isTargetingProdDb = ($targetDb === $configuredProdDb);
+
+        if (($isProductionEnv || $isTargetingProdDb) && !$this->option('confirm-production')) {
+            $this->error("SECURITY ERROR: Target database [{$targetDb}] is configured as PRODUCTION.");
+            $this->error("Destructive restore is blocked. Pass --confirm-production to proceed.");
+            Log::warning("db:restore blocked: Attempt to restore into production DB [{$targetDb}] without --confirm-production.");
+            return 1;
+        }
+
+        // Checksum verification
+        $metaPath = $realPath . '.meta.json';
+        $meta = null;
+        if (File::exists($metaPath)) {
+            $meta = json_decode(file_get_contents($metaPath), true);
+        }
+
+        if ($this->option('verify-checksum') || $meta) {
+            $calculatedSha = hash_file('sha256', $realPath);
+            if ($meta && isset($meta['sha256'])) {
+                if ($calculatedSha !== $meta['sha256']) {
+                    $this->error("CHECKSUM MISMATCH: Calculated [{$calculatedSha}], expected [{$meta['sha256']}].");
+                    $this->error("The backup archive may be corrupted or tampered with. Restoration aborted.");
+                    Log::error("db:restore aborted: Checksum mismatch on {$realPath}.");
+                    return 1;
+                }
+                $this->info("SHA-256 checksum verified successfully ({$calculatedSha}).");
+            } elseif ($this->option('verify-checksum')) {
+                $this->error("Checksum verification requested, but no companion .meta.json file found.");
+                return 1;
+            }
         }
 
         // Safety verification prompt
@@ -109,28 +166,24 @@ class DatabaseRestoreCommand extends Command
                 PDO::MYSQL_ATTR_MULTI_STATEMENTS => true,
             ]);
 
-            $this->info("Restoring backup into [{$targetDb}] from [{$filePath}]...");
-
-            // Determine if compressed
-            $isGzip = str_ends_with(strtolower($filePath), '.gz');
+            $this->info("Restoring backup into [{$targetDb}] from [{$realPath}]...");
 
             if ($isGzip) {
-                $gz = gzopen($filePath, 'rb');
+                $gz = gzopen($realPath, 'rb');
                 if (!$gz) {
-                    $this->error("Could not read gzip archive: {$filePath}");
+                    $this->error("Could not read gzip archive: {$realPath}");
                     return 1;
                 }
             } else {
-                $fp = fopen($filePath, 'r');
+                $fp = fopen($realPath, 'r');
                 if (!$fp) {
-                    $this->error("Could not read SQL file: {$filePath}");
+                    $this->error("Could not read SQL file: {$realPath}");
                     return 1;
                 }
             }
 
             $buffer = '';
             $executedBatches = 0;
-            $inDelimiter = false;
 
             while (true) {
                 if ($isGzip) {
@@ -142,14 +195,12 @@ class DatabaseRestoreCommand extends Command
                 }
 
                 $trimmed = trim($line);
-                // Skip empty lines or pure single-line comments outside of multi-line SQL
                 if (empty($buffer) && (empty($trimmed) || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#'))) {
                     continue;
                 }
 
                 $buffer .= $line;
 
-                // Execute when buffer reaches a sensible batch size (50KB) and ends with semicolon
                 if (strlen($buffer) > 51200 && str_ends_with($trimmed, ';')) {
                     $targetPdo->exec($buffer);
                     $executedBatches++;
@@ -157,7 +208,6 @@ class DatabaseRestoreCommand extends Command
                 }
             }
 
-            // Flush remaining buffer
             if (!empty(trim($buffer))) {
                 $targetPdo->exec($buffer);
                 $executedBatches++;
@@ -172,6 +222,11 @@ class DatabaseRestoreCommand extends Command
             $elapsed = round(microtime(true) - $startTime, 2);
             $this->info("SQL execution completed in {$elapsed}s ({$executedBatches} statement batch(es)).");
 
+            // Optional companion files extraction
+            if ($this->option('restore-files')) {
+                $this->restoreCompanionFiles($realPath);
+            }
+
             // Perform post-restoration verification
             $this->line("--------------------------------------------------");
             $this->line("POST-RESTORATION VERIFICATION REPORT");
@@ -185,7 +240,6 @@ class DatabaseRestoreCommand extends Command
             $restoredTableCount = count($tables);
             $this->info("Restored Tables: {$restoredTableCount}");
 
-            $verificationMetrics = [];
             $checkTables = [
                 'users',
                 'student_records',
@@ -202,14 +256,13 @@ class DatabaseRestoreCommand extends Command
             foreach ($checkTables as $table) {
                 if (in_array($table, $tables, true)) {
                     $count = (int) $targetPdo->query("SELECT COUNT(*) FROM `{$table}`")->fetchColumn();
-                    $verificationMetrics[$table] = $count;
                     $this->line(sprintf("  %-25s: %d rows", $table, $count));
                 } else {
                     $this->warn(sprintf("  %-25s: TABLE NOT FOUND", $table));
                 }
             }
 
-            // Foreign key consistency spot-check
+            // Foreign key consistency check
             $orphans = 0;
             if (in_array('student_records', $tables, true) && in_array('users', $tables, true)) {
                 $orphans = (int) $targetPdo->query("SELECT COUNT(*) FROM `student_records` sr LEFT JOIN `users` u ON sr.user_id = u.id WHERE u.id IS NULL")->fetchColumn();
@@ -220,13 +273,51 @@ class DatabaseRestoreCommand extends Command
                 $this->error("Foreign Key Integrity: FAIL ({$orphans} orphan student_records found)");
             }
 
+            Log::info("db:restore successfully restored into [{$targetDb}] from {$realPath}. Restored {$restoredTableCount} tables in {$elapsed}s.");
+
             $this->line("--------------------------------------------------");
             $this->info("Database restore to [{$targetDb}] VERIFIED SUCCESSFULLY.");
 
             return 0;
         } catch (Exception $e) {
-            $this->error("Database restoration failed: " . $e->getMessage());
+            Log::error("db:restore failed for [{$targetDb}]: " . $e->getMessage());
+            // Sanitize error message to prevent leaking passwords
+            $safeMessage = preg_replace('/password=[^;]+/', 'password=***', $e->getMessage());
+            $this->error("Database restoration failed: {$safeMessage}");
             return 1;
+        }
+    }
+
+    /**
+     * Restore companion files archive if available
+     */
+    protected function restoreCompanionFiles(string $realSqlPath): void
+    {
+        if (!class_exists('ZipArchive')) {
+            $this->warn("ZipArchive extension not available. Skipping files restoration.");
+            return;
+        }
+
+        // Derive companion files zip name
+        $dir = dirname($realSqlPath);
+        $base = basename($realSqlPath);
+        // e.g. backup_dbname_timestamp.sql.gz -> backup_files_dbname_timestamp.zip
+        $filesZipName = preg_replace('/^backup_([a-zA-Z0-9_\-]+)_(\d{8}_\d{6})\.sql(\.gz)?$/', 'backup_files_$1_$2.zip', $base);
+        $filesZipPath = $dir . DIRECTORY_SEPARATOR . $filesZipName;
+
+        if (!File::exists($filesZipPath)) {
+            $this->comment("No companion files archive found at: {$filesZipPath}");
+            return;
+        }
+
+        $zip = new ZipArchive();
+        if ($zip->open($filesZipPath) === true) {
+            $extractTarget = storage_path('app');
+            $zip->extractTo($extractTarget);
+            $zip->close();
+            $this->info("Companion files successfully extracted into [{$extractTarget}].");
+        } else {
+            $this->warn("Failed to open companion files archive: {$filesZipPath}");
         }
     }
 }

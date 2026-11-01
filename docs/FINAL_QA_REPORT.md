@@ -2,21 +2,21 @@
 **SMS Academy — Laravel School Management System (Nepal Edition)**  
 **Branch:** `testing` | **Environment:** PHP 8.2.12 / MariaDB 10.4+ / PHPUnit 9.6.38  
 **Execution Timestamp:** November 1, 2026  
-**Final QA Status:** **ALL 445 TESTS PASSING (0 FAILURES, 0 SKIPS)**
+**Final QA Status:** **ALL 451 TESTS PASSING (0 FAILURES, 0 SKIPS)**
 
 ---
 
 ## 1. Test Suite Execution Summary
 
 ```
-Total Test Methods:      445
-- Feature Tests:         404
-- Unit Tests:            41
-Total Assertions:        1,515+
-Tests Passed:            445 (100.0%)
+Total Test Methods:      451
+- Feature Tests:         410 passed
+- Unit Tests:            41 passed (870 assertions)
+Total Assertions:        1,530+
+Tests Passed:            451 (100.0%)
 Tests Failed:            0
 Tests Skipped:           0
-Execution Time:          25.18s (Feature) + 0.88s (Unit) = 26.06s
+Execution Time:          24.19s (Feature) + 0.93s (Unit) = 25.12s
 PHP Syntax Lint:         315 files checked, 0 errors
 Database Driver:         MySQL / MariaDB (`sms_laravel_test`)
 ```
@@ -25,10 +25,16 @@ Database Driver:         MySQL / MariaDB (`sms_laravel_test`)
 
 ## 2. Test Execution Details by Module
 
-### 2.1 Database Backup & Restoration (`DatabaseBackupRestoreTest`)
+### 2.1 Database Backup & Disaster Recovery (`DatabaseBackupRestoreTest`)
 - Backup generation with gzip compression and metadata JSON: PASSED.
-- Archive restoration into isolated database and post-verification: PASSED.
-**Result:** 2/2 Passed.
+- Coordinated files bundling (`--include-files`): PASSED.
+- Automated retention pruning (`--retention-days`): PASSED.
+- Archive restoration with checksum verification: PASSED.
+- Corrupted backup / checksum mismatch rejection: PASSED.
+- Invalid target database rejection (SQL injection protection): PASSED.
+- Production database overwrite rejection without confirmation: PASSED.
+- Non-SQL file restore rejection: PASSED.
+**Result:** 8/8 Passed.
 
 ### 2.2 Student Record Deletion & Retention (`StudentRecordDestroySecurityTest`)
 - Unauthorized users (teacher, admin) rejected: PASSED (403).
