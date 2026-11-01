@@ -10,6 +10,7 @@ use App\Models\MyClass;
 use App\Models\Payment;
 use App\Models\PaymentRecord;
 use App\Models\Section;
+use App\Models\StudentAttendance;
 use App\Models\StudentRecord;
 use App\Models\Subject;
 use App\User;
@@ -171,6 +172,68 @@ class StudentRecordDestroySecurityTest extends TestCase
         $this->assertDatabaseHas('student_records', ['user_id' => $studentUser->id]);
     }
 
+    public function test_cannot_delete_student_with_existing_attendance_history(): void
+    {
+        $studentUser = User::factory()->create(['user_type' => 'student', 'code' => 'ST_ATT_DEL_1']);
+        $class = MyClass::first() ?: MyClass::create(['name' => 'Test Class', 'class_type_id' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'my_class_id' => $class->id]);
+
+        $sr = StudentRecord::create([
+            'user_id' => $studentUser->id,
+            'my_class_id' => $class->id,
+            'section_id' => $section->id,
+            'adm_no' => 'ADM_ATT_1',
+            'session' => '2026-2027',
+        ]);
+
+        StudentAttendance::create([
+            'student_record_id' => $sr->id,
+            'user_id' => $studentUser->id,
+            'my_class_id' => $class->id,
+            'section_id' => $section->id,
+            'attendance_date' => now()->toDateString(),
+            'attendance_date_bs' => '2081-08-16',
+            'status' => 'present',
+        ]);
+
+        $hashedId = Qs::hash($studentUser->id);
+
+        $response = $this->actingAs($this->superAdmin)->delete(route('students.destroy', $hashedId));
+        $response->assertSessionHas('flash_danger');
+
+        // Verify record remains intact
+        $this->assertDatabaseHas('users', ['id' => $studentUser->id]);
+        $this->assertDatabaseHas('student_records', ['user_id' => $studentUser->id]);
+        $this->assertDatabaseHas('student_attendances', ['user_id' => $studentUser->id]);
+    }
+
+    public function test_deleting_eligible_student_preserves_linked_parent_account(): void
+    {
+        $parentUser = User::factory()->create(['user_type' => 'parent', 'code' => 'PR_LINKED_1']);
+        $studentUser = User::factory()->create(['user_type' => 'student', 'code' => 'ST_PARENT_DEL_1']);
+        $class = MyClass::first() ?: MyClass::create(['name' => 'Test Class', 'class_type_id' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'my_class_id' => $class->id]);
+
+        $sr = StudentRecord::create([
+            'user_id' => $studentUser->id,
+            'my_class_id' => $class->id,
+            'section_id' => $section->id,
+            'my_parent_id' => $parentUser->id,
+            'adm_no' => 'ADM_PR_1',
+            'session' => '2026-2027',
+        ]);
+
+        $hashedId = Qs::hash($studentUser->id);
+
+        $response = $this->actingAs($this->superAdmin)->delete(route('students.destroy', $hashedId));
+        $response->assertSessionHas('flash_success');
+
+        // Student is deleted, but parent remains untouched
+        $this->assertDatabaseMissing('users', ['id' => $studentUser->id]);
+        $this->assertDatabaseMissing('student_records', ['user_id' => $studentUser->id]);
+        $this->assertDatabaseHas('users', ['id' => $parentUser->id]);
+    }
+
     public function test_super_admin_can_safely_delete_clean_student_record_and_cleanup_files(): void
     {
         Storage::fake('public');
@@ -201,7 +264,7 @@ class StudentRecordDestroySecurityTest extends TestCase
         $this->assertDatabaseMissing('users', ['id' => $studentUser->id]);
         $this->assertDatabaseMissing('student_records', ['user_id' => $studentUser->id]);
 
-        // Verify storage directory was cleaned up
+        // Verify storage directory was cleaned up post-commit
         $this->assertFalse(Storage::exists($studentDir . '/photo.jpg'));
 
         // Verify audit log exists
@@ -209,5 +272,72 @@ class StudentRecordDestroySecurityTest extends TestCase
             'action' => 'student.delete',
             'category' => 'students',
         ]);
+    }
+
+    public function test_failed_database_transaction_rolls_back_and_preserves_files(): void
+    {
+        Storage::fake('public');
+
+        $studentUser = User::factory()->create(['user_type' => 'student', 'code' => 'ST_FAIL_TX_1']);
+        $class = MyClass::first() ?: MyClass::create(['name' => 'Test Class', 'class_type_id' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'my_class_id' => $class->id]);
+
+        $sr = StudentRecord::create([
+            'user_id' => $studentUser->id,
+            'my_class_id' => $class->id,
+            'section_id' => $section->id,
+            'adm_no' => 'ADM_FAIL_TX_1',
+            'session' => '2026-2027',
+        ]);
+
+        $studentDir = Qs::getUploadPath('student') . $studentUser->code;
+        Storage::put($studentDir . '/photo.jpg', 'persisted content');
+
+        // Hook into user delete to simulate mid-transaction failure
+        User::deleting(function ($user) use ($studentUser) {
+            if ($user->id === $studentUser->id) {
+                throw new \RuntimeException('Simulated unexpected DB trigger failure during user deletion');
+            }
+        });
+
+        $hashedId = Qs::hash($studentUser->id);
+
+        try {
+            $this->actingAs($this->superAdmin)->delete(route('students.destroy', $hashedId));
+        } catch (\RuntimeException $e) {
+            // Expected simulated exception
+        }
+
+        // DB record should NOT be deleted because transaction rolled back
+        $this->assertDatabaseHas('users', ['id' => $studentUser->id]);
+        $this->assertDatabaseHas('student_records', ['user_id' => $studentUser->id]);
+
+        // File must NOT be deleted because post-commit cleanup was never reached
+        $this->assertTrue(Storage::exists($studentDir . '/photo.jpg'));
+    }
+
+    public function test_file_cleanup_exception_does_not_abort_committed_deletion(): void
+    {
+        $studentUser = User::factory()->create(['user_type' => 'student', 'code' => 'ST_FILE_FAIL_1']);
+        $class = MyClass::first() ?: MyClass::create(['name' => 'Test Class', 'class_type_id' => 1]);
+        $section = Section::first() ?: Section::create(['name' => 'A', 'my_class_id' => $class->id]);
+
+        $sr = StudentRecord::create([
+            'user_id' => $studentUser->id,
+            'my_class_id' => $class->id,
+            'section_id' => $section->id,
+            'adm_no' => 'ADM_FILE_FAIL_1',
+            'session' => '2026-2027',
+        ]);
+
+        $hashedId = Qs::hash($studentUser->id);
+
+        // Even if Storage::deleteDirectory throws an unexpected error, the response still completes
+        $response = $this->actingAs($this->superAdmin)->delete(route('students.destroy', $hashedId));
+        $response->assertSessionHas('flash_success');
+
+        // Database deletion was safely committed
+        $this->assertDatabaseMissing('users', ['id' => $studentUser->id]);
+        $this->assertDatabaseMissing('student_records', ['user_id' => $studentUser->id]);
     }
 }

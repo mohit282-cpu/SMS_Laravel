@@ -411,7 +411,7 @@ class StudentRecordController extends Controller
             return back()->with('flash_danger', __('msg.rnf'));
         }
 
-        // Data Retention Policy: Prevent deletion if student has financial or academic records
+        // Data Retention Policy: Prevent deletion if student has financial, academic, or attendance records
         if (\App\Models\PaymentRecord::where('student_id', $st_id)->exists()) {
             return back()->with('flash_danger', __('Cannot delete student with existing payment or financial records. Please graduate or archive the record.'));
         }
@@ -420,23 +420,17 @@ class StudentRecordController extends Controller
             return back()->with('flash_danger', __('Cannot delete student with existing examination marks or academic history. Please graduate or archive the record.'));
         }
 
+        if (class_exists(\App\Models\StudentAttendance::class) && \App\Models\StudentAttendance::where('user_id', $st_id)->exists()) {
+            return back()->with('flash_danger', __('Cannot delete student with existing attendance history. Please graduate or archive the record.'));
+        }
+
         $studentName = $studentUser ? $studentUser->name : ($sr && $sr->user ? $sr->user->name : "Student #{$st_id}");
         $studentCode = $studentUser ? $studentUser->code : ($sr && $sr->user ? $sr->user->code : null);
 
+        // Transactional Database Mutation
         DB::transaction(function () use ($sr, $studentUser, $st_id, $studentName, $studentCode) {
             if ($sr) {
                 $sr->delete();
-            }
-
-            if (class_exists(\App\Models\StudentAttendance::class)) {
-                \App\Models\StudentAttendance::where('user_id', $st_id)->delete();
-            }
-
-            if ($studentCode) {
-                $path = Qs::getUploadPath('student') . $studentCode;
-                if (Storage::exists($path)) {
-                    Storage::deleteDirectory($path);
-                }
             }
 
             if ($studentUser) {
@@ -453,6 +447,18 @@ class StudentRecordController extends Controller
                 'success'
             );
         });
+
+        // Safe Post-Commit File Cleanup: only performed after database changes are safely committed
+        if ($studentCode) {
+            try {
+                $path = Qs::getUploadPath('student') . $studentCode;
+                if (Storage::exists($path)) {
+                    Storage::deleteDirectory($path);
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::warning("Post-commit file cleanup warning for student {$st_id}: " . $e->getMessage());
+            }
+        }
 
         return back()->with('flash_success', __('msg.del_ok'));
     }
