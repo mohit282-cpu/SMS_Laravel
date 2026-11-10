@@ -1,0 +1,199 @@
+name: CD (Deployment)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_env:
+        description: 'Target Deployment Environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+      run_migrations:
+        description: 'Execute database migrations'
+        required: true
+        type: boolean
+        default: true
+      enable_maintenance:
+        description: 'Enable maintenance mode during deployment'
+        required: true
+        type: boolean
+        default: true
+
+concurrency:
+  group: cd-${{ inputs.target_env || 'staging' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  pre-deploy-validation:
+    name: Pre-deployment Gate & Artifact Assembly
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, gmp
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Production Composer Dependencies
+        run: |
+          composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Set up Node.js 14 for Legacy Build
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '14'
+          cache: npm
+
+      - name: Build Production Assets
+        run: |
+          npm ci
+          npm run prod
+
+      - name: Verify Asset Integrity
+        run: |
+          set -euo pipefail
+          test -f public/js/app.js || { echo "::error::public/js/app.js missing"; exit 1; }
+          test -f public/css/app.css || { echo "::error::public/css/app.css missing"; exit 1; }
+          test -f public/mix-manifest.json || { echo "::error::public/mix-manifest.json missing"; exit 1; }
+
+      - name: Package Release Archive
+        run: |
+          set -euo pipefail
+          mkdir -p release-dist
+          tar --exclude='.git' \
+              --exclude='.github' \
+              --exclude='node_modules' \
+              --exclude='tests' \
+              --exclude='.env' \
+              --exclude='.env.example' \
+              --exclude='storage/logs/*.log' \
+              -czf release-dist/release-${{ github.sha }}.tar.gz .
+
+      - name: Upload Release Artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: release-bundle
+          path: release-dist/release-${{ github.sha }}.tar.gz
+          retention-days: 7
+
+  deploy:
+    name: Deploy to ${{ inputs.target_env || 'staging' }}
+    needs: pre-deploy-validation
+    runs-on: ubuntu-22.04
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.target_env || 'staging' }}
+      url: ${{ vars.APP_URL }}
+
+    steps:
+      - name: Download Release Artifact
+        uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
+        with:
+          name: release-bundle
+          path: deploy-dist
+
+      - name: Verify Host Credentials Configured
+        run: |
+          if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ]; then
+            echo "::error::DEPLOY_HOST and DEPLOY_USER secrets must be configured in GitHub Environment '${{ inputs.target_env || 'staging' }}'."
+            echo "Deployment halted safely before execution."
+            exit 1
+          fi
+
+      - name: Configure SSH Key
+        uses: webfactory/ssh-agent@dc588b651fe13675774614f8e6a936a468676387 # v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
+
+      - name: Upload and Execute Release on Target Host
+        env:
+          TARGET_DIR: ${{ vars.DEPLOY_PATH || '/var/www/sms_academy' }}
+          MAINTENANCE: ${{ inputs.enable_maintenance }}
+          MIGRATIONS: ${{ inputs.run_migrations }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "Starting controlled release deployment of ${SHA} to ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${TARGET_DIR}..."
+
+          # Transfer release tarball to host incoming directory
+          scp deploy-dist/release-${SHA}.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/release-${SHA}.tar.gz
+
+          # Execute atomic release script on server
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash -s <<REMOTE_DEPLOY
+            set -euo pipefail
+
+            RELEASE_DIR="${TARGET_DIR}/releases/${SHA}"
+            mkdir -p "\${RELEASE_DIR}"
+            tar -xzf /tmp/release-${SHA}.tar.gz -C "\${RELEASE_DIR}"
+            rm -f /tmp/release-${SHA}.tar.gz
+
+            # Link shared production storage and environment file
+            rm -rf "\${RELEASE_DIR}/storage"
+            ln -s "${TARGET_DIR}/shared/storage" "\${RELEASE_DIR}/storage"
+            ln -s "${TARGET_DIR}/shared/.env" "\${RELEASE_DIR}/.env"
+
+            cd "\${RELEASE_DIR}"
+
+            # Step 1: Pre-deployment database backup before any schema changes
+            if [ "${MIGRATIONS}" = "true" ]; then
+              echo "Taking pre-migration database backup..."
+              php artisan db:backup --compress || { echo "Pre-deployment database backup failed!"; exit 1; }
+            fi
+
+            # Step 2: Maintenance mode if requested
+            if [ "${MAINTENANCE}" = "true" ]; then
+              php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60 || true
+            fi
+
+            # Step 3: Run database migrations safely
+            if [ "${MIGRATIONS}" = "true" ]; then
+              echo "Executing pending database migrations..."
+              php artisan migrate --force
+            fi
+
+            # Step 4: Optimization and cache warmup
+            php artisan config:cache
+            php artisan route:cache
+            php artisan view:cache
+
+            # Step 5: Atomic symlink switch to new release
+            ln -sfn "\${RELEASE_DIR}" "${TARGET_DIR}/current"
+
+            # Step 6: Bring application back up
+            if [ "${MAINTENANCE}" = "true" ]; then
+              php artisan up
+            fi
+
+            # Step 7: Reload PHP-FPM / OPcache
+            sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+
+            echo "Deployment of ${SHA} completed successfully."
+          REMOTE_DEPLOY
+
+      - name: Post-Deployment Smoke Test
+        run: |
+          set -euo pipefail
+          if [ -n "${{ vars.APP_URL }}" ]; then
+            echo "Verifying health at ${{ vars.APP_URL }}..."
+            STATUS_CODE=\$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ vars.APP_URL }}" || echo "000")
+            if [ "\$STATUS_CODE" -lt 200 ] || [ "\$STATUS_CODE" -ge 400 ]; then
+              echo "::error::Health check returned HTTP \$STATUS_CODE at ${{ vars.APP_URL }}"
+              exit 1
+            fi
+            echo "Health check OK (HTTP \$STATUS_CODE)."
+          else
+            echo "Notice: APP_URL variable not configured for environment. Skipped HTTP smoke test."
+          fi
+

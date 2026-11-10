@@ -22,9 +22,28 @@ class TimeTableController extends Controller
         $this->tt = $tt;
         $this->my_class = $mc;
         $this->exam = $exam;
-        $this->year = Qs::getCurrentSession();
 
         $this->middleware('super_admin', ['only' => ['delete', 'delete_record']]);
+        $this->middleware(function ($request, $next) {
+            $this->year = $this->getYear();
+            return $next($request);
+        });
+    }
+
+    public function getYear()
+    {
+        if (!$this->year) {
+            $this->year = Qs::getCurrentSession();
+        }
+        return $this->year;
+    }
+
+    public function __get($name)
+    {
+        if ($name === 'year') {
+            return $this->getYear();
+        }
+        return null;
     }
 
     public function my_timetable()
@@ -103,7 +122,7 @@ class TimeTableController extends Controller
                 ->unique();
 
             $d['my_classes'] = $this->my_class->all()->whereIn('id', $assignedClassIds);
-            $d['exams'] = $this->exam->getExam(['year' => $this->year])->filter(function($ex) {
+            $d['exams'] = $this->exam->getExam(['year' => $this->getYear()])->filter(function($ex) {
                 return $ex->isPublished();
             });
 
@@ -125,7 +144,7 @@ class TimeTableController extends Controller
             abort(403);
         }
 
-        $d['exams'] = $this->exam->getExam(['year' => $this->year]);
+        $d['exams'] = $this->exam->getExam(['year' => $this->getYear()]);
         $d['my_classes'] = $this->my_class->all();
         $d['tt_records'] = $this->tt->getAllRecords();
 
@@ -487,8 +506,12 @@ class TimeTableController extends Controller
 
     public function store_record(TTRecordRequest $req)
     {
+        $year = $this->getYear();
+        if (!$year) {
+            return response()->json(['msg' => __('No active academic session found. Please configure an academic year first.')], 422);
+        }
         $data = $req->all();
-        $data['year'] = $this->year;
+        $data['year'] = $year;
         $this->tt->createRecord($data);
 
         return Qs::jsonStoreOk();

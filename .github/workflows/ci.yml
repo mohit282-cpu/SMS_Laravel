@@ -108,8 +108,11 @@ jobs:
           php artisan config:cache
           php artisan config:clear
 
-      - name: Verify routes load
-        run: php artisan route:list
+      - name: Verify routes load before migrations (zero database schema dependency)
+        run: |
+          set -euo pipefail
+          php artisan route:list
+          php artisan route:list --json > /dev/null
 
       - name: Verify disposable CI database
         run: php .github/scripts/verify-ci-database.php --connection=mysql_test
@@ -121,6 +124,9 @@ jobs:
           php artisan migrate:rollback --force --database=mysql_test
           php artisan migrate --force --database=mysql_test
           php artisan db:seed --force --database=mysql_test
+
+      - name: Verify routes load after migrations and seeders
+        run: php artisan route:list
 
       - name: Run test suite
         run: |
@@ -214,3 +220,23 @@ jobs:
           node --version
           npm --version
           node .github/scripts/npm-audit-checker.js
+
+  integration-gate:
+    name: CI Integration Gate
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    needs: [php-tests, frontend-build, npm-audit]
+    if: always()
+    steps:
+      - name: Verify mandatory CI checks succeeded
+        run: |
+          if [ "${{ needs.php-tests.result }}" != "success" ] || \
+             [ "${{ needs.frontend-build.result }}" != "success" ] || \
+             [ "${{ needs.npm-audit.result }}" != "success" ]; then
+            echo "::error::One or more mandatory CI checks failed or were skipped."
+            echo "php-tests: ${{ needs.php-tests.result }}"
+            echo "frontend-build: ${{ needs.frontend-build.result }}"
+            echo "npm-audit: ${{ needs.npm-audit.result }}"
+            exit 1
+          fi
+          echo "All mandatory CI checks passed successfully."

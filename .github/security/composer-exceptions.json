@@ -115,21 +115,6 @@
             "compensatingControl": "Uploaded files are stored under application-generated random names and are never addressed through user-supplied path segments; Tests/Feature/StudyMaterialSecurityTest.php covers unauthorized downloads.",
             "owner": "Repository owner (mohit282-cpu)",
             "expires": "2026-12-31"
-        },
-        {
-            "package": "symfony/mime",
-            "advisoryIds": [
-                "PKSA-wtxr-p26d-nn42",
-                "CVE-2026-45070",
-                "GHSA-vqc8-7275-q272",
-                "symfony/mime/CVE-2026-45070.yaml"
-            ],
-            "severity": "medium",
-            "scope": "runtime",
-            "reason": "E-mail header injection via non-token characters in MIME parameter names. The advisory affects the Symfony MIME component shipped with the Laravel 8 dependency set; no compatible patched release is installable without the framework upgrade.",
-            "compensatingControl": "The application does not build MIME parameter names from user input; outbound mail uses fixed framework/Symfony generated parameters. Templates and subjects are server-controlled.",
-            "owner": "Repository owner (mohit282-cpu)",
-            "expires": "2026-12-31"
         }
     ]
 }

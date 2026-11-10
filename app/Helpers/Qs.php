@@ -278,8 +278,21 @@ class Qs
 
     public static function getSetting($type)
     {
-        $setting = Setting::where('type', $type)->first();
-        return $setting ? $setting->description : null;
+        try {
+            $setting = Setting::where('type', $type)->first();
+            return $setting ? $setting->description : null;
+        } catch (\Illuminate\Database\QueryException $e) {
+            // SQLSTATE 42S02: Base table or view not found (e.g. during route:list before migrations)
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), 'Base table or view not found') || str_contains($e->getMessage(), "doesn't exist")) {
+                return null;
+            }
+            throw $e;
+        } catch (\PDOException $e) {
+            if ($e->getCode() === '42S02' || str_contains($e->getMessage(), 'Base table or view not found') || str_contains($e->getMessage(), "doesn't exist")) {
+                return null;
+            }
+            throw $e;
+        }
     }
 
     public static function getCurrentSession()
@@ -288,6 +301,14 @@ class Qs
             $activeYear = \App\Models\AcademicYear::current();
             if ($activeYear) {
                 return $activeYear->name;
+            }
+        } catch (\Illuminate\Database\QueryException $e) {
+            if ($e->getCode() !== '42S02' && !str_contains($e->getMessage(), 'Base table or view not found') && !str_contains($e->getMessage(), "doesn't exist")) {
+                throw $e;
+            }
+        } catch (\PDOException $e) {
+            if ($e->getCode() !== '42S02' && !str_contains($e->getMessage(), 'Base table or view not found') && !str_contains($e->getMessage(), "doesn't exist")) {
+                throw $e;
             }
         } catch (\Exception $e) {
             // fallback if table does not exist or error occurs

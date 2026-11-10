@@ -24,11 +24,30 @@ class PaymentController extends Controller
     {
         $this->my_class = $my_class;
         $this->pay = $pay;
-        $this->year = Qs::getCurrentSession();
         $this->student = $student;
 
         $this->middleware('teamAccount')->except(['invoice', 'receipts', 'pdf_receipts']);
         $this->middleware('super_admin', ['only' => ['destroy', 'reset_record']]);
+        $this->middleware(function ($request, $next) {
+            $this->year = $this->getYear();
+            return $next($request);
+        });
+    }
+
+    public function getYear()
+    {
+        if (!$this->year) {
+            $this->year = Qs::getCurrentSession();
+        }
+        return $this->year;
+    }
+
+    public function __get($name)
+    {
+        if ($name === 'year') {
+            return $this->getYear();
+        }
+        return null;
     }
 
     public function index()
@@ -422,8 +441,12 @@ class PaymentController extends Controller
 
     public function store(PaymentCreate $req)
     {
+        $year = $this->getYear();
+        if (!$year) {
+            return response()->json(['msg' => __('No active academic session found. Please configure an academic year first.')], 422);
+        }
         $data = $req->all();
-        $data['year'] = $this->year;
+        $data['year'] = $year;
         $data['ref_no'] = Pay::genRefCode();
 
         if (!empty($data['due_date_bs'])) {

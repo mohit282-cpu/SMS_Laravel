@@ -25,9 +25,28 @@ class MarkController extends Controller
         $this->mark =  $mark;
         $this->student =  $student;
         $this->my_class =  $my_class;
-        $this->year =  Qs::getCurrentSession();
 
         $this->middleware('teamSAT', ['except' => ['show', 'year_selected', 'year_selector', 'print_view', 'pdf_download'] ]);
+        $this->middleware(function ($request, $next) {
+            $this->year = $this->getYear();
+            return $next($request);
+        });
+    }
+
+    public function getYear()
+    {
+        if (!$this->year) {
+            $this->year = Qs::getCurrentSession();
+        }
+        return $this->year;
+    }
+
+    public function __get($name)
+    {
+        if ($name === 'year') {
+            return $this->getYear();
+        }
+        return null;
     }
 
     public function index()
