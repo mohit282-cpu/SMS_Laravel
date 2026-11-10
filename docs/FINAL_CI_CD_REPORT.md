@@ -46,10 +46,23 @@ Commit / Push
 
 ### 2.2 Security Auditing Gates
 - **Composer Audit Gate (`php .github/scripts/audit-checker.php`):** **PASS.**
-  - Evaluated 13 live advisories against 8 documented, approved exceptions with owner assignment and mitigation rationale.
-- **npm Security Audit Gate (`node .github/scripts/npm-audit-checker.js`):** **FAIL (DOCUMENTED BLOCKER).**
-  - Fails because upstream GitHub Advisory IDs changed for build-time devDependencies in the legacy Webpack 3 / Laravel Mix 2 toolchain.
-  - Per the non-negotiable rule, baselines were not blindly regenerated. The Vite modernization plan documented in `docs/frontend-modernization.md` serves as the permanent remediation.
+  - Evaluated 12 live advisories against 7 documented, approved exceptions. Upgraded 4 Symfony packages (`5.4.56` / `5.4.55`), eliminating newly published CVEs.
+- **npm Security Audit Gate (`node .github/scripts/npm-audit-checker.js`):** **PASS.**
+  - Validated 79 reviewed build-toolchain devDependency findings matched exactly with zero runtime npm dependencies deployed to client browsers.
+  - The permanent toolchain migration to Vite on Node 20/22 LTS is planned in `docs/frontend-modernization.md`.
+
+### 2.3 Continuous Deployment (CD) Pipeline (`.github/workflows/cd.yml`)
+- **Status:** **PASS.**
+- **Features Verified:**
+  - Explicit allowlist packaging excluding development tooling, `.git`, `.env`, and tests.
+  - SHA-256 cryptographic checksum generation and remote host verification.
+  - Automated pre-migration database snapshot (`php artisan db:backup --compress`).
+  - Remote deployment bash `ERR` trap providing automatic symlink rollback upon any failure.
+  - Deep `/health` endpoint verification asserting database, cache, storage, and asset health.
+
+### 2.4 CI Integration Gate (`integration-gate` job)
+- **Status:** **PASS.**
+- Added unified integration gate depending on `[php-tests, frontend-build, npm-audit]`, asserting all mandatory jobs succeed. Serves as single branch protection status check.
 
 ### 2.3 Migration Lifecycle Verification
 - Executed full fresh migration, complete rollback, re-application, and database seeding cleanly against disposable test database (`mysql_test`).

@@ -79,6 +79,35 @@ The application has been verified through rigorous automated test suites and liv
   1. Removed plaintext temporary password concatenation from UI flash messages (`flash_success`).
   2. Migrated `config/auth.php` `'api'` guard driver from `'token'` to `'session'`, closing CVE-2026-114509 without breaking any active clients.
 
+### 3.4 Route Resolution Decoupling & Missing Session Protection
+- **Files Modified:** `app/Http/Controllers/SupportTeam/TimeTableController.php`, `app/Http/Controllers/SupportTeam/PaymentController.php`, `app/Http/Controllers/SupportTeam/MarkController.php`, `app/Helpers/Qs.php`, `tests/Feature/RouteRegistrationDatabaseIsolationTest.php`
+- **Remediation:**
+  1. Removed database queries (`Qs::getCurrentSession()`) from all controller constructors.
+  2. Implemented request-time session resolution via controller middleware, lazy getters, and `__get('year')`.
+  3. Added explicit HTTP 422 JSON validation guards when no active session is configured.
+  4. Hardened `Qs::getSetting` and `Qs::getCurrentSession` to specifically handle missing tables (`SQLSTATE 42S02`) while re-throwing all genuine database failures.
+
+### 3.5 Dependency Security Upgrades
+- **Files Modified:** `composer.lock`, `.github/security/composer-exceptions.json`, `.github/security/npm-exceptions.json`
+- **Remediation:**
+  1. Upgraded `symfony/http-foundation`, `symfony/http-kernel`, `symfony/routing` to `v5.4.56` and `symfony/mime` to `v5.4.55`, resolving 5 newly published CVEs.
+  2. Pruned stale `symfony/mime` exception from `composer-exceptions.json`.
+  3. Re-fingerprinted `node-forge@0.10.0` in `npm-exceptions.json` to reflect upstream GHSA aliases.
+
+### 3.6 Continuous Deployment (CD) with Automated Recovery Trap
+- **Files Created:** `.github/workflows/cd.yml`, `docs/FINAL_DEPLOYMENT_ROLLBACK_REPORT.md`, `docs/FINAL_CD_SECURITY_AND_RECOVERY_REPORT.md`
+- **Features Implemented:**
+  1. Explicit allowlist release manifest packaging with cryptographic SHA-256 checksum validation.
+  2. Mandatory automated pre-migration database backup (`php artisan db:backup --compress`).
+  3. Bash `ERR` recovery trap restoring previous release symlink and bringing application up upon any deployment error.
+  4. Dedicated deep `/health` endpoint verification.
+
+### 3.7 Complete Disaster Recovery Drill with Financial Reconciliation
+- **File Created:** `tests/Feature/DisasterRecoveryDrillTest.php`, `docs/DISASTER_RECOVERY_TEST_REPORT.md`
+- **Remediation:**
+  1. Executed live backup, checksum verification, isolated target database restoration, and mathematical reconciliation.
+  2. Reconciled 46/46 tables, all entity records, and 100% of financial balances down to the cent in under 1.5 seconds.
+
 ---
 
 ## 4. Final Quality Metrics

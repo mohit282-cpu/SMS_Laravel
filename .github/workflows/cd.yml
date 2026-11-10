@@ -68,24 +68,41 @@ jobs:
           test -f public/css/app.css || { echo "::error::public/css/app.css missing"; exit 1; }
           test -f public/mix-manifest.json || { echo "::error::public/mix-manifest.json missing"; exit 1; }
 
-      - name: Package Release Archive
+      - name: Package Release Archive (Explicit Allowlist Manifest)
         run: |
           set -euo pipefail
           mkdir -p release-dist
-          tar --exclude='.git' \
-              --exclude='.github' \
-              --exclude='node_modules' \
-              --exclude='tests' \
-              --exclude='.env' \
-              --exclude='.env.example' \
-              --exclude='storage/logs/*.log' \
-              -czf release-dist/release-${{ github.sha }}.tar.gz .
+          TAR_FILE="release-dist/release-${{ github.sha }}.tar.gz"
 
-      - name: Upload Release Artifact
+          # Use explicit allowlist of application trees required in production
+          tar -czf "${TAR_FILE}" \
+            app \
+            bootstrap \
+            config \
+            database/migrations \
+            database/seeders \
+            public \
+            resources/views \
+            resources/lang \
+            routes \
+            vendor \
+            artisan \
+            composer.json \
+            composer.lock
+
+          # Generate cryptographic SHA-256 checksum
+          cd release-dist
+          sha256sum "release-${{ github.sha }}.tar.gz" > "release-${{ github.sha }}.tar.gz.sha256"
+          cat "release-${{ github.sha }}.tar.gz.sha256"
+          cd ..
+
+      - name: Upload Release Artifact and Checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: release-bundle
-          path: release-dist/release-${{ github.sha }}.tar.gz
+          path: |
+            release-dist/release-${{ github.sha }}.tar.gz
+            release-dist/release-${{ github.sha }}.tar.gz.sha256
           retention-days: 7
 
   deploy:
@@ -98,26 +115,37 @@ jobs:
       url: ${{ vars.APP_URL }}
 
     steps:
-      - name: Download Release Artifact
+      - name: Download Release Artifact and Checksum
         uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with:
           name: release-bundle
           path: deploy-dist
 
-      - name: Verify Host Credentials Configured
+      - name: Verify Artifact Checksum
         run: |
+          set -euo pipefail
+          cd deploy-dist
+          sha256sum -c "release-${{ github.sha }}.tar.gz.sha256"
+          echo "Release archive cryptographic checksum verified successfully."
+
+      - name: Validate Host Credentials and Target Environment
+        run: |
+          set -euo pipefail
           if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ]; then
             echo "::error::DEPLOY_HOST and DEPLOY_USER secrets must be configured in GitHub Environment '${{ inputs.target_env || 'staging' }}'."
-            echo "Deployment halted safely before execution."
+            exit 1
+          fi
+          if [ -z "${{ vars.APP_URL }}" ]; then
+            echo "::error::APP_URL environment variable is mandatory for health verification."
             exit 1
           fi
 
-      - name: Configure SSH Key
+      - name: Configure SSH Agent
         uses: webfactory/ssh-agent@dc588b651fe13675774614f8e6a936a468676387 # v0.9.0
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Upload and Execute Release on Target Host
+      - name: Execute Atomic Release on Target Host with Recovery Trap
         env:
           TARGET_DIR: ${{ vars.DEPLOY_PATH || '/var/www/sms_academy' }}
           MAINTENANCE: ${{ inputs.enable_maintenance }}
@@ -125,75 +153,136 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          echo "Starting controlled release deployment of ${SHA} to ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:${TARGET_DIR}..."
+          echo "Transferring release ${SHA} to ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}..."
 
-          # Transfer release tarball to host incoming directory
-          scp deploy-dist/release-${SHA}.tar.gz ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/release-${SHA}.tar.gz
+          # Transfer release archive and checksum to host /tmp
+          scp deploy-dist/release-${SHA}.tar.gz deploy-dist/release-${SHA}.tar.gz.sha256 \
+              ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/
 
-          # Execute atomic release script on server
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash -s <<REMOTE_DEPLOY
+          # Execute remote deployment script with automated failure trap and rollback
+          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash -s <<'REMOTE_SCRIPT'
             set -euo pipefail
 
+            TARGET_DIR="${TARGET_DIR:-/var/www/sms_academy}"
+            MAINTENANCE="${MAINTENANCE:-true}"
+            MIGRATIONS="${MIGRATIONS:-true}"
+            SHA="${SHA}"
             RELEASE_DIR="${TARGET_DIR}/releases/${SHA}"
-            mkdir -p "\${RELEASE_DIR}"
-            tar -xzf /tmp/release-${SHA}.tar.gz -C "\${RELEASE_DIR}"
-            rm -f /tmp/release-${SHA}.tar.gz
 
-            # Link shared production storage and environment file
-            rm -rf "\${RELEASE_DIR}/storage"
-            ln -s "${TARGET_DIR}/shared/storage" "\${RELEASE_DIR}/storage"
-            ln -s "${TARGET_DIR}/shared/.env" "\${RELEASE_DIR}/.env"
+            # 1. Verify incoming archive on server
+            cd /tmp
+            sha256sum -c "release-${SHA}.tar.gz.sha256"
 
-            cd "\${RELEASE_DIR}"
+            # 2. Identify currently active release for rollback
+            PREVIOUS_RELEASE=""
+            if [ -L "${TARGET_DIR}/current" ]; then
+              PREVIOUS_RELEASE="$(readlink -f "${TARGET_DIR}/current")"
+              echo "Identified current release before deployment: ${PREVIOUS_RELEASE}"
+            fi
 
-            # Step 1: Pre-deployment database backup before any schema changes
+            # 3. Setup Error Trap for Automatic Rollback
+            rollback_handler() {
+              EXIT_STATUS=$?
+              echo "::error::Remote deployment failed with exit code ${EXIT_STATUS}!"
+              if [ -n "${PREVIOUS_RELEASE}" ] && [ -d "${PREVIOUS_RELEASE}" ]; then
+                echo "Initiating automated rollback to previous release: ${PREVIOUS_RELEASE}..."
+                ln -sfn "${PREVIOUS_RELEASE}" "${TARGET_DIR}/current"
+                cd "${PREVIOUS_RELEASE}"
+                php artisan config:cache || true
+                php artisan route:cache || true
+                php artisan view:cache || true
+                if [ "${MAINTENANCE}" = "true" ]; then
+                  php artisan up || true
+                fi
+                sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+                echo "Automated rollback completed successfully."
+              else
+                echo "Warning: No previous release symlink found to roll back to."
+                if [ -d "${RELEASE_DIR}" ]; then
+                  cd "${RELEASE_DIR}"
+                  php artisan up || true
+                fi
+              fi
+              rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
+              exit ${EXIT_STATUS}
+            }
+            trap 'rollback_handler' ERR
+
+            # 4. Prepare release directory
+            mkdir -p "${RELEASE_DIR}"
+            tar -xzf "/tmp/release-${SHA}.tar.gz" -C "${RELEASE_DIR}"
+            rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
+
+            # 5. Link shared persistent storage and environment
+            mkdir -p "${TARGET_DIR}/shared/storage"
+            ln -sfn "${TARGET_DIR}/shared/storage" "${RELEASE_DIR}/storage"
+            ln -sfn "${TARGET_DIR}/shared/.env" "${RELEASE_DIR}/.env"
+
+            cd "${RELEASE_DIR}"
+
+            # 6. Database backup before migrations
             if [ "${MIGRATIONS}" = "true" ]; then
-              echo "Taking pre-migration database backup..."
-              php artisan db:backup --compress || { echo "Pre-deployment database backup failed!"; exit 1; }
+              echo "Executing automated pre-migration database snapshot..."
+              php artisan db:backup --compress
             fi
 
-            # Step 2: Maintenance mode if requested
+            # 7. Enable Maintenance Mode (No '|| true')
             if [ "${MAINTENANCE}" = "true" ]; then
-              php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60 || true
+              echo "Enabling maintenance mode..."
+              php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60
             fi
 
-            # Step 3: Run database migrations safely
+            # 8. Execute approved migrations
             if [ "${MIGRATIONS}" = "true" ]; then
               echo "Executing pending database migrations..."
               php artisan migrate --force
             fi
 
-            # Step 4: Optimization and cache warmup
+            # 9. Warm up production caches
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            # Step 5: Atomic symlink switch to new release
-            ln -sfn "\${RELEASE_DIR}" "${TARGET_DIR}/current"
+            # 10. Atomic symlink switch to activate new release
+            ln -sfn "${RELEASE_DIR}" "${TARGET_DIR}/current"
+            echo "Activated release ${SHA} via atomic symlink."
 
-            # Step 6: Bring application back up
+            # 11. Exit maintenance mode
             if [ "${MAINTENANCE}" = "true" ]; then
               php artisan up
             fi
 
-            # Step 7: Reload PHP-FPM / OPcache
+            # 12. Reload PHP-FPM / OPcache
             sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
 
-            echo "Deployment of ${SHA} completed successfully."
-          REMOTE_DEPLOY
+            # Cancel error trap on success
+            trap - ERR
+            echo "Remote deployment of release ${SHA} completed successfully."
+          REMOTE_SCRIPT
 
-      - name: Post-Deployment Smoke Test
+      - name: Post-Deployment Health Check Verification
         run: |
           set -euo pipefail
-          if [ -n "${{ vars.APP_URL }}" ]; then
-            echo "Verifying health at ${{ vars.APP_URL }}..."
-            STATUS_CODE=\$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${{ vars.APP_URL }}" || echo "000")
-            if [ "\$STATUS_CODE" -lt 200 ] || [ "\$STATUS_CODE" -ge 400 ]; then
-              echo "::error::Health check returned HTTP \$STATUS_CODE at ${{ vars.APP_URL }}"
-              exit 1
-            fi
-            echo "Health check OK (HTTP \$STATUS_CODE)."
-          else
-            echo "Notice: APP_URL variable not configured for environment. Skipped HTTP smoke test."
+          HEALTH_URL="${{ vars.APP_URL }}/health"
+          echo "Performing post-deployment health check at ${HEALTH_URL}..."
+
+          # Query health endpoint
+          HTTP_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 20 "${HEALTH_URL}")
+          HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed '$d')
+          HTTP_CODE=$(echo "${HTTP_RESPONSE}" | tail -n 1)
+
+          echo "Response HTTP Code: ${HTTP_CODE}"
+          echo "Response Payload: ${HTTP_BODY}"
+
+          if [ "${HTTP_CODE}" -ne 200 ]; then
+            echo "::error::Health check failed with HTTP ${HTTP_CODE} at ${HEALTH_URL}."
+            exit 1
           fi
 
+          HEALTH_STATUS=$(echo "${HTTP_BODY}" | jq -r '.status // empty' 2>/dev/null || true)
+          if [ "${HEALTH_STATUS}" != "healthy" ]; then
+            echo "::error::Health check status is '${HEALTH_STATUS}', expected 'healthy'."
+            exit 1
+          fi
+
+          echo "Post-deployment health check PASSED: System is healthy."

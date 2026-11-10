@@ -94,6 +94,23 @@ Database Driver:         MySQL / MariaDB (`sms_laravel_test`)
 - Push endpoint SSRF protection: PASSED.
 **Result:** 61/61 Passed.
 
+### 2.11 Route Registration Database Isolation (`RouteRegistrationDatabaseIsolationTest`)
+- `php artisan route:list` executes without database schema dependencies: PASSED.
+- `TimeTableController`, `PaymentController`, `MarkController` container instantiation without constructor DB queries: PASSED.
+**Result:** 2/2 Passed.
+
+### 2.12 System Health Endpoint (`HealthCheckTest`)
+- `/health` endpoint validates database, cache, storage, and assets: PASSED (13 assertions).
+**Result:** 1/1 Passed.
+
+### 2.13 Complete Disaster Recovery & Reconciliation Drill (`DisasterRecoveryDrillTest`)
+- Full snapshot backup with SHA-256 integrity: PASSED.
+- Restoration into separate disposable drill database: PASSED.
+- Schema and table count reconciliation (46/46 tables): PASSED.
+- Entity record count reconciliation (users, students, classes, subjects, exams, marks, attendances, payments): PASSED.
+- Critical financial sums exact mathematical reconciliation (payments, paid amount, balance): PASSED.
+**Result:** 1/1 Passed (18 assertions).
+
 ---
 
 ## 3. Database Lifecycle Verification

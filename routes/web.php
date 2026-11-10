@@ -9,6 +9,7 @@ Route::group(['middleware' => 'no_store'], function () {
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
 Route::get('/locale/{lang}', 'HomeController@set_locale')->name('set_locale');
+Route::get('/health', 'HealthCheckController@check')->name('health');
 
 /* Progressive Web App (PWA) Routes */
 Route::get('/manifest.json', 'PwaController@manifest')->name('pwa.manifest');
