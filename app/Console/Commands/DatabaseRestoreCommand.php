@@ -182,8 +182,15 @@ class DatabaseRestoreCommand extends Command
                 }
             }
 
-            $buffer = '';
-            $executedBatches = 0;
+            $targetPdo->exec("SET FOREIGN_KEY_CHECKS=0");
+            $targetPdo->exec("SET UNIQUE_CHECKS=0");
+
+            $statementBuffer = '';
+            $executedStatements = 0;
+            $inSingleQuote = false;
+            $inDoubleQuote = false;
+            $inBacktick = false;
+            $inMultiLineComment = false;
 
             while (true) {
                 if ($isGzip) {
@@ -194,24 +201,142 @@ class DatabaseRestoreCommand extends Command
                     if ($line === false) break;
                 }
 
+                // If currently not inside any quote or multiline comment, check for full comment line
                 $trimmed = trim($line);
-                if (empty($buffer) && (empty($trimmed) || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#'))) {
-                    continue;
+                if (!$inSingleQuote && !$inDoubleQuote && !$inBacktick && !$inMultiLineComment) {
+                    if ($trimmed === '' || str_starts_with($trimmed, '--') || str_starts_with($trimmed, '#')) {
+                        continue;
+                    }
                 }
 
-                $buffer .= $line;
+                $len = strlen($line);
+                for ($i = 0; $i < $len; $i++) {
+                    $char = $line[$i];
+                    $nextChar = ($i + 1 < $len) ? $line[$i + 1] : '';
 
-                if (strlen($buffer) > 51200 && str_ends_with($trimmed, ';')) {
-                    $targetPdo->exec($buffer);
-                    $executedBatches++;
-                    $buffer = '';
+                    if ($inMultiLineComment) {
+                        $statementBuffer .= $char;
+                        if ($char === '*' && $nextChar === '/') {
+                            $statementBuffer .= '/';
+                            $i++;
+                            $inMultiLineComment = false;
+                        }
+                        continue;
+                    }
+
+                    if ($inSingleQuote) {
+                        $statementBuffer .= $char;
+                        if ($char === '\\') {
+                            $statementBuffer .= $nextChar;
+                            $i++;
+                        } elseif ($char === "'") {
+                            if ($nextChar === "'") {
+                                $statementBuffer .= "'";
+                                $i++;
+                            } else {
+                                $inSingleQuote = false;
+                            }
+                        }
+                        continue;
+                    }
+
+                    if ($inDoubleQuote) {
+                        $statementBuffer .= $char;
+                        if ($char === '\\') {
+                            $statementBuffer .= $nextChar;
+                            $i++;
+                        } elseif ($char === '"') {
+                            if ($nextChar === '"') {
+                                $statementBuffer .= '"';
+                                $i++;
+                            } else {
+                                $inDoubleQuote = false;
+                            }
+                        }
+                        continue;
+                    }
+
+                    if ($inBacktick) {
+                        $statementBuffer .= $char;
+                        if ($char === '`') {
+                            if ($nextChar === '`') {
+                                $statementBuffer .= '`';
+                                $i++;
+                            } else {
+                                $inBacktick = false;
+                            }
+                        }
+                        continue;
+                    }
+
+                    // Outside of any quotes or comments:
+                    if ($char === '/' && $nextChar === '*') {
+                        $statementBuffer .= '/*';
+                        $i++;
+                        $inMultiLineComment = true;
+                        continue;
+                    }
+
+                    if ($char === '#' || ($char === '-' && $nextChar === '-')) {
+                        // Single-line comment: rest of the line is a comment
+                        $statementBuffer .= "\n";
+                        break;
+                    }
+
+                    if ($char === "'") {
+                        $inSingleQuote = true;
+                        $statementBuffer .= $char;
+                        continue;
+                    }
+
+                    if ($char === '"') {
+                        $inDoubleQuote = true;
+                        $statementBuffer .= $char;
+                        continue;
+                    }
+
+                    if ($char === '`') {
+                        $inBacktick = true;
+                        $statementBuffer .= $char;
+                        continue;
+                    }
+
+                    if ($char === ';') {
+                        $trimmedStmt = trim($statementBuffer);
+                        if ($trimmedStmt !== '') {
+                            try {
+                                $targetPdo->exec($trimmedStmt);
+                                $executedStatements++;
+                            } catch (Exception $stmtEx) {
+                                $preview = substr($trimmedStmt, 0, 120);
+                                throw new Exception("SQL execution failed on statement #{$executedStatements} [{$preview}...]: " . $stmtEx->getMessage(), (int)$stmtEx->getCode(), $stmtEx);
+                            }
+                        }
+                        $statementBuffer = '';
+                        continue;
+                    }
+
+                    $statementBuffer .= $char;
+                }
+
+                if ($statementBuffer !== '' && !str_ends_with($statementBuffer, "\n")) {
+                    $statementBuffer .= "\n";
                 }
             }
 
-            if (!empty(trim($buffer))) {
-                $targetPdo->exec($buffer);
-                $executedBatches++;
+            if (!empty(trim($statementBuffer))) {
+                $trimmedStmt = trim($statementBuffer);
+                try {
+                    $targetPdo->exec($trimmedStmt);
+                    $executedStatements++;
+                } catch (Exception $stmtEx) {
+                    $preview = substr($trimmedStmt, 0, 120);
+                    throw new Exception("SQL execution failed on final statement [{$preview}...]: " . $stmtEx->getMessage(), (int)$stmtEx->getCode(), $stmtEx);
+                }
             }
+
+            $targetPdo->exec("SET FOREIGN_KEY_CHECKS=1");
+            $targetPdo->exec("SET UNIQUE_CHECKS=1");
 
             if ($isGzip) {
                 gzclose($gz);
@@ -220,7 +345,7 @@ class DatabaseRestoreCommand extends Command
             }
 
             $elapsed = round(microtime(true) - $startTime, 2);
-            $this->info("SQL execution completed in {$elapsed}s ({$executedBatches} statement batch(es)).");
+            $this->info("SQL execution completed in {$elapsed}s ({$executedStatements} statement(s)).");
 
             // Optional companion files extraction
             if ($this->option('restore-files')) {

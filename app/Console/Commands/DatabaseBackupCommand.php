@@ -108,13 +108,24 @@ class DatabaseBackupCommand extends Command
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             ]);
 
-            $write = function (string $text) use ($fileHandle, $compress) {
-                if ($compress) {
-                    gzwrite($fileHandle, $text);
-                } else {
-                    fwrite($fileHandle, $text);
+            $write = function (string $text) use ($fileHandle, $compress, $filePath) {
+                $len = strlen($text);
+                if ($len === 0) {
+                    return;
+                }
+                $written = $compress ? @gzwrite($fileHandle, $text) : @fwrite($fileHandle, $text);
+                if ($written === false || $written < $len) {
+                    throw new Exception("Write failure or disk space exhausted while writing backup archive: {$filePath}");
                 }
             };
+
+            // Establish point-in-time consistent snapshot for InnoDB tables
+            try {
+                $pdo->exec("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ");
+                $pdo->exec("START TRANSACTION WITH CONSISTENT SNAPSHOT");
+            } catch (Throwable $e) {
+                // Proceed if database does not permit consistent snapshot or tables are MyISAM
+            }
 
             // Write header and safety directives
             $write("-- --------------------------------------------------------\n");

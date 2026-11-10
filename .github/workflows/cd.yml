@@ -129,13 +129,18 @@ jobs:
           echo "Release archive cryptographic checksum verified successfully."
 
       - name: Validate Host Credentials and Target Environment
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          APP_URL: ${{ vars.APP_URL }}
+          TARGET_ENV: ${{ inputs.target_env || 'staging' }}
         run: |
           set -euo pipefail
-          if [ -z "${{ secrets.DEPLOY_HOST }}" ] || [ -z "${{ secrets.DEPLOY_USER }}" ]; then
-            echo "::error::DEPLOY_HOST and DEPLOY_USER secrets must be configured in GitHub Environment '${{ inputs.target_env || 'staging' }}'."
+          if [ -z "${DEPLOY_HOST}" ] || [ -z "${DEPLOY_USER}" ]; then
+            echo "::error::DEPLOY_HOST and DEPLOY_USER secrets must be configured in GitHub Environment '${TARGET_ENV}'."
             exit 1
           fi
-          if [ -z "${{ vars.APP_URL }}" ]; then
+          if [ -z "${APP_URL}" ]; then
             echo "::error::APP_URL environment variable is mandatory for health verification."
             exit 1
           fi
@@ -145,28 +150,38 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
 
-      - name: Execute Atomic Release on Target Host with Recovery Trap
+      - name: Execute Atomic Release on Target Host with In-Flight Rollback Trap
         env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           TARGET_DIR: ${{ vars.DEPLOY_PATH || '/var/www/sms_academy' }}
+          APP_URL: ${{ vars.APP_URL }}
           MAINTENANCE: ${{ inputs.enable_maintenance }}
           MIGRATIONS: ${{ inputs.run_migrations }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          echo "Transferring release ${SHA} to ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}..."
+          echo "Transferring release ${SHA} to ${DEPLOY_USER}@${DEPLOY_HOST}..."
 
           # Transfer release archive and checksum to host /tmp
           scp deploy-dist/release-${SHA}.tar.gz deploy-dist/release-${SHA}.tar.gz.sha256 \
-              ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/
+              "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
 
-          # Execute remote deployment script with automated failure trap and rollback
-          ssh -T ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash -s <<'REMOTE_SCRIPT'
+          # Execute remote deployment script with automated failure trap, in-band health check, and rollback
+          ssh -T "${DEPLOY_USER}@${DEPLOY_HOST}" \
+            TARGET_DIR="${TARGET_DIR}" \
+            APP_URL="${APP_URL}" \
+            MAINTENANCE="${MAINTENANCE}" \
+            MIGRATIONS="${MIGRATIONS}" \
+            SHA="${SHA}" \
+            bash -s <<'REMOTE_SCRIPT'
             set -euo pipefail
 
             TARGET_DIR="${TARGET_DIR:-/var/www/sms_academy}"
             MAINTENANCE="${MAINTENANCE:-true}"
             MIGRATIONS="${MIGRATIONS:-true}"
             SHA="${SHA}"
+            APP_URL="${APP_URL}"
             RELEASE_DIR="${TARGET_DIR}/releases/${SHA}"
 
             # 1. Verify incoming archive on server
@@ -195,9 +210,13 @@ jobs:
                   php artisan up || true
                 fi
                 sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+
+                echo "Verifying restored previous release health..."
+                RESTORE_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${APP_URL}/health/readiness" || true)
+                echo "Rolled back release readiness HTTP code: ${RESTORE_HTTP_CODE}"
                 echo "Automated rollback completed successfully."
               else
-                echo "Warning: No previous release symlink found to roll back to."
+                echo "Warning: No previous release directory found to roll back to."
                 if [ -d "${RELEASE_DIR}" ]; then
                   cd "${RELEASE_DIR}"
                   php artisan up || true
@@ -226,7 +245,7 @@ jobs:
               php artisan db:backup --compress
             fi
 
-            # 7. Enable Maintenance Mode (No '|| true')
+            # 7. Enable Maintenance Mode
             if [ "${MAINTENANCE}" = "true" ]; then
               echo "Enabling maintenance mode..."
               php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60
@@ -255,18 +274,46 @@ jobs:
             # 12. Reload PHP-FPM / OPcache
             sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
 
-            # Cancel error trap on success
+            # 13. Perform in-band Health Check Verification while rollback trap is still active
+            echo "Performing in-band release readiness check at ${APP_URL}/health/readiness..."
+            HEALTH_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 20 "${APP_URL}/health/readiness")
+            HEALTH_BODY=$(echo "${HEALTH_RESPONSE}" | sed '$d')
+            HEALTH_CODE=$(echo "${HEALTH_RESPONSE}" | tail -n 1)
+
+            echo "Health check HTTP response code: ${HEALTH_CODE}"
+            echo "Health check response payload: ${HEALTH_BODY}"
+
+            if [ "${HEALTH_CODE}" -ne 200 ]; then
+              echo "Health probe failed with HTTP ${HEALTH_CODE}."
+              false
+            fi
+
+            HEALTH_STATUS=$(echo "${HEALTH_BODY}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
+            if [ "${HEALTH_STATUS}" != "ready" ] && [ "${HEALTH_STATUS}" != "healthy" ]; then
+              echo "Health probe status '${HEALTH_STATUS}' does not indicate readiness."
+              false
+            fi
+
+            echo "In-band health check PASSED: New release ${SHA} is confirmed healthy and serving traffic."
+
+            # 14. Retention of older releases (keep last 5)
+            echo "Pruning older releases (retaining last 5 releases)..."
+            cd "${TARGET_DIR}/releases"
+            ls -1dt */ 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true
+
+            # Cancel error trap on verified success
             trap - ERR
-            echo "Remote deployment of release ${SHA} completed successfully."
+            echo "Deployment of release ${SHA} fully verified and completed successfully."
           REMOTE_SCRIPT
 
-      - name: Post-Deployment Health Check Verification
+      - name: External Gateway Health Check Verification
+        env:
+          APP_URL: ${{ vars.APP_URL }}
         run: |
           set -euo pipefail
-          HEALTH_URL="${{ vars.APP_URL }}/health"
-          echo "Performing post-deployment health check at ${HEALTH_URL}..."
+          HEALTH_URL="${APP_URL}/health/readiness"
+          echo "Performing secondary external health probe at ${HEALTH_URL}..."
 
-          # Query health endpoint
           HTTP_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 20 "${HEALTH_URL}")
           HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed '$d')
           HTTP_CODE=$(echo "${HTTP_RESPONSE}" | tail -n 1)
@@ -275,14 +322,8 @@ jobs:
           echo "Response Payload: ${HTTP_BODY}"
 
           if [ "${HTTP_CODE}" -ne 200 ]; then
-            echo "::error::Health check failed with HTTP ${HTTP_CODE} at ${HEALTH_URL}."
+            echo "::error::External health check failed with HTTP ${HTTP_CODE} at ${HEALTH_URL}."
             exit 1
           fi
 
-          HEALTH_STATUS=$(echo "${HTTP_BODY}" | jq -r '.status // empty' 2>/dev/null || true)
-          if [ "${HEALTH_STATUS}" != "healthy" ]; then
-            echo "::error::Health check status is '${HEALTH_STATUS}', expected 'healthy'."
-            exit 1
-          fi
-
-          echo "Post-deployment health check PASSED: System is healthy."
+          echo "External health check PASSED: Gateway confirmed traffic routing."
