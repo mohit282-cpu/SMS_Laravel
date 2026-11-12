@@ -1,56 +1,57 @@
 @php
     $currentUser = Auth::user();
     $studentRec = ($currentUser && Qs::userIsStudent()) ? Qs::findStudentRecord($currentUser->id) : null;
-    $myProfileUrl = $studentRec ? route('students.show', Qs::hash($studentRec->id)) : ($currentUser ? route('users.show', Qs::hash($currentUser->id)) : '#');
+    $myProfileUrl = $studentRec ? route('students.show', Qs::hash($studentRec->id)) : ($currentUser ? route('users.show', Qs::hash($currentUser->id)) : route('my_account'));
+    $noticeCount = $shellNoticeCount ?? 0;
 @endphp
-<div class="navbar navbar-expand-md navbar-dark apple-navbar-glass">
+<nav class="navbar navbar-expand-md navbar-dark sms-navbar" aria-label="{{ __('Top Navigation') }}">
     <div class="navbar-brand-wrapper mr-auto mr-md-4 d-flex align-items-center">
         <a href="{{ route('dashboard') }}" class="d-inline-flex align-items-center text-decoration-none">
-            <span class="brand-liquid-pill mr-2">
+            <span class="sms-brand-mark mr-2" aria-hidden="true">
                 <i class="icon-graduation2"></i>
             </span>
-            <h4 class="text-bold text-white mb-0 app-brand-title">
+            <span class="sms-brand-title">
                 {{ Qs::getSystemName() }}
-            </h4>
+            </span>
         </a>
     </div>
 
-    {{-- Mobile Top Bar Quick Actions (iOS Style) --}}
+    {{-- Mobile Top Bar Quick Actions --}}
     <div class="d-md-none d-flex align-items-center ml-auto">
-        {{-- Mobile Language Toggle --}}
-        <a href="{{ route('set_locale', app()->getLocale() == 'ne' ? 'en' : 'ne') }}" class="btn-glass-icon mr-2" title="{{ __('Switch Language') }}">
-            <span class="font-weight-bold" style="font-size: 0.72rem; color: #FFFFFF;">{{ app()->getLocale() == 'ne' ? 'EN' : 'ने' }}</span>
+        <a href="{{ route('set_locale', app()->getLocale() == 'ne' ? 'en' : 'ne') }}"
+           class="sms-nav-pill mr-1"
+           aria-label="{{ __('Switch Language') }}"
+           title="{{ __('Switch Language') }}">
+            <span class="font-weight-bold" style="font-size: 0.75rem;">{{ app()->getLocale() == 'ne' ? 'EN' : 'ने' }}</span>
         </a>
 
-        {{-- Mobile Notices Bell --}}
-        <a href="{{ route('notices.index') }}" class="btn-glass-icon mr-2 position-relative" title="{{ __('Notices') }}">
-            <i class="icon-bell2 text-white"></i>
-            @php
-                $mobileNoticeCount = \App\Models\Notice::visibleTo(Auth::user())->where('is_published', true)->count();
-            @endphp
-            @if($mobileNoticeCount > 0)
-                <span class="mobile-notification-dot"></span>
+        <a href="{{ route('notices.index') }}"
+           class="sms-nav-pill mr-2 position-relative"
+           aria-label="{{ __('Notices') }}"
+           title="{{ __('Notices') }}">
+            <i class="icon-bell2" aria-hidden="true"></i>
+            @if($noticeCount > 0)
+                <span class="mobile-notification-dot" aria-label="{{ $noticeCount }} {{ __('notices') }}"></span>
             @endif
         </a>
 
-        {{-- Mobile User Avatar Dropdown --}}
         <div class="dropdown">
-            <a href="#" class="d-inline-block position-relative" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                <img style="width: 36px; height: 36px; object-fit: cover; border: 2px solid #FF5700; box-shadow: 0 0 10px rgba(255, 87, 0, 0.4);" src="{{ Auth::user()->photo }}" class="rounded-circle" alt="{{ Auth::user()->name }}">
+            <a href="#" class="d-inline-flex align-items-center" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" aria-label="{{ __('User menu') }}">
+                <img src="{{ Auth::user()->photo }}" class="sms-avatar-sm" alt="{{ Auth::user()->name }}">
             </a>
-            <div class="dropdown-menu dropdown-menu-right shadow-lg apple-glass-dropdown">
-                <div class="dropdown-header font-weight-bold text-uppercase font-size-xs text-muted">
-                    {{ __('Signed in as') }} <strong class="text-white">{{ Auth::user()->username }}</strong>
+            <div class="dropdown-menu dropdown-menu-right">
+                <div class="dropdown-header font-weight-semibold text-uppercase font-size-xs text-muted">
+                    {{ __('Signed in as') }} <strong class="text-dark">{{ Auth::user()->username }}</strong>
                 </div>
                 <a href="{{ $myProfileUrl }}" class="dropdown-item">
-                    <i class="icon-user-check text-muted mr-2"></i> {{ __('My Profile') }}
+                    <i class="icon-user-check text-muted mr-2" aria-hidden="true"></i> {{ __('My Profile') }}
                 </a>
                 <a href="{{ route('my_account') }}" class="dropdown-item">
-                    <i class="icon-cog5 text-muted mr-2"></i> {{ __('Account Settings') }}
+                    <i class="icon-cog5 text-muted mr-2" aria-hidden="true"></i> {{ __('Account Settings') }}
                 </a>
                 <div class="dropdown-divider"></div>
                 <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();" class="dropdown-item text-danger">
-                    <i class="icon-switch2 text-danger mr-2"></i> {{ __('Logout') }}
+                    <i class="icon-switch2 text-danger mr-2" aria-hidden="true"></i> {{ __('Logout') }}
                 </a>
                 <form id="logout-form-mobile" action="{{ route('logout') }}" method="POST" style="display: none;">
                     @csrf
@@ -63,65 +64,63 @@
     <div class="collapse navbar-collapse d-none d-md-flex" id="navbar-mobile">
         <ul class="navbar-nav">
             <li class="nav-item">
-                <a href="#" class="navbar-nav-link sidebar-control sidebar-main-toggle d-none d-md-flex align-items-center" title="{{ __('Toggle Sidebar') }}">
-                    <i class="icon-paragraph-justify3"></i>
+                <a href="#" class="navbar-nav-link sidebar-control sidebar-main-toggle d-none d-md-flex align-items-center" aria-label="{{ __('Toggle Sidebar') }}" title="{{ __('Toggle Sidebar') }}">
+                    <i class="icon-paragraph-justify3" aria-hidden="true"></i>
                 </a>
             </li>
         </ul>
 
         <div class="navbar-text ml-md-3 mr-md-auto d-none d-lg-block">
-            <span class="badge apple-role-badge">
-                <i class="icon-shield-check mr-1" style="color: #FF5700;"></i> {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}
+            <span class="sms-role-badge">
+                <i class="icon-shield-check" style="color: var(--sms-primary);" aria-hidden="true"></i>
+                <span>{{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}</span>
             </span>
         </div>
 
         <ul class="navbar-nav align-items-md-center">
-            {{-- Quick Portal Notice Link --}}
             <li class="nav-item mr-md-2">
-                <a href="{{ route('notices.index') }}" class="navbar-nav-link d-flex align-items-center apple-nav-icon-link" title="{{ __('Notices') }}">
-                    <i class="icon-bell2"></i>
-                    @if(isset($mobileNoticeCount) && $mobileNoticeCount > 0)
-                        <span class="badge badge-pill ml-1" style="background: #FF5700; color: #FFF; font-size: 0.65rem;">{{ $mobileNoticeCount }}</span>
+                <a href="{{ route('notices.index') }}" class="sms-nav-pill position-relative" aria-label="{{ __('Notices') }}" title="{{ __('Notices') }}">
+                    <i class="icon-bell2" aria-hidden="true"></i>
+                    @if($noticeCount > 0)
+                        <span class="badge badge-primary badge-pill ml-1" style="font-size: 0.68rem;">{{ $noticeCount }}</span>
                     @endif
                 </a>
             </li>
 
-            {{-- Language Switcher Pill --}}
             <li class="nav-item dropdown mr-md-2">
-                <a href="#" class="navbar-nav-link dropdown-toggle d-flex align-items-center apple-lang-pill" data-toggle="dropdown">
-                    <i class="icon-earth mr-1"></i>
+                <a href="#" class="sms-nav-pill dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="icon-earth mr-1" aria-hidden="true"></i>
                     <span>{{ app()->getLocale() == 'ne' ? 'नेपाली' : 'English' }}</span>
                 </a>
-                <div class="dropdown-menu dropdown-menu-right shadow-lg apple-glass-dropdown">
+                <div class="dropdown-menu dropdown-menu-right">
                     <a href="{{ route('set_locale', 'ne') }}" class="dropdown-item {{ app()->getLocale() == 'ne' ? 'active' : '' }}">
-                        <i class="icon-check {{ app()->getLocale() == 'ne' ? '' : 'invisible' }}"></i> नेपाली (Nepali)
+                        <i class="icon-check mr-2 {{ app()->getLocale() == 'ne' ? '' : 'invisible' }}" aria-hidden="true"></i> नेपाली (Nepali)
                     </a>
                     <a href="{{ route('set_locale', 'en') }}" class="dropdown-item {{ app()->getLocale() == 'en' ? 'active' : '' }}">
-                        <i class="icon-check {{ app()->getLocale() == 'en' ? '' : 'invisible' }}"></i> English
+                        <i class="icon-check mr-2 {{ app()->getLocale() == 'en' ? '' : 'invisible' }}" aria-hidden="true"></i> English
                     </a>
                 </div>
             </li>
 
-            {{-- User Profile Pill --}}
             <li class="nav-item dropdown dropdown-user">
-                <a href="#" class="navbar-nav-link dropdown-toggle apple-user-pill" data-toggle="dropdown">
-                    <img style="width: 34px; height: 34px; object-fit: cover;" src="{{ Auth::user()->photo }}" class="rounded-circle" alt="{{ Auth::user()->name }}">
-                    <span class="font-weight-semibold text-white ml-2">{{ Auth::user()->name }}</span>
+                <a href="#" class="sms-nav-pill dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <img src="{{ Auth::user()->photo }}" class="sms-avatar-sm mr-2" alt="{{ Auth::user()->name }}">
+                    <span class="font-weight-medium text-white">{{ Auth::user()->name }}</span>
                 </a>
 
-                <div class="dropdown-menu dropdown-menu-right shadow-lg apple-glass-dropdown">
-                    <div class="dropdown-header font-weight-bold text-uppercase font-size-xs text-muted">
-                        {{ __('Signed in as') }} <strong class="text-white">{{ Auth::user()->username }}</strong>
+                <div class="dropdown-menu dropdown-menu-right">
+                    <div class="dropdown-header font-weight-semibold text-uppercase font-size-xs text-muted">
+                        {{ __('Signed in as') }} <strong class="text-dark">{{ Auth::user()->username }}</strong>
                     </div>
                     <a href="{{ $myProfileUrl }}" class="dropdown-item">
-                        <i class="icon-user-check text-muted mr-2"></i> {{ __('My Profile') }}
+                        <i class="icon-user-check text-muted mr-2" aria-hidden="true"></i> {{ __('My Profile') }}
                     </a>
                     <a href="{{ route('my_account') }}" class="dropdown-item">
-                        <i class="icon-cog5 text-muted mr-2"></i> {{ __('Account Settings') }}
+                        <i class="icon-cog5 text-muted mr-2" aria-hidden="true"></i> {{ __('Account Settings') }}
                     </a>
                     <div class="dropdown-divider"></div>
                     <a href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();" class="dropdown-item text-danger">
-                        <i class="icon-switch2 text-danger mr-2"></i> {{ __('Logout') }}
+                        <i class="icon-switch2 text-danger mr-2" aria-hidden="true"></i> {{ __('Logout') }}
                     </a>
                     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
                         @csrf
@@ -130,4 +129,4 @@
             </li>
         </ul>
     </div>
-</div>
+</nav>

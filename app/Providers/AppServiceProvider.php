@@ -16,6 +16,11 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->environment('production') || env('FORCE_HTTPS', false)) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
+
+        \Illuminate\Support\Facades\View::composer(
+            ['partials.top_menu', 'partials.mobile_dock', 'partials.menu', 'partials.header'],
+            \App\Http\View\Composers\ShellComposer::class
+        );
     }
 
     /**

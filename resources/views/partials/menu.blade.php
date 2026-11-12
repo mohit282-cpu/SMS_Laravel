@@ -1,33 +1,31 @@
-<div class="sidebar sidebar-dark sidebar-main sidebar-expand-md" style="background: rgba(17, 24, 39, 0.95) !important; backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); border-right: 1px solid rgba(255, 255, 255, 0.08);">
-
-
+<div class="sidebar sidebar-dark sidebar-main sidebar-expand-md sms-sidebar">
 
     <!-- Sidebar content -->
     <div class="sidebar-content">
 
         <!-- User menu -->
-        <div class="sidebar-user" style="padding: 1.1rem 1.25rem; border-bottom: 1px solid rgba(255, 255, 255, 0.06); background: rgba(255, 255, 255, 0.02);">
+        <div class="sidebar-user sms-sidebar-user">
             <div class="media align-items-center">
                 <div class="mr-3 position-relative">
-                    <a href="{{ route('my_account') }}">
-                        <img src="{{ Auth::user()->photo }}" width="42" height="42" class="rounded-circle" style="object-fit: cover; border: 2px solid #FF5700; box-shadow: 0 0 10px rgba(255, 87, 0, 0.3);" alt="{{ Auth::user()->name }}">
+                    <a href="{{ route('my_account') }}" aria-label="{{ __('Account Settings') }}">
+                        <img src="{{ Auth::user()->photo }}" width="40" height="40" class="rounded-circle" style="object-fit: cover; border: 1.5px solid rgba(255, 255, 255, 0.25);" alt="{{ Auth::user()->name }}">
                     </a>
                 </div>
 
                 <div class="media-body">
-                    <div class="media-title font-weight-bold text-white mb-0" style="font-size: 0.92rem; letter-spacing: -0.01em;">
+                    <div class="media-title font-weight-semibold text-white mb-0" style="font-size: 0.88rem;">
                         {{ Auth::user()->name }}
                     </div>
                     <div class="mt-1">
-                        <span class="badge" style="background: rgba(255, 87, 0, 0.14); color: #FF5700; border: 1px solid rgba(255, 87, 0, 0.25); font-size: 0.72rem; padding: 2px 8px;">
+                        <span class="sms-role-badge" style="font-size: 0.7rem; padding: 2px 8px;">
                             {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}
                         </span>
                     </div>
                 </div>
 
                 <div class="ml-2">
-                    <a href="{{ route('my_account') }}" class="text-white-50" title="{{ __('Account Settings') }}">
-                        <i class="icon-cog3" style="font-size: 1.1rem;"></i>
+                    <a href="{{ route('my_account') }}" class="text-white-50" title="{{ __('Account Settings') }}" aria-label="{{ __('Account Settings') }}">
+                        <i class="icon-cog3" style="font-size: 1.05rem;" aria-hidden="true"></i>
                     </a>
                 </div>
             </div>
@@ -105,8 +103,8 @@
                             <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['students.list', 'students.edit', 'students.show']) ? 'nav-item-expanded' : '' }}">
                                 <a href="#" class="nav-link {{ in_array(Route::currentRouteName(), ['students.list', 'students.edit', 'students.show']) ? 'active' : '' }}">{{ __('Student Information') }}</a>
                                 <ul class="nav nav-group-sub">
-                                    @foreach(App\Models\MyClass::orderBy('name')->get() as $c)
-                                        <li class="nav-item"><a href="{{ route('students.list', $c->id) }}" class="nav-link ">{{ $c->name }}</a></li>
+                                    @foreach(($shellClasses ?? collect()) as $c)
+                                        <li class="nav-item"><a href="{{ route('students.list', $c->id) }}" class="nav-link {{ (Route::is('students.list') && (string)request()->route('class_id') === (string)$c->id) ? 'active' : '' }}">{{ $c->name }}</a></li>
                                     @endforeach
                                 </ul>
                             </li>
