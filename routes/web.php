@@ -302,3 +302,11 @@ Route::group(['namespace' => 'MyParent','middleware' => 'my_parent',], function(
     Route::get('/my_children', 'MyController@children')->name('my_children');
 
 });
+
+/************************ NEPAL GEOGRAPHY CASCADING API ****************************/
+Route::group(['middleware' => 'auth', 'prefix' => 'nepal-locations'], function () {
+    Route::get('/provinces', 'NepalLocationController@provinces')->name('nepal_locations.provinces');
+    Route::get('/districts', 'NepalLocationController@districts')->name('nepal_locations.districts');
+    Route::get('/local-levels', 'NepalLocationController@localLevels')->name('nepal_locations.local_levels');
+    Route::get('/wards', 'NepalLocationController@wards')->name('nepal_locations.wards');
+});
