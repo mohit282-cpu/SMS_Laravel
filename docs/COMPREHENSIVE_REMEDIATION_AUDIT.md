@@ -2,20 +2,20 @@
 
 **Repository:** https://github.com/mohit282-cpu/SMS_Laravel  
 **Target Branch:** `testing`  
-**Current Commit:** `d3b317452dcdfab09bbbaeaf2f438fe463cca7b9`  
+**Current Commit:** `e3b283e2618c7e7999eeb5ed0ff4d22fca56804c` (following `d3b317452dcdfab09bbbaeaf2f438fe463cca7b9`)  
 **Organization:** Sovryx Tech Pvt. Ltd.  
 **Product:** SMS Academy — Nepal School Management System  
 **Framework:** Laravel 8.83.29, PHP 8.2.31, MySQL / MariaDB  
-**Audit Date:** November 2026  
+**Audit Date:** November 12, 2026  
 **Auditor:** Principal Software & DevSecOps Engineering Team  
 
 ---
 
 ## 1. Executive Summary & Repository Status
 
-A full repository audit was conducted across all 18 engineering phases specified in the Master Prompt. The codebase is currently on branch `testing` with a clean working tree at commit `d3b3174`. The application contains 423 automated tests (2,805 assertions) passing with zero failures.
+A full repository audit was conducted across all 18 engineering phases specified in the Master Prompt. The codebase is currently on branch `testing` with a clean working tree at commit `e3b283e` (extending `d3b3174`).
 
-This audit report identifies existing strengths, resolved issues, open risks, and presents a phased remediation roadmap for Milestones 1 through 10.
+This audit report records verified strengths, previously resolved items, and newly identified open defects requiring remediation across Milestones 2 through 10.
 
 ---
 
@@ -37,39 +37,39 @@ This audit report identifies existing strengths, resolved issues, open risks, an
 
 ### Phase 1: CI/CD & Deployment Reliability
 
-#### ISSUE-002 (HIGH) — CD Deployment Error Trap & In-Flight Rollback Separation
-- **File & Location:** `.github/workflows/cd.yml:148-262`
+#### ISSUE-002 (HIGH) — CD Rollback Verification & Post-Rollback Assertions Incomplete
+- **File & Location:** `.github/workflows/cd.yml:184-215`
 - **Severity:** High
-- **Root Cause:** Post-deployment health verification previously ran in a separate GitHub Actions step outside the remote SSH command. If the health probe failed, the server-side bash rollback trap was not invoked because the SSH session had already terminated. Inline secret interpolation created shell evaluation risks.
-- **Reproduction Steps:** Deploy code that passes compilation but fails database connectivity at runtime; observe server remains on broken release without auto-rollback.
-- **Proposed Solution:** Embed health check inside the remote SSH deployment script before releasing the bash `ERR` trap. Pass secrets strictly via environment variables. Add post-rollback health verification.
-- **Actual Implementation:** Implemented in `.github/workflows/cd.yml`.
-- **Test Evidence:** YAML parsed cleanly via Python `yaml.safe_load()`. Rollback handler restores previous release symlink, runs cache warmup, restarts PHP-FPM, and verifies `/health/readiness`.
-- **Remaining Risk:** Server host secrets (`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`) must be configured in GitHub environment settings.
+- **Root Cause:** In-band health verification was moved inside the remote SSH script (`cd.yml`), and secrets were moved to env vars, **however** `rollback_handler()` still uses `|| true` on cache warmup (`config:cache || true`, `route:cache || true`, `view:cache || true`) and runs `RESTORE_HTTP_CODE=$(curl ... || true)` without failing or verifying: symlink target via `readlink -f`, required files (`artisan`, `vendor/autoload.php`), Laravel bootstrap (`php artisan --version`), PHP-FPM active state, and HTTP 200 `'ready'` readiness response.
+- **Reproduction Steps:** Trigger a failed deployment rollback where the previous release's cache warm or readiness probe fails; `rollback_handler` prints `"Automated rollback completed successfully."` even if the rolled-back app returns 500 or 503.
+- **Proposed Solution:** Remove `|| true` from critical rollback steps, verify previous release integrity, check `php artisan --version`, check `systemctl is-active` for PHP-FPM, assert HTTP 200 & `"ready"` on `/health/readiness`, and report explicit recovery failure logs if rollback verification fails. Also document expand-and-contract migration practices.
+- **Actual Implementation:** Partially implemented (in-band check & env secrets added in `d3b3174`; strict rollback verification planned for Milestone 2).
+- **Test Evidence:** YAML validated via `yaml.safe_load()`; live SSH target verification pending deployment environment secrets.
+- **Remaining Risk:** Server host secrets (`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`) and `APP_URL` must be configured in GitHub environment settings.
 
 ---
 
 ### Phase 2: Health Checks & Monitoring
 
-#### ISSUE-003 (HIGH) — Missing Health Secret in `config/app.php` & Runtime `env()` Fallback
-- **File & Location:** `config/app.php`, `app/Http/Controllers/HealthCheckController.php:263`
+#### ISSUE-003 (HIGH) — Missing Health Secret in `config/app.php`, Runtime `env()` Fallback & Unthrottled Diagnostic Route
+- **File & Location:** `config/app.php`, `app/Http/Controllers/HealthCheckController.php:263`, `routes/web.php:15`
 - **Severity:** High
-- **Root Cause:** `HealthCheckController.php` accesses `$configuredKey = config('app.health_key') ?: env('HEALTH_CHECK_SECRET')`. In production with cached configuration (`php artisan config:cache`), direct calls to `env()` return `null`. Furthermore, `config/app.php` lacks the `'health_key'` configuration entry.
-- **Reproduction Steps:** Run `php artisan config:cache` when `config('app.health_key')` is undefined. Attempt to query `/health/diagnostic` using `X-Health-Key`.
-- **Proposed Solution:** Add `'health_key' => env('HEALTH_CHECK_SECRET')` to `config/app.php`. Remove direct `env()` call from `HealthCheckController.php`. Fail closed if no key is configured.
+- **Root Cause:** `HealthCheckController.php:263` accesses `$configuredKey = config('app.health_key') ?: env('HEALTH_CHECK_SECRET')`. In production with cached configuration (`php artisan config:cache`), `env()` returns `null`, and `config/app.php` does not define `'health_key'`. Additionally, `routes/web.php:15` exposes `/health/diagnostic` without `throttle` or `no_store` middleware.
+- **Reproduction Steps:** Run `php artisan config:cache` with `HEALTH_CHECK_SECRET` set in `.env` and query `/health/diagnostic` with `X-Health-Key`; access fails with 403 because `config('app.health_key')` is undefined and `env()` returns `null`.
+- **Proposed Solution:** Add `'health_key' => env('HEALTH_CHECK_SECRET')` to `config/app.php`, remove runtime `env()` fallback from `HealthCheckController.php`, fail closed when empty, and attach `throttle` + `no_store` middleware to `health.diagnostic`.
 - **Actual Implementation:** Planned for Milestone 2.
-- **Test Evidence:** Verified in `HealthCheckTest.php`.
-- **Remaining Risk:** Operations must define `HEALTH_CHECK_SECRET` in `.env`.
+- **Test Evidence:** Pending Milestone 2 implementation and cached-config test.
+- **Remaining Risk:** Operations must define `HEALTH_CHECK_SECRET` in `.env` for token-based monitoring.
 
-#### ISSUE-004 (MEDIUM) — Conditional User Lookup in Health Check Feature Tests
-- **File & Location:** `tests/Feature/HealthCheckTest.php:72-107`
+#### ISSUE-004 (MEDIUM) — Conditional Assertion Skips & Incomplete Failure/Role Coverage in `HealthCheckTest.php`
+- **File & Location:** `tests/Feature/HealthCheckTest.php:70-107`
 - **Severity:** Medium
-- **Root Cause:** Tests used `User::where('user_type', 'student')->first()` with `if ($student) { ... } else { $this->assertTrue(true); }`, allowing assertions to be skipped if test database has no seeded users. Did not test all 7 roles (Admin, Teacher, Parent, Accountant, Librarian).
-- **Reproduction Steps:** Run `phpunit tests/Feature/HealthCheckTest.php` on an unseeded database; conditional branch skips real assertions.
-- **Proposed Solution:** Use explicit model creation / factory fixtures to test all 7 roles: Super Admin (200), and Admin, Teacher, Student, Parent, Accountant, Librarian (403 Forbidden). Add maintenance mode and subsystem failure simulation tests.
+- **Root Cause:** Tests query `User::where('user_type', 'student')->first()` and `User::where('user_type', 'super_admin')->first()` with `else { $this->assertTrue(true); }`, silently passing if users are absent. Missing test cases for Admin, Teacher, Parent, Accountant, Librarian, Maintenance Mode, Database failure, Cache failure, Storage failure, Missing asset manifest, Missing secret, and Invalid secret.
+- **Reproduction Steps:** Run `phpunit tests/Feature/HealthCheckTest.php` on an unseeded DB; authorization tests pass via fallback `assertTrue(true)`.
+- **Proposed Solution:** Create isolated user fixtures/factories inside the test covering all 7 roles, maintenance mode, missing/invalid/valid secrets (via `X-Health-Key` and Bearer), and mocked DB/cache/storage/manifest failures.
 - **Actual Implementation:** Planned for Milestone 2.
-- **Test Evidence:** All 7 roles tested with direct assertions.
-- **Remaining Risk:** None once fixtures are created.
+- **Test Evidence:** Pending Milestone 2 expansion.
+- **Remaining Risk:** None once fixtures are added.
 
 ---
 
@@ -179,7 +179,7 @@ This audit report identifies existing strengths, resolved issues, open risks, an
 
 ### Phase 12: File Upload & Download Security
 
-#### ISSUE-013 (HIGH) — Upload File Extension & MIME Validation
+#### ISSUE-013 (HIGH) — Upload File Extension & MIME Validation (Study Materials)
 - **File & Location:** `app/Http/Controllers/SupportTeam/StudyMaterialController.php:138-156`
 - **Severity:** High
 - **Root Cause:** User file uploads without strict extension blacklisting and MIME sniffing could allow uploading webshells (.php, .phtml, .phar).
@@ -188,6 +188,60 @@ This audit report identifies existing strengths, resolved issues, open risks, an
 - **Actual Implementation:** Implemented in `StudyMaterialController.php`.
 - **Test Evidence:** Verified in `StudyMaterialTest.php`.
 - **Remaining Risk:** Ensure web server does not execute PHP scripts inside `storage/`.
+
+---
+
+### Additional Phase 3, 8 & 12 Findings Discovered in Code Inspection
+
+#### ISSUE-014 (HIGH) — `DatabaseBackupCommand.php` Missing `use Throwable;`, `@` Suppression, Open File Permissions, & Missing Version Metadata
+- **File & Location:** `app/Console/Commands/DatabaseBackupCommand.php:1-12, 116, 126, 236-249, 284`
+- **Severity:** High
+- **Root Cause:** `Throwable` is not imported at the top of the file, so `catch (Throwable $e)` on line 126 resolves to non-existent `App\Console\Commands\Throwable`. Line 116 uses `@gzwrite` / `@fwrite` error suppression. Backup files and `.meta.json` inherit default umask instead of `0600`. Metadata lacks `app_version` / `laravel_version`. Catch block on line 284 logs/prints unsanitized exception message without redacting credentials. Gzip archive integrity is not verified after closing.
+- **Reproduction Steps:** Inspect `DatabaseBackupCommand.php` imports and catch block; run `db:backup --compress` and inspect resulting file mode (`ls -l`) and `.meta.json` keys.
+- **Proposed Solution:** Import `use Throwable;`, remove `@` operators, set `chmod(..., 0600)` on SQL/gz/zip/meta files, record `app_version` and `laravel_version` in `.meta.json`, verify gzip stream readability before completion, and sanitize password strings in error output.
+- **Actual Implementation:** Planned for Milestone 3.
+- **Test Evidence:** Pending Milestone 3 unit/feature tests.
+- **Remaining Risk:** Windows filesystems treat POSIX `chmod` differently than Linux production hosts.
+
+#### ISSUE-015 (HIGH) — Broken Email Uniqueness Validation in `StudentRecordUpdate.php`
+- **File & Location:** `app/Http/Requests/Student/StudentRecordUpdate.php:27`
+- **Severity:** High
+- **Root Cause:** Rule specifies `'email' => 'sometimes|nullable|email|max:100|unique:users,id'`, checking whether the email string matches any `users.id` integer rather than validating uniqueness on `users.email` while ignoring the updated student's `user_id`.
+- **Reproduction Steps:** Update an existing student record via `StudentRecordController@update` using an email already belonging to another user. Validation passes and MySQL throws `SQLSTATE[23000]` duplicate entry exception.
+- **Proposed Solution:** Resolve the target `StudentRecord` ID from route parameter, find its `user_id`, and apply `Rule::unique('users', 'email')->ignore($userId)`.
+- **Actual Implementation:** Planned for Milestone 5.
+- **Test Evidence:** Pending Milestone 5 regression test.
+- **Remaining Risk:** None once covered by feature test.
+
+#### ISSUE-016 (MEDIUM) — Raw `$req->all()` Mass Assignment & Commented `$fillable` in `Skill.php`
+- **File & Location:** `app/Models/Skill.php:9`, `GradeController.php:33,48`, `MyClassController.php:35`, `SectionController.php:36`, `SubjectController.php:36,53`, `PaymentController.php:448,480`, `TimeTableController.php:183,238,303,343,513,522`
+- **Severity:** Medium
+- **Root Cause:** Controllers pass un-filtered `$req->all()` directly into repository `create()` / `update()` calls, while `Skill.php` has `$fillable` commented out.
+- **Reproduction Steps:** Inspect controller `store()` and `update()` methods across SupportTeam controllers.
+- **Proposed Solution:** Replace `$req->all()` with `$req->validated()` or explicit `$req->only([...])` allowlists, and uncomment/define `$fillable` on `Skill.php`.
+- **Actual Implementation:** Planned for Milestone 5.
+- **Test Evidence:** Pending Milestone 5 tests.
+- **Remaining Risk:** Repository methods using `create($data)` rely on model `$fillable`.
+
+#### ISSUE-017 (MEDIUM) — Predictable Static Filenames & Client Extension Trust in Photo/Logo Uploads
+- **File & Location:** `MyAccountController.php:63-65`, `StudentRecordController.php:122-124, 359-361`, `UserController.php:127-129, 189-191`, `SettingController.php:43-45`, `BookController.php:124,165`
+- **Severity:** Medium
+- **Root Cause:** Profile photos and logos use static filenames (`'photo.' . $f['ext']`, `'logo.' . $f['ext']`) derived from `$file->getClientOriginalExtension()` instead of MIME-derived `$file->guessExtension()` and randomized server-generated filenames.
+- **Reproduction Steps:** Inspect `storeAs()` calls in `MyAccountController`, `StudentRecordController`, `UserController`, and `SettingController`.
+- **Proposed Solution:** Use `$file->guessExtension()` and randomized filenames (`Str::random(20) . '.' . $ext`) across all image uploads, and clean up replaced files safely.
+- **Actual Implementation:** Planned for Milestone 5/7.
+- **Test Evidence:** Pending Milestone 5/7 upload security tests.
+- **Remaining Risk:** Existing uploaded file URLs stored in `users.photo` remain valid until updated.
+
+#### ISSUE-018 (HIGH) — npm Security Gate Failing on `node-forge@0.10.0` Baseline Drift
+- **File & Location:** `.github/security/npm-exceptions.json`, `.github/scripts/npm-audit-checker.js`
+- **Severity:** High (blocks CI `npm-security` gate)
+- **Root Cause:** GitHub Advisory Database updated/added GHSA alias entries for `node-forge@0.10.0` (used strictly inside the legacy Webpack 3 / `webpack-dev-server` build toolchain), causing the exact advisory-set fingerprint in `.github/security/npm-exceptions.json` to mismatch (`1 new/changed and 1 stale finding(s)`).
+- **Reproduction Steps:** Execute `node .github/scripts/npm-audit-checker.js`. Command exits with code `1`.
+- **Proposed Solution:** Review the updated `node-forge@0.10.0` advisories (`dev`-only via `webpack-dev-server` / `selfsigned`), regenerate the baseline if confirmed build-toolchain-only (`node .github/scripts/generate-npm-baseline.js --write`), or evaluate upgrading build tooling (Milestone 6).
+- **Actual Implementation:** Identified during Milestone 1 audit (`2026-11-12`); remediation scheduled for Milestone 2/6.
+- **Test Evidence:** `node .github/scripts/npm-audit-checker.js` failed with exit code `1` (`79 high/critical finding(s)`).
+- **Remaining Risk:** Legacy Webpack 3 / Laravel Mix 2 toolchain will continue encountering upstream advisory churn until migrated to Vite (Milestone 6).
 
 ---
 
