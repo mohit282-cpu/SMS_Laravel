@@ -310,7 +310,9 @@ a:hover {
 }
 
 .sms-session-pill,
-.apple-session-pill {
+.apple-session-pill,
+.sms-status-pill,
+.apple-status-pill {
   display: inline-flex;
   align-items: center;
   gap: 0.45rem;

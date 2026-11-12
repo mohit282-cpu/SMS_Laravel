@@ -285,7 +285,7 @@
         // Native iOS Dismissal: Close mobile navigation drawer when tapping outside or touching scrim
         $(document).on('click touchstart', function(e) {
             if ($('body').hasClass('sidebar-mobile-main')) {
-                if (!$(e.target).closest('.sidebar-main, .sidebar-mobile-main-toggle, .apple-mobile-dock').length) {
+                if (!$(e.target).closest('.sidebar-main, .sidebar-mobile-main-toggle, .sms-mobile-dock, .apple-mobile-dock').length) {
                     $('body').removeClass('sidebar-mobile-main');
                 }
             }
@@ -336,7 +336,7 @@
 
         // Dynamic Liquid Glass Mobile Dock: compress to icons only on interaction/scroll across all pages
         var dockShrinkTimeout;
-        var $mobileDock = $('.apple-mobile-dock');
+        var $mobileDock = $('.sms-mobile-dock, .apple-mobile-dock');
 
         function triggerDockInteraction() {
             if ($mobileDock.length && window.innerWidth < 992) {

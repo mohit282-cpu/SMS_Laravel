@@ -3,22 +3,18 @@
 @section('content')
 
 <style>
-    /* Glassmorphism theme tokens */
     .glass-panel {
-        background: rgba(255, 255, 255, 0.85);
-        backdrop-filter: blur(16px);
-        -webkit-backdrop-filter: blur(16px);
-        border: 1px solid rgba(226, 232, 240, 0.8);
-        border-radius: 12px;
-        box-shadow: 0 4px 20px -2px rgba(15, 23, 42, 0.05);
-        transition: all 0.25s ease;
+        background: var(--sms-surface);
+        border: 1px solid var(--sms-border);
+        border-radius: var(--sms-radius-lg);
+        box-shadow: var(--sms-shadow-sm);
+        transition: border-color var(--sms-transition), box-shadow var(--sms-transition);
     }
     .glass-card {
-        border-radius: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.6);
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.85) 100%);
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 16px -2px rgba(15, 23, 42, 0.04);
+        border-radius: var(--sms-radius-lg);
+        border: 1px solid var(--sms-border);
+        background: var(--sms-surface);
+        box-shadow: var(--sms-shadow-sm);
         padding: 1.15rem 1.25rem;
         position: relative;
         overflow: hidden;
@@ -31,8 +27,8 @@
         right: 0;
         height: 3px;
     }
-    .glass-card-primary::before { background: linear-gradient(90deg, #3B82F6, #1D4ED8); }
-    .glass-card-success::before { background: linear-gradient(90deg, #10B981, #059669); }
+    .glass-card-primary::before { background: var(--sms-info); }
+    .glass-card-success::before { background: var(--sms-success); }
     .glass-card-purple::before { background: linear-gradient(90deg, #8B5CF6, #6D28D9); }
     .glass-card-warning::before { background: linear-gradient(90deg, #F59E0B, #D97706); }
     .glass-card-danger::before { background: linear-gradient(90deg, #EF4444, #B91C1C); }

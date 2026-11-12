@@ -5,7 +5,7 @@
     {{-- Stats Cards Row --}}
     <div class="row">
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number">{{ $stats['total_titles'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Total Titles') }}</div>
@@ -17,7 +17,7 @@
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number">{{ $stats['total_copies'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Total Copies') }}</div>
@@ -29,7 +29,7 @@
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number">{{ $stats['available_copies'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Available') }}</div>
@@ -41,7 +41,7 @@
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number">{{ $stats['issued_copies'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Active Loans') }}</div>
@@ -53,7 +53,7 @@
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number text-danger">{{ $stats['overdue_count'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Overdue') }}</div>
@@ -65,7 +65,7 @@
         </div>
 
         <div class="col-sm-6 col-xl-2">
-            <div class="apple-stat-card mb-3">
+            <div class="sms-stat-card mb-3">
                 <div>
                     <div class="stat-number">{{ $stats['pending_requests'] ?? 0 }}</div>
                     <div class="stat-label">{{ __('Requests') }}</div>
