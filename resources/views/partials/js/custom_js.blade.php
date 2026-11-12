@@ -154,7 +154,6 @@
     $('form#ajax-reg').on('submit', function(ev){
         ev.preventDefault();
         submitForm($(this), 'store');
-        $('#ajax-reg-t-0').get(0).click();
     });
 
     $('form.ajax-pay').on('submit', function(ev){

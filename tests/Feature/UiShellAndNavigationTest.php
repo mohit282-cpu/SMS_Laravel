@@ -120,5 +120,19 @@ class UiShellAndNavigationTest extends TestCase
         $pwaCss = file_get_contents(public_path('assets/css/pwa.css'));
         $this->assertStringContainsString('bottom: calc(74px + env(safe-area-inset-bottom, 0px));', $pwaCss);
     }
+
+    public function test_admit_student_page_renders_with_accessible_labels_and_design_system()
+    {
+        $admin = $this->makeUser('super_admin');
+        $response = $this->actingAs($admin)->get(route('students.create'));
+
+        $response->assertStatus(200);
+        $response->assertSee('sms-card', false);
+        $response->assertSee('sms-info-callout', false);
+        $response->assertSee('for="student_name"', false);
+        $response->assertSee('for="state_id"', false);
+        $response->assertSee('for="lga_id"', false);
+        $response->assertDontSee('apple-liquid-theme.css', false);
+    }
 }
 

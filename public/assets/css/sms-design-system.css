@@ -187,6 +187,87 @@ a:hover {
   gap: 0.5rem;
 }
 
+/* ==========================================================================
+   7b. Form Wizard (.wizard-form / jQuery Steps) & Callouts
+   ========================================================================== */
+.wizard > .steps {
+  border-bottom: 1px solid var(--sms-border);
+  padding: 0 1.25rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.wizard > .steps > ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.wizard > .steps > ul > li {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.wizard > .steps > ul > li > a {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--sms-radius-sm);
+  border: 1px solid var(--sms-border);
+  background-color: var(--sms-surface-subtle);
+  color: var(--sms-text-secondary);
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-decoration: none;
+}
+
+.wizard > .steps > ul > li.current > a {
+  background-color: var(--sms-primary-soft);
+  border-color: var(--sms-primary-border);
+  color: var(--sms-primary);
+}
+
+.wizard > .steps > ul > li.done > a {
+  background-color: var(--sms-success-soft);
+  border-color: rgba(22, 163, 74, 0.25);
+  color: var(--sms-success);
+}
+
+.wizard > .content {
+  overflow: visible !important;
+  background: transparent;
+  padding: 0.75rem 1.25rem 0.5rem;
+  min-height: auto;
+  margin: 0;
+}
+
+.wizard > .actions {
+  padding: 0.85rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--sms-border);
+}
+
+.wizard > .actions > ul {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sms-info-callout {
+  background-color: var(--sms-primary-soft);
+  border: 1px solid var(--sms-primary-border);
+  border-left: 4px solid var(--sms-primary);
+  border-radius: var(--sms-radius-sm);
+  padding: 0.9rem 1rem;
+  color: var(--sms-text-primary);
+}
+
 .content {
   padding: 1.25rem 1.5rem 2.5rem;
 }
