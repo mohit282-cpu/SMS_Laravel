@@ -146,4 +146,56 @@ class NepalGradingService
             'total_credits' => $totalCredits,
         ];
     }
+
+    /**
+     * Resolve Grade and GPA using configurable database GradingScale rules for an academic year
+     * and optional education level, falling back cleanly to STANDARD_SCALE when unconfigured.
+     */
+    public function getGradeAndGpaForConfig($percentage, ?string $academicYear = null, ?string $levelCode = null, bool $isAbsent = false, bool $isExempt = false): array
+    {
+        if ($isAbsent || $isExempt) {
+            return $this->getGradeAndGpa($percentage, $isAbsent, $isExempt);
+        }
+
+        $p = max(0, min(100, (float) $percentage));
+
+        try {
+            $query = \App\Models\GradingScale::where('is_active', true)
+                ->orderBy('min_percentage', 'desc');
+
+            if ($academicYear !== null) {
+                $yearScales = (clone $query)
+                    ->where('academic_year', $academicYear)
+                    ->when($levelCode !== null, function ($q) use ($levelCode) {
+                        $q->where('education_level_code', $levelCode);
+                    })
+                    ->get();
+
+                if ($yearScales->isEmpty() && $levelCode !== null) {
+                    $yearScales = (clone $query)
+                        ->where('academic_year', $academicYear)
+                        ->whereNull('education_level_code')
+                        ->get();
+                }
+
+                if ($yearScales->isNotEmpty()) {
+                    foreach ($yearScales as $scale) {
+                        if ($p >= (float) $scale->min_percentage && $p <= (float) $scale->max_percentage) {
+                            return [
+                                'grade' => $scale->grade_letter,
+                                'gpa' => (float) $scale->grade_point,
+                                'remark' => $scale->remark,
+                                'remark_ne' => $scale->remark_ne ?: $scale->remark,
+                                'is_passed' => (bool) $scale->is_passing,
+                            ];
+                        }
+                    }
+                }
+            }
+        } catch (\Throwable $e) {
+            // Fall back to standard CDC scale if grading_scales table is not yet migrated
+        }
+
+        return $this->getGradeAndGpa($p, false, false);
+    }
 }
