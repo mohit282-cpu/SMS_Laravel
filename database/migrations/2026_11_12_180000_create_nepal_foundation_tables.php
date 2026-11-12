@@ -95,11 +95,14 @@ class CreateNepalFoundationTables extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('fiscal_years');
-        Schema::dropIfExists('school_profiles');
-        Schema::dropIfExists('nepal_local_levels');
-        Schema::dropIfExists('nepal_districts');
-        Schema::dropIfExists('nepal_provinces');
+        foreach (['fiscal_years', 'school_profiles', 'nepal_local_levels', 'nepal_districts', 'nepal_provinces'] as $table) {
+            if (Schema::hasTable($table)) {
+                if (\Illuminate\Support\Facades\DB::table($table)->count() > 0) {
+                    throw new \RuntimeException("Refusing to drop populated table '{$table}' during rollback.");
+                }
+                Schema::dropIfExists($table);
+            }
+        }
     }
 }
 

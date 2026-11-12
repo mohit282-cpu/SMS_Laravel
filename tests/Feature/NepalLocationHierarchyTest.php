@@ -321,5 +321,93 @@ class NepalLocationHierarchyTest extends TestCase
 
         $this->assertFalse((bool) $local->fresh()->is_active);
     }
+
+    public function test_incomplete_hierarchy_and_conflicting_legacy_fields_are_rejected_and_parent_inherits_nepal_location()
+    {
+        $this->seed(NepalGeographySeeder::class);
+        $admin = $this->makeAuthUser();
+        $service = app(NepalLocationService::class);
+
+        $bagmati = NepalProvince::where('code', 'P3')->firstOrFail();
+        $kathmandu = NepalDistrict::where('province_id', $bagmati->id)->where('name', 'Kathmandu')->firstOrFail();
+        $kmc = NepalLocalLevel::where('district_id', $kathmandu->id)->where('name', 'Kathmandu Metropolitan City')->firstOrFail();
+
+        // Incomplete combinations rejected
+        $this->assertNotNull($service->validateHierarchy(null, $kathmandu->id, null, null, true));
+        $this->assertNotNull($service->validateHierarchy($bagmati->id, null, $kmc->id, null, true));
+        $this->assertNotNull($service->validateHierarchy($bagmati->id, $kathmandu->id, null, 1, true));
+
+        // Non-admin role rejected on admin management page
+        $studentUser = User::create([
+            'name' => 'Student Role User',
+            'email' => 'stu_role_' . uniqid() . '@sms.local',
+            'username' => 'stu_role_' . uniqid(),
+            'user_type' => 'student',
+            'code' => strtoupper(substr(md5(uniqid('', true)), 0, 8)),
+            'password' => Hash::make('Secret123!'),
+            'photo' => 'global_assets/images/user.png',
+        ]);
+        $this->actingAs($studentUser)->get(route('nepal_locations.manage'))->assertRedirect();
+        $regularAdmin = User::create([
+            'name' => 'Regular Admin User',
+            'email' => 'reg_admin_' . uniqid() . '@sms.local',
+            'username' => 'reg_admin_' . uniqid(),
+            'user_type' => 'admin',
+            'code' => strtoupper(substr(md5(uniqid('', true)), 0, 8)),
+            'password' => Hash::make('Secret123!'),
+            'photo' => 'global_assets/images/user.png',
+        ]);
+        $this->actingAs($regularAdmin)
+            ->post(route('nepal_locations.toggle', ['type' => 'local_level', 'id' => $kmc->id]))
+            ->assertStatus(403);
+
+        $myClass = \App\Models\MyClass::firstOrFail();
+        $section = \App\Models\Section::where('my_class_id', $myClass->id)->firstOrFail();
+        $nal = \App\Models\Nationality::firstOrFail();
+
+        $unique = mt_rand(10000, 99999);
+        $parentPhone = '9841' . $unique . '9';
+
+        // Conflicting legacy + Nepal location rejected
+        $this->actingAs($admin)->postJson(route('students.store'), [
+            'name' => 'Conflict Student ' . $unique,
+            'address' => 'Koteshwor, Kathmandu',
+            'gender' => 'Male',
+            'nal_id' => $nal->id,
+            'state_id' => 1,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+            'year_admitted' => '2083',
+        ])->assertStatus(422);
+
+        // Valid Nepal location + auto-created parent inherits Nepal location
+        $this->actingAs($admin)->postJson(route('students.store'), [
+            'name' => 'Sita Gurung ' . $unique,
+            'address' => 'Koteshwor, Kathmandu',
+            'gender' => 'Female',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'local_level_id' => $kmc->id,
+            'ward_no' => 32,
+            'tole' => 'Koteshwor Chowk',
+            'street' => 'Ring Road',
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+            'year_admitted' => '2083',
+            'parent_name' => 'Hari Gurung ' . $unique,
+            'parent_phone' => $parentPhone,
+            'parent_relationship' => 'Father',
+        ])->assertStatus(200);
+
+        $parent = User::where('name', 'Hari Gurung ' . $unique)->firstOrFail();
+        $this->assertEquals($bagmati->id, $parent->province_id);
+        $this->assertEquals($kathmandu->id, $parent->district_id);
+        $this->assertEquals($kmc->id, $parent->local_level_id);
+        $this->assertEquals(32, $parent->ward_no);
+        $this->assertEquals('Koteshwor Chowk', $parent->tole);
+    }
 }
 

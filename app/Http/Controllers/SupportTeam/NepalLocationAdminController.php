@@ -74,7 +74,7 @@ class NepalLocationAdminController extends Controller
         $model->is_active = !$oldActive;
         $model->save();
 
-        Cache::flush();
+        app(NepalLocationService::class)->clearCache();
 
         app(AuditLogService::class)->log(
             'nepal_location.toggle',
@@ -111,7 +111,7 @@ class NepalLocationAdminController extends Controller
         $model->fill($validated);
         $model->save();
 
-        Cache::flush();
+        app(NepalLocationService::class)->clearCache();
 
         app(AuditLogService::class)->log(
             'nepal_location.update',

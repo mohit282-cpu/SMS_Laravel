@@ -84,8 +84,14 @@ class ExtendNepalLocationHierarchy extends Migration
             });
         }
 
-        Schema::dropIfExists('nepal_settlements');
-        Schema::dropIfExists('nepal_wards');
+        foreach (['nepal_settlements', 'nepal_wards'] as $table) {
+            if (Schema::hasTable($table)) {
+                if (\Illuminate\Support\Facades\DB::table($table)->count() > 0) {
+                    throw new \RuntimeException("Refusing to drop populated table '{$table}' during rollback.");
+                }
+                Schema::dropIfExists($table);
+            }
+        }
 
         foreach (['nepal_local_levels', 'nepal_districts', 'nepal_provinces'] as $tableName) {
             if (Schema::hasTable($tableName) && Schema::hasColumn($tableName, 'is_active')) {

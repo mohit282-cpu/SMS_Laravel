@@ -94,12 +94,33 @@ class UserRequest extends FormRequest
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
-            if ($this->filled('province_id') || $this->filled('district_id') || $this->filled('local_level_id')) {
+            $hasNepal = $this->filled('province_id') || $this->filled('district_id') || $this->filled('local_level_id') || $this->filled('ward_no');
+            $hasLegacy = $this->filled('state_id') || $this->filled('lga_id');
+            if ($hasNepal && $hasLegacy) {
+                $validator->errors()->add('province_id', __('Cannot combine legacy state/LGA fields with Nepal province/district fields.'));
+                return;
+            }
+
+            if ($hasNepal) {
+                $requireActive = true;
+                if ($this->method() === 'PUT' && $this->user) {
+                    $existing = \App\User::find($this->user);
+                    if (
+                        $existing &&
+                        (string) $existing->province_id === (string) $this->province_id &&
+                        (string) $existing->district_id === (string) $this->district_id &&
+                        (string) $existing->local_level_id === (string) $this->local_level_id
+                    ) {
+                        $requireActive = false;
+                    }
+                }
+
                 $geoError = app(\App\Services\NepalLocationService::class)->validateHierarchy(
                     $this->filled('province_id') ? (int) $this->province_id : null,
                     $this->filled('district_id') ? (int) $this->district_id : null,
                     $this->filled('local_level_id') ? (int) $this->local_level_id : null,
-                    $this->filled('ward_no') ? (int) $this->ward_no : null
+                    $this->filled('ward_no') ? (int) $this->ward_no : null,
+                    $requireActive
                 );
                 if ($geoError !== null) {
                     $validator->errors()->add('district_id', $geoError);

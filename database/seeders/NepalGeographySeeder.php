@@ -69,6 +69,6 @@ class NepalGeographySeeder extends Seeder
             }
         }
 
-        Cache::flush();
+        app(\App\Services\NepalLocationService::class)->clearCache();
     }
 }

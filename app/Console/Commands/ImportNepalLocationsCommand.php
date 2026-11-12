@@ -225,7 +225,15 @@ class ImportNepalLocationsCommand extends Command
             }
         });
 
-        Cache::flush();
+        app(NepalLocationService::class)->clearCache();
+
+        if ($strict) {
+            $report = app(NepalLocationService::class)->getDatasetCompletenessReport();
+            if (!$report['is_complete_official_dataset']) {
+                $this->error('Post-commit completeness verification failed.');
+                return 1;
+            }
+        }
 
         $this->info("Imported {$counts['provinces']} provinces, {$counts['districts']} districts, {$counts['local_levels']} local governments ({$counts['total_wards']} wards).");
         return 0;

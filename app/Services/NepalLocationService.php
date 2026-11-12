@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\NepalDistrict;
 use App\Models\NepalLocalLevel;
 use App\Models\NepalProvince;
+use Illuminate\Support\Facades\Cache;
 
 class NepalLocationService
 {
@@ -35,6 +36,9 @@ class NepalLocationService
         }
 
         if ($districtId !== null) {
+            if ($provinceId === null) {
+                return __('Please select a province before choosing a district.');
+            }
             $district = NepalDistrict::find($districtId);
             if (!$district) {
                 return __('Selected district does not exist.');
@@ -42,13 +46,16 @@ class NepalLocationService
             if ($requireActive && !$district->is_active) {
                 return __('Selected district is inactive.');
             }
-            if ($provinceId !== null && (int) $district->province_id !== (int) $provinceId) {
+            if ((int) $district->province_id !== (int) $provinceId) {
                 return __('Selected district does not belong to the selected province.');
             }
         }
 
         $localLevel = null;
         if ($localLevelId !== null) {
+            if ($districtId === null) {
+                return __('Please select a district before choosing a local government.');
+            }
             $localLevel = NepalLocalLevel::find($localLevelId);
             if (!$localLevel) {
                 return __('Selected local government does not exist.');
@@ -56,7 +63,7 @@ class NepalLocationService
             if ($requireActive && !$localLevel->is_active) {
                 return __('Selected local government is inactive.');
             }
-            if ($districtId !== null && (int) $localLevel->district_id !== (int) $districtId) {
+            if ((int) $localLevel->district_id !== (int) $districtId) {
                 return __('Selected local government does not belong to the selected district.');
             }
         }
@@ -124,6 +131,20 @@ class NepalLocationService
                 $byType['rural_municipality']['complete']
             ),
         ];
+    }
+
+    /**
+     * Invalidate only Nepal location cache keys without flushing unrelated application caches.
+     */
+    public function clearCache(): void
+    {
+        Cache::forget('nepal_loc_provinces');
+        foreach (NepalProvince::pluck('id') as $provinceId) {
+            Cache::forget('nepal_loc_districts_p_' . $provinceId);
+        }
+        foreach (NepalDistrict::pluck('id') as $districtId) {
+            Cache::forget('nepal_loc_locals_d_' . $districtId);
+        }
     }
 }
 
