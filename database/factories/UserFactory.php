@@ -29,8 +29,8 @@ class UserFactory extends Factory
 
         return [
             'name' => $this->faker->name,
-            'email' => $this->faker->safeEmail,
-            'username' => $this->faker->userName,
+            'email' => Str::lower(Str::random(8)) . '.' . $this->faker->unique()->safeEmail,
+            'username' => $this->faker->unique()->userName . '_' . Str::lower(Str::random(6)),
             'password' => Hash::make($user_type),
             'user_type' => $user_type,
             'code' => strtoupper(Str::random(10)),

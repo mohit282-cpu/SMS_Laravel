@@ -49,34 +49,6 @@ jobs:
           fi
           echo "Deploying verified commit SHA: ${SHA}"
 
-      - name: Verify Mandatory CI Integration Gate Passed for Commit
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
-          SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          echo "Checking CI workflow (ci.yml) and CI Integration Gate for ${REPO}@${SHA}..."
-
-          WORKFLOW_RUNS=$(gh api --paginate "/repos/${REPO}/actions/workflows/ci.yml/runs?head_sha=${SHA}&per_page=100" \
-            --jq '[.workflow_runs[] | select(.head_sha == env.SHA)]')
-          SUCCESSFUL_RUNS=$(printf '%s' "${WORKFLOW_RUNS}" | jq '[.[] | select(.status == "completed" and .conclusion == "success")] | length')
-          if [ "${SUCCESSFUL_RUNS}" -lt 1 ]; then
-            echo "::error::No completed successful ci.yml workflow run found for ${REPO}@${SHA}."
-            exit 1
-          fi
-
-          CHECK_RUNS=$(gh api --paginate "/repos/${REPO}/commits/${SHA}/check-runs?per_page=100" \
-            --jq '[.check_runs[] | select(.name == "CI Integration Gate")]')
-          PASSED_GATES=$(printf '%s' "${CHECK_RUNS}" | jq '[.[] | select(.status == "completed" and .conclusion == "success")] | length')
-          FAILED_OR_INCOMPLETE=$(printf '%s' "${CHECK_RUNS}" | jq '[.[] | select(.status != "completed" or .conclusion != "success")] | length')
-
-          if [ "${PASSED_GATES}" -lt 1 ] || [ "${FAILED_OR_INCOMPLETE}" -gt 0 ]; then
-            echo "::error::Commit ${SHA} failed mandatory 'CI Integration Gate' verification (passed=${PASSED_GATES}, non_success=${FAILED_OR_INCOMPLETE})."
-            exit 1
-          fi
-          echo "Verified: ci.yml and 'CI Integration Gate' passed cleanly for ${REPO}@${SHA}."
-
       - name: Checkout Source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -84,10 +56,23 @@ jobs:
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
         with:
           php-version: '8.2'
-          extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, gmp
+          extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, gmp, curl
           coverage: none
           tools: composer:v2
           cache: composer
+
+      - name: Verify Mandatory CI Integration Gate Passed for Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          php .github/scripts/verify-ci-gate.php \
+            --repo="${REPO}" \
+            --sha="${SHA}" \
+            --workflow=ci.yml \
+            --gate="CI Integration Gate"
 
       - name: Validate & Install Production Composer Dependencies
         run: |
@@ -297,10 +282,10 @@ jobs:
 
                 echo "Readiness probe attempt ${attempt}/${max_attempts}: HTTP=${code}, status=${status}, release=${rel:-none}"
                 if [ "${code}" = "200" ] && { [ "${status}" = "ready" ] || [ "${status}" = "healthy" ]; }; then
-                  if [ -z "${expected_sha}" ] || [ -z "${rel}" ] || [ "${rel}" = "${expected_sha}" ]; then
+                  if [ -n "${expected_sha}" ] && [[ "${rel}" =~ ^[0-9a-f]{40}$ ]] && [ "${rel}" = "${expected_sha}" ]; then
                     return 0
                   fi
-                  echo "Release mismatch: expected '${expected_sha}', got '${rel}'."
+                  echo "Release mismatch or missing release SHA: expected '${expected_sha}', got '${rel:-missing}'."
                 fi
                 attempt=$((attempt + 1))
                 sleep "${interval}"
@@ -324,28 +309,39 @@ jobs:
             rollback_handler() {
               EXIT_STATUS=$?
               echo "::error::Remote deployment failed with exit code ${EXIT_STATUS}!"
+              local rollback_errors=0
               if [ -n "${PREVIOUS_RELEASE}" ] && [ -d "${PREVIOUS_RELEASE}" ]; then
                 echo "Rolling back symlink to previous release: ${PREVIOUS_RELEASE}..."
                 ln -sfn "${PREVIOUS_RELEASE}" "${TARGET_DIR}/current"
                 cd "${PREVIOUS_RELEASE}"
-                php artisan config:cache || true
-                php artisan route:cache || true
-                php artisan view:cache || true
+                php artisan config:cache || rollback_errors=$((rollback_errors + 1))
+                php artisan route:cache || rollback_errors=$((rollback_errors + 1))
+                php artisan view:cache || rollback_errors=$((rollback_errors + 1))
                 if [ "${MAINTENANCE}" = "true" ]; then
-                  php artisan up || true
+                  php artisan up || rollback_errors=$((rollback_errors + 1))
                 fi
-                sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+                if ! (sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm); then
+                  echo "::error::PHP-FPM reload failed during rollback."
+                  rollback_errors=$((rollback_errors + 1))
+                fi
 
                 PREV_SHA=""
                 if [ -f "${PREVIOUS_RELEASE}/.release_sha" ]; then
                   PREV_SHA=$(cat "${PREVIOUS_RELEASE}/.release_sha" | tr -d '[:space:]')
                 fi
-                if ! probe_readiness "${APP_URL}" "${PREV_SHA}"; then
+                if ! [[ "${PREV_SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+                  echo "::error::Previous release missing valid .release_sha; cannot verify rollback identity."
+                  rollback_errors=$((rollback_errors + 1))
+                elif ! probe_readiness "${APP_URL}" "${PREV_SHA}"; then
                   echo "::error::CRITICAL: Rollback readiness check FAILED for ${PREVIOUS_RELEASE}!"
-                  rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
-                  exit 1
+                  rollback_errors=$((rollback_errors + 1))
                 fi
-                echo "Automated rollback verified healthy for ${PREVIOUS_RELEASE}."
+                echo "Rollback Report: previous=${PREVIOUS_RELEASE}, sha=${PREV_SHA:-missing}, recovery_errors=${rollback_errors}"
+                if [ "${rollback_errors}" -gt 0 ]; then
+                  echo "::error::CRITICAL: Rollback completed with ${rollback_errors} error(s)."
+                else
+                  echo "Automated rollback verified healthy for ${PREVIOUS_RELEASE}."
+                fi
               else
                 echo "::error::No previous release directory found to roll back to."
                 if [ -d "${RELEASE_DIR}" ]; then
@@ -353,7 +349,7 @@ jobs:
                   php artisan up || true
                 fi
               fi
-              rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
+              rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256" "/tmp/verify-release-archive.php"
               exit "${EXIT_STATUS}"
             }
             trap 'rollback_handler' ERR
@@ -416,9 +412,15 @@ jobs:
               false
             fi
 
-            # 14. Prune old releases (keep last KEEP_RELEASES)
+            # 14. Prune old releases (keep last KEEP_RELEASES, never delete active or rollback release)
             cd "${TARGET_DIR}/releases"
-            ls -1dt */ 2>/dev/null | tail -n +"$((KEEP_RELEASES + 1))" | xargs -r rm -rf || true
+            CURRENT_TARGET="$(readlink -f "${TARGET_DIR}/current" || true)"
+            for old_rel in $(ls -1dt */ 2>/dev/null | tail -n +"$((KEEP_RELEASES + 1))"); do
+              old_abs="$(readlink -f "${TARGET_DIR}/releases/${old_rel%/}" || true)"
+              if [ -n "${old_abs}" ] && [ "${old_abs}" != "${CURRENT_TARGET}" ] && [ "${old_abs}" != "${PREVIOUS_RELEASE}" ]; then
+                rm -rf "${old_abs}"
+              fi
+            done
 
             trap - ERR
             echo "Deployment of release ${SHA} fully verified and completed."
@@ -444,11 +446,11 @@ jobs:
 
             echo "External probe ${attempt}/${max_attempts}: HTTP=${HTTP_CODE}, status=${STATUS}, release=${RELEASE:-none}"
             if [ "${HTTP_CODE}" = "200" ] && { [ "${STATUS}" = "ready" ] || [ "${STATUS}" = "healthy" ]; }; then
-              if [ -z "${RELEASE}" ] || [ "${RELEASE}" = "${SHA}" ]; then
+              if [[ "${RELEASE}" =~ ^[0-9a-f]{40}$ ]] && [ "${RELEASE}" = "${SHA}" ]; then
                 echo "External health check PASSED for release ${SHA}."
                 exit 0
               fi
-              echo "Release mismatch: expected ${SHA}, got ${RELEASE}."
+              echo "Release mismatch or missing SHA: expected ${SHA}, got ${RELEASE:-missing}."
             fi
             attempt=$((attempt + 1))
             sleep "${interval}"

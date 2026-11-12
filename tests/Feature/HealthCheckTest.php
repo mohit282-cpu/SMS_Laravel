@@ -145,4 +145,24 @@ class HealthCheckTest extends TestCase
             }
         }
     }
+
+    public function test_readiness_endpoint_returns_503_when_release_sha_file_is_invalid()
+    {
+        $releaseFile = base_path('.release_sha');
+        $hadFile = file_exists($releaseFile);
+        $previous = $hadFile ? file_get_contents($releaseFile) : null;
+        file_put_contents($releaseFile, "not-a-valid-sha\n");
+
+        try {
+            $response = $this->get('/health/readiness');
+            $response->assertStatus(503);
+            $response->assertJson(['status' => 'not_ready']);
+        } finally {
+            if ($hadFile) {
+                file_put_contents($releaseFile, $previous);
+            } else {
+                @unlink($releaseFile);
+            }
+        }
+    }
 }
