@@ -78,20 +78,20 @@ class ExtendNepalLocationHierarchy extends Migration
 
     public function down()
     {
+        foreach (['nepal_settlements', 'nepal_wards'] as $table) {
+            if (Schema::hasTable($table) && \Illuminate\Support\Facades\DB::table($table)->count() > 0) {
+                throw new \RuntimeException("Refusing to drop populated table '{$table}' during rollback.");
+            }
+        }
+
         if (Schema::hasTable('school_profiles') && Schema::hasColumn('school_profiles', 'landmark')) {
             Schema::table('school_profiles', function (Blueprint $table) {
                 $table->dropColumn(['street', 'landmark', 'postal_address', 'latitude', 'longitude']);
             });
         }
 
-        foreach (['nepal_settlements', 'nepal_wards'] as $table) {
-            if (Schema::hasTable($table)) {
-                if (\Illuminate\Support\Facades\DB::table($table)->count() > 0) {
-                    throw new \RuntimeException("Refusing to drop populated table '{$table}' during rollback.");
-                }
-                Schema::dropIfExists($table);
-            }
-        }
+        Schema::dropIfExists('nepal_settlements');
+        Schema::dropIfExists('nepal_wards');
 
         foreach (['nepal_local_levels', 'nepal_districts', 'nepal_provinces'] as $tableName) {
             if (Schema::hasTable($tableName) && Schema::hasColumn($tableName, 'is_active')) {

@@ -181,59 +181,63 @@ class ImportNepalLocationsCommand extends Command
             return 0;
         }
 
-        DB::transaction(function () use ($payload, $source, $verifiedDate) {
-            foreach ($payload['provinces'] as $p) {
-                $province = NepalProvince::updateOrCreate(
-                    ['code' => $p['code']],
-                    [
-                        'country_code' => 'NP',
-                        'name' => trim($p['name']),
-                        'name_ne' => trim($p['name_ne'] ?? $p['name']),
-                        'is_active' => true,
-                        'effective_date' => $verifiedDate,
-                        'data_source' => $source,
-                    ]
-                );
-
-                foreach (($p['districts'] ?? []) as $d) {
-                    $district = NepalDistrict::updateOrCreate(
-                        ['province_id' => $province->id, 'name' => trim($d['name'])],
+        try {
+            DB::transaction(function () use ($payload, $source, $verifiedDate, $strict) {
+                foreach ($payload['provinces'] as $p) {
+                    $province = NepalProvince::updateOrCreate(
+                        ['code' => $p['code']],
                         [
-                            'name_ne' => trim($d['name_ne'] ?? $d['name']),
-                            'code' => $d['code'] ?? null,
+                            'country_code' => 'NP',
+                            'name' => trim($p['name']),
+                            'name_ne' => trim($p['name_ne'] ?? $p['name']),
                             'is_active' => true,
                             'effective_date' => $verifiedDate,
                             'data_source' => $source,
                         ]
                     );
 
-                    foreach (($d['local_levels'] ?? []) as $l) {
-                        NepalLocalLevel::updateOrCreate(
-                            ['district_id' => $district->id, 'name' => trim($l['name'])],
+                    foreach (($p['districts'] ?? []) as $d) {
+                        $district = NepalDistrict::updateOrCreate(
+                            ['province_id' => $province->id, 'name' => trim($d['name'])],
                             [
-                                'name_ne' => trim($l['name_ne'] ?? $l['name']),
-                                'level_type' => $l['level_type'],
-                                'total_wards' => (int) $l['total_wards'],
-                                'code' => $l['code'] ?? null,
+                                'name_ne' => trim($d['name_ne'] ?? $d['name']),
+                                'code' => $d['code'] ?? null,
                                 'is_active' => true,
                                 'effective_date' => $verifiedDate,
                                 'data_source' => $source,
                             ]
                         );
+
+                        foreach (($d['local_levels'] ?? []) as $l) {
+                            NepalLocalLevel::updateOrCreate(
+                                ['district_id' => $district->id, 'name' => trim($l['name'])],
+                                [
+                                    'name_ne' => trim($l['name_ne'] ?? $l['name']),
+                                    'level_type' => $l['level_type'],
+                                    'total_wards' => (int) $l['total_wards'],
+                                    'code' => $l['code'] ?? null,
+                                    'is_active' => true,
+                                    'effective_date' => $verifiedDate,
+                                    'data_source' => $source,
+                                ]
+                            );
+                        }
                     }
                 }
-            }
-        });
+
+                if ($strict) {
+                    $report = app(NepalLocationService::class)->getDatasetCompletenessReport();
+                    if (!$report['is_complete_official_dataset']) {
+                        throw new \RuntimeException('In-transaction completeness verification failed; rolling back import.');
+                    }
+                }
+            });
+        } catch (\Throwable $e) {
+            $this->error('Import failed and was rolled back: ' . $e->getMessage());
+            return 1;
+        }
 
         app(NepalLocationService::class)->clearCache();
-
-        if ($strict) {
-            $report = app(NepalLocationService::class)->getDatasetCompletenessReport();
-            if (!$report['is_complete_official_dataset']) {
-                $this->error('Post-commit completeness verification failed.');
-                return 1;
-            }
-        }
 
         $this->info("Imported {$counts['provinces']} provinces, {$counts['districts']} districts, {$counts['local_levels']} local governments ({$counts['total_wards']} wards).");
         return 0;

@@ -109,7 +109,8 @@ class UserRequest extends FormRequest
                         $existing &&
                         (string) $existing->province_id === (string) $this->province_id &&
                         (string) $existing->district_id === (string) $this->district_id &&
-                        (string) $existing->local_level_id === (string) $this->local_level_id
+                        (string) $existing->local_level_id === (string) $this->local_level_id &&
+                        (string) $existing->ward_no === (string) $this->ward_no
                     ) {
                         $requireActive = false;
                     }

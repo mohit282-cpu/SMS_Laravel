@@ -409,5 +409,104 @@ class NepalLocationHierarchyTest extends TestCase
         $this->assertEquals(32, $parent->ward_no);
         $this->assertEquals('Koteshwor Chowk', $parent->tole);
     }
+
+    public function test_fk_restrict_historical_update_and_teacher_staff_lifecycle()
+    {
+        $this->seed(NepalGeographySeeder::class);
+        $admin = $this->makeAuthUser();
+
+        $bagmati = NepalProvince::where('code', 'P3')->firstOrFail();
+        $kathmandu = NepalDistrict::where('province_id', $bagmati->id)->where('name', 'Kathmandu')->firstOrFail();
+        $kmc = NepalLocalLevel::where('district_id', $kathmandu->id)->where('name', 'Kathmandu Metropolitan City')->firstOrFail();
+        $kirtipur = NepalLocalLevel::where('district_id', $kathmandu->id)->where('name', 'Kirtipur Municipality')->firstOrFail();
+
+        $myClass = \App\Models\MyClass::firstOrFail();
+        $section = \App\Models\Section::where('my_class_id', $myClass->id)->firstOrFail();
+        $nal = \App\Models\Nationality::firstOrFail();
+
+        $unique = mt_rand(10000, 99999);
+
+        // 1. Create student with active location
+        $this->actingAs($admin)->postJson(route('students.store'), [
+            'name' => 'Ramesh Thapa ' . $unique,
+            'address' => 'Kalanki, Kathmandu',
+            'gender' => 'Male',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'local_level_id' => $kmc->id,
+            'ward_no' => 14,
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+            'year_admitted' => '2083',
+        ])->assertStatus(200);
+
+        $stuUser = User::where('name', 'Ramesh Thapa ' . $unique)->firstOrFail();
+        $sr = \App\Models\StudentRecord::where('user_id', $stuUser->id)->firstOrFail();
+
+        // 2. FK RESTRICT prevents deleting referenced local level
+        $fkBlocked = false;
+        try {
+            $kmc->delete();
+        } catch (\Illuminate\Database\QueryException $e) {
+            $fkBlocked = true;
+        }
+        $this->assertTrue($fkBlocked, 'Expected FK RESTRICT to block deleting referenced NepalLocalLevel.');
+
+        // 3. Deactivate KMC & Kirtipur; updating student with unchanged KMC+ward 14 succeeds, changing to inactive Kirtipur fails
+        $kmc->is_active = false;
+        $kmc->save();
+        $kirtipur->is_active = false;
+        $kirtipur->save();
+
+        $srHash = \App\Helpers\Qs::hash($sr->id);
+        $this->actingAs($admin)->putJson(route('students.update', $srHash), [
+            'name' => 'Ramesh Thapa Updated ' . $unique,
+            'address' => 'Kalanki, Kathmandu',
+            'gender' => 'Male',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'local_level_id' => $kmc->id,
+            'ward_no' => 14,
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+        ])->assertStatus(200);
+
+        $this->actingAs($admin)->putJson(route('students.update', $srHash), [
+            'name' => 'Ramesh Thapa Updated ' . $unique,
+            'address' => 'Kalanki, Kathmandu',
+            'gender' => 'Male',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'local_level_id' => $kirtipur->id,
+            'ward_no' => 1,
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+        ])->assertStatus(422);
+
+        // 4. Teacher creation with Nepal location
+        $teacherType = \App\Models\UserType::where('title', 'teacher')->firstOrFail();
+        $kirtipur->is_active = true;
+        $kirtipur->save();
+
+        $this->actingAs($admin)->postJson(route('users.store'), [
+            'name' => 'Gita Sharma ' . $unique,
+            'user_type' => \App\Helpers\Qs::hash($teacherType->id),
+            'address' => 'Kirtipur, Kathmandu',
+            'gender' => 'Female',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'local_level_id' => $kirtipur->id,
+            'ward_no' => 2,
+            'tole' => 'Naya Bazar',
+        ])->assertStatus(200);
+
+        $teacher = User::where('name', 'Gita Sharma ' . $unique)->firstOrFail();
+        $this->assertEquals($kirtipur->id, $teacher->local_level_id);
+        $this->assertEquals(2, $teacher->ward_no);
+    }
 }
 

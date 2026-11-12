@@ -35,15 +35,20 @@ class AddNepalLocationToUsersTable extends Migration
     public function down()
     {
         if (Schema::hasTable('users')) {
-            Schema::table('users', function (Blueprint $table) {
-                $cols = array_filter(
-                    ['province_id', 'district_id', 'local_level_id', 'ward_no', 'tole', 'street'],
-                    fn ($col) => Schema::hasColumn('users', $col)
-                );
-                if (!empty($cols)) {
-                    $table->dropColumn($cols);
+            $cols = array_filter(
+                ['province_id', 'district_id', 'local_level_id', 'ward_no', 'tole', 'street'],
+                fn ($col) => Schema::hasColumn('users', $col)
+            );
+            foreach ($cols as $col) {
+                if (\Illuminate\Support\Facades\DB::table('users')->whereNotNull($col)->exists()) {
+                    throw new \RuntimeException("Refusing to drop populated column 'users.{$col}' during rollback.");
                 }
-            });
+            }
+            if (!empty($cols)) {
+                Schema::table('users', function (Blueprint $table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+            }
         }
     }
 }

@@ -32,15 +32,20 @@ class AddNepalLocationToStudentRecordsTable extends Migration
     public function down()
     {
         if (Schema::hasTable('student_records')) {
-            Schema::table('student_records', function (Blueprint $table) {
-                $cols = array_filter(
-                    ['province_id', 'district_id', 'local_level_id', 'tole', 'street'],
-                    fn ($col) => Schema::hasColumn('student_records', $col)
-                );
-                if (!empty($cols)) {
-                    $table->dropColumn($cols);
+            $cols = array_filter(
+                ['province_id', 'district_id', 'local_level_id', 'tole', 'street'],
+                fn ($col) => Schema::hasColumn('student_records', $col)
+            );
+            foreach ($cols as $col) {
+                if (\Illuminate\Support\Facades\DB::table('student_records')->whereNotNull($col)->exists()) {
+                    throw new \RuntimeException("Refusing to drop populated column 'student_records.{$col}' during rollback.");
                 }
-            });
+            }
+            if (!empty($cols)) {
+                Schema::table('student_records', function (Blueprint $table) use ($cols) {
+                    $table->dropColumn($cols);
+                });
+            }
         }
     }
 }

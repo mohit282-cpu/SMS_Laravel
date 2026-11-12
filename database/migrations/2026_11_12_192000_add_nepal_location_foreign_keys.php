@@ -38,6 +38,13 @@ class AddNepalLocationForeignKeys extends Migration
             if (!Schema::hasColumn($table, $column) || !Schema::hasTable($refTable)) {
                 continue;
             }
+            $orphaned = DB::table($table)
+                ->whereNotNull($column)
+                ->whereNotIn($column, DB::table($refTable)->select('id'))
+                ->count();
+            if ($orphaned > 0) {
+                throw new \RuntimeException("Cannot add foreign key {$table}.{$column} -> {$refTable}.id: {$orphaned} orphaned row(s) detected.");
+            }
             $fkName = "{$table}_{$column}_foreign";
             if (!$this->foreignKeyExists($table, $fkName)) {
                 Schema::table($table, function (Blueprint $blueprint) use ($column, $refTable) {
