@@ -116,6 +116,12 @@ h1, h2, h3, h4, h5, h6,
     }
 }
 
+@media (max-width: 991.98px) {
+    #pwa-install-banner {
+        bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    }
+}
+
 /* PWA Installation Prompt Banner */
 #pwa-install-banner {
     position: fixed;

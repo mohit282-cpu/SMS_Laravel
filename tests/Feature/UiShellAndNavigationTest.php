@@ -105,5 +105,20 @@ class UiShellAndNavigationTest extends TestCase
         $response->assertSee('sms-card', false);
         $response->assertSee('No Children Currently Linked');
     }
+
+    public function test_responsive_css_overflow_and_touch_target_guards_are_present()
+    {
+        $designCss = file_get_contents(public_path('assets/css/sms-design-system.css'));
+        $this->assertStringContainsString('overflow-x: clip;', $designCss);
+        $this->assertStringContainsString('min-height: 100dvh;', $designCss);
+        $this->assertStringContainsString('.dataTables_wrapper', $designCss);
+        $this->assertStringContainsString('min-height: 44px;', $designCss);
+
+        $calendarCss = file_get_contents(public_path('assets/css/nepali_bs_calendar.css'));
+        $this->assertStringNotContainsString('min-width: 320px;', $calendarCss);
+
+        $pwaCss = file_get_contents(public_path('assets/css/pwa.css'));
+        $this->assertStringContainsString('bottom: calc(74px + env(safe-area-inset-bottom, 0px));', $pwaCss);
+    }
 }
 

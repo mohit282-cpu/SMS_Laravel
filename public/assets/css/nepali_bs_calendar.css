@@ -219,13 +219,17 @@
 @media (max-width: 576px) {
   .nepali-calendar-wrapper {
     padding: 0.75rem 0.5rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .nepali-calendar-days-grid {
     gap: 3px;
-    min-width: 320px;
+    min-width: 0;
+    width: 100%;
   }
   .nepali-calendar-weekdays-grid {
-    min-width: 320px;
+    min-width: 0;
+    width: 100%;
   }
   .nepali-calendar-day-cell {
     min-height: 52px;

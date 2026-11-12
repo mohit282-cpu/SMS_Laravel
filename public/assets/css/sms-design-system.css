@@ -71,14 +71,27 @@
 }
 
 /* ==========================================================================
-   1. Base Typography & Document Canvas
+   1. Base Typography, Box Sizing & Viewport Overflow Guards
    ========================================================================== */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 html {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   -webkit-tap-highlight-color: transparent;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  overflow-x: clip;
   font-family: var(--sms-font-sans);
   background-color: var(--sms-background);
   color: var(--sms-text-primary);
@@ -86,6 +99,18 @@ body {
   line-height: 1.55;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+img,
+video,
+iframe,
+svg,
+canvas {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
 }
 
 h1, h2, h3, h4, h5, h6,
@@ -124,19 +149,42 @@ a:hover {
   text-decoration: none;
 }
 
-.content-wrapper {
-  background-color: var(--sms-background);
+.page-content {
+  width: 100%;
+  max-width: 100%;
   min-width: 0;
 }
 
+.content-wrapper {
+  background-color: var(--sms-background);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.row > [class*="col-"] {
+  min-width: 0;
+}
+
+.card,
 .card-body {
   min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .dataTables_wrapper {
   width: 100%;
+  max-width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+}
+
+.select2-container {
+  max-width: 100% !important;
+}
+
+.fc .fc-toolbar {
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .content {
@@ -820,9 +868,30 @@ a:hover {
   .apple-page-header-glass {
     padding: 0.85rem 1rem;
   }
+  .sms-brand-title,
+  .app-brand-title {
+    max-width: 135px;
+    font-size: 0.9rem;
+  }
   .btn,
   .form-control {
-    min-height: 42px;
+    min-height: 44px;
+  }
+  .btn-sm {
+    min-height: 38px;
+  }
+  .sms-btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .modal-dialog {
+    margin: 0.75rem auto;
+    max-width: calc(100vw - 1.5rem);
+  }
+  .modal-body {
+    max-height: calc(100dvh - 180px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 }
 
@@ -831,6 +900,7 @@ a:hover {
    ========================================================================== */
 .sms-auth-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--sms-background);
   display: flex;
   flex-direction: column;
@@ -864,6 +934,7 @@ a:hover {
 
 .sms-error-page {
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--sms-background);
   display: flex;
   align-items: center;
