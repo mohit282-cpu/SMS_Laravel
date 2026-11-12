@@ -78,10 +78,20 @@ class HealthCheckController extends Controller
             ], 503)->header('Cache-Control', 'no-cache, no-store, must-revalidate');
         }
 
-        return response()->json([
+        $payload = [
             'status' => 'ready',
             'timestamp' => now()->toIso8601String(),
-        ], 200)->header('Cache-Control', 'no-cache, no-store, must-revalidate');
+        ];
+
+        $releaseFile = base_path('.release_sha');
+        if (is_file($releaseFile) && is_readable($releaseFile)) {
+            $releaseSha = trim((string) file_get_contents($releaseFile));
+            if ($releaseSha !== '') {
+                $payload['release'] = $releaseSha;
+            }
+        }
+
+        return response()->json($payload, 200)->header('Cache-Control', 'no-cache, no-store, must-revalidate');
     }
 
     /**

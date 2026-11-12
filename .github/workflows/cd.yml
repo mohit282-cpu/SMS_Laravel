@@ -28,6 +28,8 @@ concurrency:
 
 permissions:
   contents: read
+  checks: read
+  statuses: read
 
 jobs:
   pre-deploy-validation:
@@ -35,6 +37,35 @@ jobs:
     runs-on: ubuntu-22.04
     timeout-minutes: 15
     steps:
+      - name: Validate Target Commit SHA
+        env:
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          if ! [[ "${SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Invalid commit SHA '${SHA}'."
+            exit 1
+          fi
+          echo "Deploying verified commit SHA: ${SHA}"
+
+      - name: Verify Mandatory CI Integration Gate Passed for Commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          echo "Checking CI Integration Gate status for ${REPO}@${SHA}..."
+          CONCLUSION=$(gh api "/repos/${REPO}/commits/${SHA}/check-runs" \
+            --jq '.check_runs[] | select(.name == "CI Integration Gate" and .status == "completed") | .conclusion' \
+            | head -n 1 || true)
+
+          if [ "${CONCLUSION}" != "success" ]; then
+            echo "::error::Commit ${SHA} has not passed 'CI Integration Gate' (found: '${CONCLUSION:-none}'). Aborting deployment of untested commit."
+            exit 1
+          fi
+          echo "Verified: 'CI Integration Gate' passed for commit ${SHA}."
+
       - name: Checkout Source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
@@ -45,9 +76,12 @@ jobs:
           extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, gmp
           coverage: none
           tools: composer:v2
+          cache: composer
 
-      - name: Install Production Composer Dependencies
+      - name: Validate & Install Production Composer Dependencies
         run: |
+          set -euo pipefail
+          composer validate --strict
           composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
 
       - name: Set up Node.js 14 for Legacy Build
@@ -58,27 +92,35 @@ jobs:
 
       - name: Build Production Assets
         run: |
+          set -euo pipefail
           npm ci
           npm run prod
 
-      - name: Verify Asset Integrity
+      - name: Verify Asset & Release Manifest Integrity
         run: |
           set -euo pipefail
           test -f public/js/app.js || { echo "::error::public/js/app.js missing"; exit 1; }
           test -f public/css/app.css || { echo "::error::public/css/app.css missing"; exit 1; }
           test -f public/mix-manifest.json || { echo "::error::public/mix-manifest.json missing"; exit 1; }
+          test -f database/data/nepal_locations.json || { echo "::error::database/data/nepal_locations.json missing"; exit 1; }
+          node -e "const m = require('./public/mix-manifest.json'); if (!m['/js/app.js'] || !m['/css/app.css']) { console.error('Invalid mix-manifest.json'); process.exit(1); }"
 
       - name: Package Release Archive (Explicit Allowlist Manifest)
+        env:
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           mkdir -p release-dist
-          TAR_FILE="release-dist/release-${{ github.sha }}.tar.gz"
+          printf '%s\n' "${SHA}" > .release_sha
+          TAR_FILE="release-dist/release-${SHA}.tar.gz"
 
-          # Use explicit allowlist of application trees required in production
+          # Explicit production allowlist (excludes .env, tests, logs, node_modules, git metadata)
           tar -czf "${TAR_FILE}" \
+            .release_sha \
             app \
             bootstrap \
             config \
+            database/data \
             database/migrations \
             database/seeders \
             public \
@@ -90,10 +132,9 @@ jobs:
             composer.json \
             composer.lock
 
-          # Generate cryptographic SHA-256 checksum
           cd release-dist
-          sha256sum "release-${{ github.sha }}.tar.gz" > "release-${{ github.sha }}.tar.gz.sha256"
-          cat "release-${{ github.sha }}.tar.gz.sha256"
+          sha256sum "release-${SHA}.tar.gz" > "release-${SHA}.tar.gz.sha256"
+          cat "release-${SHA}.tar.gz.sha256"
           cd ..
 
       - name: Upload Release Artifact and Checksum
@@ -103,6 +144,7 @@ jobs:
           path: |
             release-dist/release-${{ github.sha }}.tar.gz
             release-dist/release-${{ github.sha }}.tar.gz.sha256
+          if-no-files-found: error
           retention-days: 7
 
   deploy:
@@ -122,28 +164,53 @@ jobs:
           path: deploy-dist
 
       - name: Verify Artifact Checksum
+        env:
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           cd deploy-dist
-          sha256sum -c "release-${{ github.sha }}.tar.gz.sha256"
+          test -f "release-${SHA}.tar.gz" || { echo "::error::Missing release archive."; exit 1; }
+          test -f "release-${SHA}.tar.gz.sha256" || { echo "::error::Missing checksum file."; exit 1; }
+          sha256sum -c "release-${SHA}.tar.gz.sha256"
           echo "Release archive cryptographic checksum verified successfully."
 
-      - name: Validate Host Credentials and Target Environment
+      - name: Validate Deployment Credentials, Host Key & Paths
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_SSH_KNOWN_HOSTS: ${{ secrets.DEPLOY_SSH_KNOWN_HOSTS }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
+          DEPLOY_PATH: ${{ vars.DEPLOY_PATH || '/var/www/sms_academy' }}
           APP_URL: ${{ vars.APP_URL }}
           TARGET_ENV: ${{ inputs.target_env || 'staging' }}
         run: |
           set -euo pipefail
-          if [ -z "${DEPLOY_HOST}" ] || [ -z "${DEPLOY_USER}" ]; then
-            echo "::error::DEPLOY_HOST and DEPLOY_USER secrets must be configured in GitHub Environment '${TARGET_ENV}'."
+          if [ -z "${DEPLOY_HOST}" ] || [ -z "${DEPLOY_USER}" ] || [ -z "${DEPLOY_SSH_KEY}" ]; then
+            echo "::error::DEPLOY_HOST, DEPLOY_USER, and DEPLOY_SSH_KEY secrets must be configured in GitHub Environment '${TARGET_ENV}'."
+            exit 1
+          fi
+          if [ -z "${DEPLOY_SSH_KNOWN_HOSTS}" ]; then
+            echo "::error::DEPLOY_SSH_KNOWN_HOSTS secret must be configured in '${TARGET_ENV}' to prevent MITM attacks."
             exit 1
           fi
           if [ -z "${APP_URL}" ]; then
-            echo "::error::APP_URL environment variable is mandatory for health verification."
+            echo "::error::APP_URL environment variable is mandatory for readiness verification."
             exit 1
           fi
+          if ! [[ "${DEPLOY_PORT}" =~ ^[0-9]+$ ]]; then
+            echo "::error::Invalid DEPLOY_PORT '${DEPLOY_PORT}'."
+            exit 1
+          fi
+          if ! [[ "${DEPLOY_PATH}" =~ ^/[A-Za-z0-9/_-]+$ ]] || [ "${DEPLOY_PATH}" = "/" ]; then
+            echo "::error::Invalid DEPLOY_PATH '${DEPLOY_PATH}'. Must be a safe non-root absolute path."
+            exit 1
+          fi
+
+          mkdir -p "${HOME}/.ssh"
+          chmod 700 "${HOME}/.ssh"
+          printf '%s\n' "${DEPLOY_SSH_KNOWN_HOSTS}" > "${HOME}/.ssh/known_hosts"
+          chmod 600 "${HOME}/.ssh/known_hosts"
 
       - name: Configure SSH Agent
         uses: webfactory/ssh-agent@dc588b651fe13675774614f8e6a936a468676387 # v0.9.0
@@ -154,22 +221,26 @@ jobs:
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ vars.DEPLOY_PORT || '22' }}
           TARGET_DIR: ${{ vars.DEPLOY_PATH || '/var/www/sms_academy' }}
+          KEEP_RELEASES: ${{ vars.KEEP_RELEASES || '5' }}
           APP_URL: ${{ vars.APP_URL }}
           MAINTENANCE: ${{ inputs.enable_maintenance }}
           MIGRATIONS: ${{ inputs.run_migrations }}
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
+          SSH_OPTS=(-o StrictHostKeyChecking=yes -o "UserKnownHostsFile=${HOME}/.ssh/known_hosts" -o BatchMode=yes -o ConnectTimeout=15)
+
           echo "Transferring release ${SHA} to ${DEPLOY_USER}@${DEPLOY_HOST}..."
+          scp -P "${DEPLOY_PORT}" "${SSH_OPTS[@]}" \
+            "deploy-dist/release-${SHA}.tar.gz" \
+            "deploy-dist/release-${SHA}.tar.gz.sha256" \
+            "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
 
-          # Transfer release archive and checksum to host /tmp
-          scp deploy-dist/release-${SHA}.tar.gz deploy-dist/release-${SHA}.tar.gz.sha256 \
-              "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
-
-          # Execute remote deployment script with automated failure trap, in-band health check, and rollback
-          ssh -T "${DEPLOY_USER}@${DEPLOY_HOST}" \
+          ssh -T -p "${DEPLOY_PORT}" "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
             TARGET_DIR="${TARGET_DIR}" \
+            KEEP_RELEASES="${KEEP_RELEASES}" \
             APP_URL="${APP_URL}" \
             MAINTENANCE="${MAINTENANCE}" \
             MIGRATIONS="${MIGRATIONS}" \
@@ -177,12 +248,46 @@ jobs:
             bash -s <<'REMOTE_SCRIPT'
             set -euo pipefail
 
-            TARGET_DIR="${TARGET_DIR:-/var/www/sms_academy}"
-            MAINTENANCE="${MAINTENANCE:-true}"
-            MIGRATIONS="${MIGRATIONS:-true}"
-            SHA="${SHA}"
-            APP_URL="${APP_URL}"
+            if ! [[ "${SHA}" =~ ^[0-9a-f]{40}$ ]]; then
+              echo "::error::Invalid SHA on remote host."
+              exit 1
+            fi
+            if ! [[ "${TARGET_DIR}" =~ ^/[A-Za-z0-9/_-]+$ ]] || [ "${TARGET_DIR}" = "/" ]; then
+              echo "::error::Invalid TARGET_DIR on remote host."
+              exit 1
+            fi
+            if ! [[ "${KEEP_RELEASES}" =~ ^[0-9]+$ ]] || [ "${KEEP_RELEASES}" -lt 1 ]; then
+              KEEP_RELEASES=5
+            fi
+
             RELEASE_DIR="${TARGET_DIR}/releases/${SHA}"
+
+            probe_readiness() {
+              local url="$1"
+              local expected_sha="$2"
+              local max_attempts=6
+              local interval=5
+              local attempt=1
+              while [ "${attempt}" -le "${max_attempts}" ]; do
+                local resp body code status rel
+                resp=$(curl -s -S -w "\n%{http_code}" --max-time 15 "${url}/health/readiness" || true)
+                body=$(printf '%s\n' "${resp}" | sed '$d')
+                code=$(printf '%s\n' "${resp}" | tail -n 1)
+                status=$(printf '%s\n' "${body}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
+                rel=$(printf '%s\n' "${body}" | grep -o '"release"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
+
+                echo "Readiness probe attempt ${attempt}/${max_attempts}: HTTP=${code}, status=${status}, release=${rel:-none}"
+                if [ "${code}" = "200" ] && { [ "${status}" = "ready" ] || [ "${status}" = "healthy" ]; }; then
+                  if [ -z "${expected_sha}" ] || [ -z "${rel}" ] || [ "${rel}" = "${expected_sha}" ]; then
+                    return 0
+                  fi
+                  echo "Release mismatch: expected '${expected_sha}', got '${rel}'."
+                fi
+                attempt=$((attempt + 1))
+                sleep "${interval}"
+              done
+              return 1
+            }
 
             # 1. Verify incoming archive on server
             cd /tmp
@@ -192,15 +297,15 @@ jobs:
             PREVIOUS_RELEASE=""
             if [ -L "${TARGET_DIR}/current" ]; then
               PREVIOUS_RELEASE="$(readlink -f "${TARGET_DIR}/current")"
-              echo "Identified current release before deployment: ${PREVIOUS_RELEASE}"
+              echo "Active release before deployment: ${PREVIOUS_RELEASE}"
             fi
 
-            # 3. Setup Error Trap for Automatic Rollback
+            # 3. Error trap for automated application rollback (never runs migrate:rollback)
             rollback_handler() {
               EXIT_STATUS=$?
               echo "::error::Remote deployment failed with exit code ${EXIT_STATUS}!"
               if [ -n "${PREVIOUS_RELEASE}" ] && [ -d "${PREVIOUS_RELEASE}" ]; then
-                echo "Initiating automated rollback to previous release: ${PREVIOUS_RELEASE}..."
+                echo "Rolling back symlink to previous release: ${PREVIOUS_RELEASE}..."
                 ln -sfn "${PREVIOUS_RELEASE}" "${TARGET_DIR}/current"
                 cd "${PREVIOUS_RELEASE}"
                 php artisan config:cache || true
@@ -211,119 +316,123 @@ jobs:
                 fi
                 sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
 
-                echo "Verifying restored previous release health..."
-                RESTORE_HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 15 "${APP_URL}/health/readiness" || true)
-                echo "Rolled back release readiness HTTP code: ${RESTORE_HTTP_CODE}"
-                echo "Automated rollback completed successfully."
+                PREV_SHA=""
+                if [ -f "${PREVIOUS_RELEASE}/.release_sha" ]; then
+                  PREV_SHA=$(cat "${PREVIOUS_RELEASE}/.release_sha" | tr -d '[:space:]')
+                fi
+                if ! probe_readiness "${APP_URL}" "${PREV_SHA}"; then
+                  echo "::error::CRITICAL: Rollback readiness check FAILED for ${PREVIOUS_RELEASE}!"
+                  rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
+                  exit 1
+                fi
+                echo "Automated rollback verified healthy for ${PREVIOUS_RELEASE}."
               else
-                echo "Warning: No previous release directory found to roll back to."
+                echo "::error::No previous release directory found to roll back to."
                 if [ -d "${RELEASE_DIR}" ]; then
                   cd "${RELEASE_DIR}"
                   php artisan up || true
                 fi
               fi
               rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
-              exit ${EXIT_STATUS}
+              exit "${EXIT_STATUS}"
             }
             trap 'rollback_handler' ERR
 
-            # 4. Prepare release directory
+            # 4. Extract into new release directory
             mkdir -p "${RELEASE_DIR}"
             tar -xzf "/tmp/release-${SHA}.tar.gz" -C "${RELEASE_DIR}"
             rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
 
+            # Validate extracted package
+            test -f "${RELEASE_DIR}/artisan"
+            test -f "${RELEASE_DIR}/vendor/autoload.php"
+            test -f "${RELEASE_DIR}/public/mix-manifest.json"
+            test -f "${RELEASE_DIR}/.release_sha"
+
             # 5. Link shared persistent storage and environment
             mkdir -p "${TARGET_DIR}/shared/storage"
+            test -f "${TARGET_DIR}/shared/.env"
             ln -sfn "${TARGET_DIR}/shared/storage" "${RELEASE_DIR}/storage"
             ln -sfn "${TARGET_DIR}/shared/.env" "${RELEASE_DIR}/.env"
 
             cd "${RELEASE_DIR}"
+            chmod -R ug+rwX bootstrap/cache || true
 
-            # 6. Database backup before migrations
+            # 6. Pre-migration database backup
             if [ "${MIGRATIONS}" = "true" ]; then
-              echo "Executing automated pre-migration database snapshot..."
+              echo "Executing pre-migration database snapshot..."
               php artisan db:backup --compress
             fi
 
-            # 7. Enable Maintenance Mode
+            # 7. Maintenance mode
             if [ "${MAINTENANCE}" = "true" ]; then
-              echo "Enabling maintenance mode..."
               php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60
             fi
 
-            # 8. Execute approved migrations
+            # 8. Run pending migrations
             if [ "${MIGRATIONS}" = "true" ]; then
-              echo "Executing pending database migrations..."
               php artisan migrate --force
             fi
 
-            # 9. Warm up production caches
+            # 9. Warm production caches
             php artisan config:cache
             php artisan route:cache
             php artisan view:cache
 
-            # 10. Atomic symlink switch to activate new release
+            # 10. Atomic symlink switch
             ln -sfn "${RELEASE_DIR}" "${TARGET_DIR}/current"
-            echo "Activated release ${SHA} via atomic symlink."
 
-            # 11. Exit maintenance mode
+            # 11. Reload PHP-FPM safely
+            sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+
+            # 12. Exit maintenance mode
             if [ "${MAINTENANCE}" = "true" ]; then
               php artisan up
             fi
 
-            # 12. Reload PHP-FPM / OPcache
-            sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
-
-            # 13. Perform in-band Health Check Verification while rollback trap is still active
-            echo "Performing in-band release readiness check at ${APP_URL}/health/readiness..."
-            HEALTH_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 20 "${APP_URL}/health/readiness")
-            HEALTH_BODY=$(echo "${HEALTH_RESPONSE}" | sed '$d')
-            HEALTH_CODE=$(echo "${HEALTH_RESPONSE}" | tail -n 1)
-
-            echo "Health check HTTP response code: ${HEALTH_CODE}"
-            echo "Health check response payload: ${HEALTH_BODY}"
-
-            if [ "${HEALTH_CODE}" -ne 200 ]; then
-              echo "Health probe failed with HTTP ${HEALTH_CODE}."
+            # 13. In-band bounded-retry readiness verification
+            if ! probe_readiness "${APP_URL}" "${SHA}"; then
+              echo "::error::In-band readiness verification failed for release ${SHA}."
               false
             fi
 
-            HEALTH_STATUS=$(echo "${HEALTH_BODY}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
-            if [ "${HEALTH_STATUS}" != "ready" ] && [ "${HEALTH_STATUS}" != "healthy" ]; then
-              echo "Health probe status '${HEALTH_STATUS}' does not indicate readiness."
-              false
-            fi
-
-            echo "In-band health check PASSED: New release ${SHA} is confirmed healthy and serving traffic."
-
-            # 14. Retention of older releases (keep last 5)
-            echo "Pruning older releases (retaining last 5 releases)..."
+            # 14. Prune old releases (keep last KEEP_RELEASES)
             cd "${TARGET_DIR}/releases"
-            ls -1dt */ 2>/dev/null | tail -n +6 | xargs rm -rf 2>/dev/null || true
+            ls -1dt */ 2>/dev/null | tail -n +"$((KEEP_RELEASES + 1))" | xargs -r rm -rf || true
 
-            # Cancel error trap on verified success
             trap - ERR
-            echo "Deployment of release ${SHA} fully verified and completed successfully."
+            echo "Deployment of release ${SHA} fully verified and completed."
           REMOTE_SCRIPT
 
       - name: External Gateway Health Check Verification
         env:
           APP_URL: ${{ vars.APP_URL }}
+          SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
           HEALTH_URL="${APP_URL}/health/readiness"
-          echo "Performing secondary external health probe at ${HEALTH_URL}..."
+          max_attempts=6
+          interval=5
+          attempt=1
 
-          HTTP_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 20 "${HEALTH_URL}")
-          HTTP_BODY=$(echo "${HTTP_RESPONSE}" | sed '$d')
-          HTTP_CODE=$(echo "${HTTP_RESPONSE}" | tail -n 1)
+          while [ "${attempt}" -le "${max_attempts}" ]; do
+            HTTP_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 15 "${HEALTH_URL}" || true)
+            HTTP_BODY=$(printf '%s\n' "${HTTP_RESPONSE}" | sed '$d')
+            HTTP_CODE=$(printf '%s\n' "${HTTP_RESPONSE}" | tail -n 1)
+            STATUS=$(printf '%s\n' "${HTTP_BODY}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
+            RELEASE=$(printf '%s\n' "${HTTP_BODY}" | grep -o '"release"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
 
-          echo "Response HTTP Code: ${HTTP_CODE}"
-          echo "Response Payload: ${HTTP_BODY}"
+            echo "External probe ${attempt}/${max_attempts}: HTTP=${HTTP_CODE}, status=${STATUS}, release=${RELEASE:-none}"
+            if [ "${HTTP_CODE}" = "200" ] && { [ "${STATUS}" = "ready" ] || [ "${STATUS}" = "healthy" ]; }; then
+              if [ -z "${RELEASE}" ] || [ "${RELEASE}" = "${SHA}" ]; then
+                echo "External health check PASSED for release ${SHA}."
+                exit 0
+              fi
+              echo "Release mismatch: expected ${SHA}, got ${RELEASE}."
+            fi
+            attempt=$((attempt + 1))
+            sleep "${interval}"
+          done
 
-          if [ "${HTTP_CODE}" -ne 200 ]; then
-            echo "::error::External health check failed with HTTP ${HTTP_CODE} at ${HEALTH_URL}."
-            exit 1
-          fi
-
-          echo "External health check PASSED: Gateway confirmed traffic routing."
+          echo "::error::External health check failed at ${HEALTH_URL}."
+          exit 1

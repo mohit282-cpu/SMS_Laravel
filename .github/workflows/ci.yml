@@ -74,9 +74,6 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
-      - name: Composer security audit gate
-        run: php .github/scripts/audit-checker.php
-
       - name: PHP syntax lint
         run: |
           set -euo pipefail
@@ -185,7 +182,9 @@ jobs:
           set -euo pipefail
           test -f public/js/app.js || { echo "::error::public/js/app.js is missing"; exit 1; }
           test -f public/css/app.css || { echo "::error::public/css/app.css is missing"; exit 1; }
-          ls -lh public/js/app.js public/css/app.css
+          test -f public/mix-manifest.json || { echo "::error::public/mix-manifest.json is missing"; exit 1; }
+          node -e "const m = require('./public/mix-manifest.json'); if (!m['/js/app.js'] || !m['/css/app.css']) { console.error('mix-manifest.json missing expected entries'); process.exit(1); }"
+          ls -lh public/js/app.js public/css/app.css public/mix-manifest.json
 
       - name: Upload compiled assets
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -221,21 +220,51 @@ jobs:
           npm --version
           node .github/scripts/npm-audit-checker.js
 
+  composer-audit:
+    name: Composer security audit
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Set up PHP 8.2
+        uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, json, zip
+          coverage: none
+          tools: composer:v2
+          cache: composer
+
+      - name: Validate Composer manifest
+        run: composer validate --strict
+
+      - name: Run Composer security audit gate
+        run: php .github/scripts/audit-checker.php
+
+      - name: Composer diagnostic output on failure
+        if: failure()
+        run: composer audit --locked --format=plain || true
+
   integration-gate:
     name: CI Integration Gate
     runs-on: ubuntu-22.04
     timeout-minutes: 5
-    needs: [php-tests, frontend-build, npm-audit]
+    needs: [php-tests, frontend-build, composer-audit, npm-audit]
     if: always()
     steps:
       - name: Verify mandatory CI checks succeeded
         run: |
           if [ "${{ needs.php-tests.result }}" != "success" ] || \
              [ "${{ needs.frontend-build.result }}" != "success" ] || \
+             [ "${{ needs.composer-audit.result }}" != "success" ] || \
              [ "${{ needs.npm-audit.result }}" != "success" ]; then
             echo "::error::One or more mandatory CI checks failed or were skipped."
             echo "php-tests: ${{ needs.php-tests.result }}"
             echo "frontend-build: ${{ needs.frontend-build.result }}"
+            echo "composer-audit: ${{ needs.composer-audit.result }}"
             echo "npm-audit: ${{ needs.npm-audit.result }}"
             exit 1
           fi
