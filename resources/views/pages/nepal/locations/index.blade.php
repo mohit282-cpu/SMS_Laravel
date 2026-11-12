@@ -30,8 +30,9 @@
     <div class="col-md-3 col-6 mb-2">
         <div class="card sms-card h-100">
             <div class="card-body">
-                <div class="text-muted small">{{ __('Dataset Status') }}</div>
-                <div class="h6 mb-0 mt-1">
+                <div class="text-muted small">{{ __('Dataset Status & Wards') }}</div>
+                <div class="h5 mb-1">{{ number_format($report['total_wards']['actual']) }} / {{ number_format($report['total_wards']['expected']) }} {{ __('Wards') }}</div>
+                <div class="h6 mb-0">
                     @if($report['is_complete_official_dataset'])
                         <span class="badge badge-success">{{ __('Verified Complete (7/77/753)') }}</span>
                     @else
@@ -98,11 +99,14 @@
                 <thead>
                     <tr>
                         <th>#</th>
+                        <th>{{ __('Code') }}</th>
                         <th>{{ __('Local Government (EN)') }}</th>
                         <th>{{ __('नेपाली नाम') }}</th>
                         <th>{{ __('Type') }}</th>
+                        <th>{{ __('Wards') }}</th>
                         <th>{{ __('District') }}</th>
                         <th>{{ __('Province') }}</th>
+                        <th>{{ __('Source / Verified') }}</th>
                         <th>{{ __('Status') }}</th>
                         @if(Qs::userIsSuperAdmin())
                             <th>{{ __('Action') }}</th>
@@ -113,11 +117,19 @@
                     @forelse($localLevels as $index => $local)
                         <tr>
                             <td>{{ $localLevels->firstItem() + $index }}</td>
+                            <td><code>{{ $local->code ?: '-' }}</code></td>
                             <td>{{ $local->name }}</td>
                             <td>{{ $local->name_ne }}</td>
                             <td>{{ ucwords(str_replace('_', ' ', $local->level_type)) }}</td>
+                            <td><span class="badge badge-light">{{ $local->total_wards }}</span></td>
                             <td>{{ $local->district ? $local->district->name : '-' }}</td>
                             <td>{{ ($local->district && $local->district->province) ? $local->district->province->name : '-' }}</td>
+                            <td class="small text-muted">
+                                {{ \Illuminate\Support\Str::limit($local->data_source ?: '-', 36) }}
+                                @if($local->effective_date)
+                                    <br><span>{{ $local->effective_date }}</span>
+                                @endif
+                            </td>
                             <td>
                                 @if($local->is_active)
                                     <span class="badge badge-success">{{ __('Active') }}</span>
@@ -138,7 +150,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="{{ Qs::userIsSuperAdmin() ? 8 : 7 }}" class="text-center text-muted">{{ __('No matching locations found.') }}</td>
+                            <td colspan="{{ Qs::userIsSuperAdmin() ? 11 : 10 }}" class="text-center text-muted">{{ __('No matching locations found.') }}</td>
                         </tr>
                     @endforelse
                 </tbody>

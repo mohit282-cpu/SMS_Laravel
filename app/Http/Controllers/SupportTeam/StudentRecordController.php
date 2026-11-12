@@ -239,12 +239,6 @@ class StudentRecordController extends Controller
             if ($req->filled('parent_relationship')) {
                 $sr['parent_relationship'] = ucwords(strtolower(trim($req->parent_relationship)));
             }
-            if (!empty($sr['local_level_id']) && empty($sr['municipality'])) {
-                $localLevel = \App\Models\NepalLocalLevel::find($sr['local_level_id']);
-                if ($localLevel) {
-                    $sr['municipality'] = $localLevel->name;
-                }
-            }
 
             $this->student->createRecord($sr);
 
@@ -378,15 +372,7 @@ class StudentRecordController extends Controller
             }
         }
 
-        $this->user->update($sr->user->id, $d); // Update User Details
-
         $srec = $req->only(Qs::getStudentData());
-        if (!empty($srec['local_level_id']) && empty($srec['municipality'])) {
-            $localLevel = \App\Models\NepalLocalLevel::find($srec['local_level_id']);
-            if ($localLevel) {
-                $srec['municipality'] = $localLevel->name;
-            }
-        }
 
         if (!empty($srec['section_id']) && !empty($srec['my_class_id'])) {
             $validSection = \App\Models\Section::where('id', $srec['section_id'])->where('my_class_id', $srec['my_class_id'])->exists();
@@ -395,19 +381,20 @@ class StudentRecordController extends Controller
             }
         }
 
-        $this->student->updateRecord($sr_id, $srec); // Update St Rec
+        DB::transaction(function () use ($sr, $sr_id, $d, $srec) {
+            $this->user->update($sr->user->id, $d); // Update User Details
+            $this->student->updateRecord($sr_id, $srec); // Update St Rec
 
-        // Preserve historical results across class/section transfers without destructive purge
-
-        app(\App\Services\AuditLogService::class)->log(
-            'student.update',
-            'students',
-            "Updated student profile and record for '{$sr->user->name}' (ID: {$sr->user->id})",
-            $sr->user,
-            [],
-            array_merge($d, $srec),
-            'success'
-        );
+            app(\App\Services\AuditLogService::class)->log(
+                'student.update',
+                'students',
+                "Updated student profile and record for '{$sr->user->name}' (ID: {$sr->user->id})",
+                $sr->user,
+                [],
+                array_merge($d, $srec),
+                'success'
+            );
+        });
 
         return Qs::jsonUpdateOk();
     }

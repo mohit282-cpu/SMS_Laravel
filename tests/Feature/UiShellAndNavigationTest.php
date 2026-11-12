@@ -146,6 +146,7 @@ class UiShellAndNavigationTest extends TestCase
         $admin = $this->makeUser('super_admin');
         $bagmati = \App\Models\NepalProvince::where('code', 'P3')->firstOrFail();
         $kathmandu = \App\Models\NepalDistrict::where('province_id', $bagmati->id)->where('name', 'Kathmandu')->firstOrFail();
+        $kmc = \App\Models\NepalLocalLevel::where('district_id', $kathmandu->id)->where('name', 'Kathmandu Metropolitan City')->firstOrFail();
         $myClass = \App\Models\MyClass::firstOrFail();
         $section = \App\Models\Section::where('my_class_id', $myClass->id)->firstOrFail();
         $nal = \App\Models\Nationality::firstOrFail();
@@ -158,6 +159,7 @@ class UiShellAndNavigationTest extends TestCase
             'nal_id' => $nal->id,
             'province_id' => $bagmati->id,
             'district_id' => $kathmandu->id,
+            'local_level_id' => $kmc->id,
             'ward_no' => 10,
             'tole' => 'New Baneshwor',
             'street' => 'Madan Bhandari Path',
@@ -172,6 +174,7 @@ class UiShellAndNavigationTest extends TestCase
         $record = \App\Models\StudentRecord::where('user_id', $studentUser->id)->firstOrFail();
         $this->assertEquals($bagmati->id, $record->province_id);
         $this->assertEquals($kathmandu->id, $record->district_id);
+        $this->assertEquals($kmc->id, $record->local_level_id);
         $this->assertEquals(10, $record->ward_no);
         $this->assertEquals('New Baneshwor', $record->tole);
         $this->assertEquals('Madan Bhandari Path', $record->street);

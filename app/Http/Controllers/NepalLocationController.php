@@ -103,10 +103,13 @@ class NepalLocationController extends Controller
     public function wards(Request $request): JsonResponse
     {
         $localLevelId = (int) $request->query('local_level_id', 0);
-        $localLevel = NepalLocalLevel::find($localLevelId);
+        if ($localLevelId < 1) {
+            return response()->json(['data' => [], 'message' => __('Invalid local government ID.')], 422);
+        }
 
+        $localLevel = NepalLocalLevel::where('is_active', true)->find($localLevelId);
         if (!$localLevel) {
-            return response()->json(['data' => []]);
+            return response()->json(['data' => [], 'message' => __('Local government not found or inactive.')], 404);
         }
 
         $wards = NepalWard::where('local_level_id', $localLevel->id)
@@ -114,7 +117,11 @@ class NepalLocationController extends Controller
             ->orderBy('ward_number')
             ->get(['id', 'ward_number', 'name', 'name_ne']);
 
-        if ($wards->isEmpty() && $localLevel->total_wards > 0) {
+        if ($wards->isNotEmpty()) {
+            return response()->json(['data' => $wards]);
+        }
+
+        if ($localLevel->total_wards >= 1 && $localLevel->total_wards <= 35) {
             $generated = [];
             for ($i = 1; $i <= $localLevel->total_wards; $i++) {
                 $generated[] = [
@@ -126,7 +133,7 @@ class NepalLocationController extends Controller
             return response()->json(['data' => $generated]);
         }
 
-        return response()->json(['data' => $wards]);
+        return response()->json(['data' => [], 'message' => __('Ward data is unavailable for this local government.')]);
     }
 
     public function apiProvinceDistricts(int $province): JsonResponse

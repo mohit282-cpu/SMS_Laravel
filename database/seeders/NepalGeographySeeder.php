@@ -24,7 +24,8 @@ class NepalGeographySeeder extends Seeder
             throw new \RuntimeException('Invalid nepal_locations.json structure.');
         }
 
-        $source = 'Government of Nepal (MoFAGA) Verified Dataset';
+        $source = $payload['metadata']['source'] ?? 'Government of Nepal, MoFAGA & Department of Postal Services';
+        $verifiedDate = $payload['metadata']['verified_date'] ?? null;
 
         foreach ($payload['provinces'] as $pData) {
             $province = NepalProvince::updateOrCreate(
@@ -34,6 +35,7 @@ class NepalGeographySeeder extends Seeder
                     'name' => $pData['name'],
                     'name_ne' => $pData['name_ne'],
                     'is_active' => true,
+                    'effective_date' => $verifiedDate,
                     'data_source' => $source,
                 ]
             );
@@ -45,6 +47,7 @@ class NepalGeographySeeder extends Seeder
                         'name_ne' => $dData['name_ne'],
                         'code' => $dData['code'] ?? null,
                         'is_active' => true,
+                        'effective_date' => $verifiedDate,
                         'data_source' => $source,
                     ]
                 );
@@ -58,6 +61,7 @@ class NepalGeographySeeder extends Seeder
                             'level_type' => $lData['level_type'] ?? 'municipality',
                             'total_wards' => (int) ($lData['total_wards'] ?? 1),
                             'is_active' => true,
+                            'effective_date' => $verifiedDate,
                             'data_source' => $source,
                         ]
                     );

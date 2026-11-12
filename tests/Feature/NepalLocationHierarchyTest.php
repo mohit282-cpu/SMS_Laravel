@@ -178,11 +178,99 @@ class NepalLocationHierarchyTest extends TestCase
         $this->assertEquals(7, $report['provinces']['actual']);
         $this->assertEquals(77, $report['districts']['actual']);
         $this->assertEquals(753, $report['local_levels']['actual']);
+        $this->assertEquals(6743, $report['total_wards']['actual']);
         $this->assertEquals(6, $report['by_type']['metropolitan']['actual']);
         $this->assertEquals(11, $report['by_type']['sub_metropolitan']['actual']);
         $this->assertEquals(276, $report['by_type']['municipality']['actual']);
         $this->assertEquals(460, $report['by_type']['rural_municipality']['actual']);
         $this->assertTrue($report['is_complete_official_dataset']);
+
+        // Verify unique codes and unique (district_id, name) across all 753 local governments
+        $allLocals = NepalLocalLevel::all();
+        $this->assertEquals(753, $allLocals->pluck('code')->filter()->unique()->count());
+        $this->assertEquals(753, $allLocals->map(fn ($l) => $l->district_id . '|' . $l->name)->unique()->count());
+
+        // Independent official reference ward-count fixture checks
+        $expectedWards = [
+            'Kathmandu Metropolitan City' => 32,
+            'Biratnagar Metropolitan City' => 19,
+            'Pokhara Metropolitan City' => 33,
+            'Lalitpur Metropolitan City' => 29,
+            'Bharatpur Metropolitan City' => 29,
+            'Birgunj Metropolitan City' => 32,
+            'Dharan Sub-Metropolitan City' => 20,
+            'Itahari Sub-Metropolitan City' => 20,
+            'Budhanilakantha Municipality' => 13,
+        ];
+        foreach ($expectedWards as $name => $wards) {
+            $local = NepalLocalLevel::where('name', $name)->firstOrFail();
+            $this->assertEquals($wards, $local->total_wards, "Ward count mismatch for {$name}");
+        }
+    }
+
+    public function test_importer_dry_run_makes_no_changes_and_rejects_fake_ward_counts()
+    {
+        $this->artisan('nepal:import-locations', [
+            'file' => database_path('data/nepal_locations.json'),
+            '--dry-run' => true,
+            '--strict-official-counts' => true,
+        ])->assertExitCode(0);
+
+        $this->assertEquals(0, NepalProvince::count());
+
+        $badPath = storage_path('app/test_bad_wards.json');
+        try {
+            File::put($badPath, json_encode([
+                'provinces' => [[
+                    'code' => 'P1',
+                    'name' => 'Koshi Province',
+                    'name_ne' => 'कोशी प्रदेश',
+                    'districts' => [[
+                        'name' => 'Morang',
+                        'name_ne' => 'मोरङ',
+                        'local_levels' => [[
+                            'name' => 'Fake Palika',
+                            'name_ne' => 'नक्कली पालिका',
+                            'level_type' => 'municipality',
+                            'total_wards' => 1, // Invalid < 5
+                        ]],
+                    ]],
+                ]],
+            ]));
+
+            $this->artisan('nepal:import-locations', [
+                'file' => $badPath,
+            ])->assertExitCode(1);
+        } finally {
+            File::delete($badPath);
+        }
+    }
+
+    public function test_inactive_locations_cannot_be_selected_and_ward_endpoint_validates_id()
+    {
+        $this->seed(NepalGeographySeeder::class);
+        $user = $this->makeAuthUser();
+        $service = app(NepalLocationService::class);
+
+        $bagmati = NepalProvince::where('code', 'P3')->firstOrFail();
+        $kathmandu = NepalDistrict::where('province_id', $bagmati->id)->where('name', 'Kathmandu')->firstOrFail();
+        $kmc = NepalLocalLevel::where('district_id', $kathmandu->id)
+            ->where('name', 'Kathmandu Metropolitan City')
+            ->firstOrFail();
+
+        // Ward endpoint returns exact 32 wards for Kathmandu Metropolitan City
+        $res = $this->actingAs($user)->getJson(route('nepal_locations.wards', ['local_level_id' => $kmc->id]));
+        $res->assertStatus(200);
+        $this->assertCount(32, $res->json('data'));
+
+        // Invalid & non-existent IDs
+        $this->actingAs($user)->getJson(route('nepal_locations.wards', ['local_level_id' => 0]))->assertStatus(422);
+        $this->actingAs($user)->getJson(route('nepal_locations.wards', ['local_level_id' => 999999]))->assertStatus(404);
+
+        // Inactive local level rejected for new selection
+        $kmc->is_active = false;
+        $kmc->save();
+        $this->assertNotNull($service->validateHierarchy($bagmati->id, $kathmandu->id, $kmc->id, 10, true));
     }
 
     public function test_rest_api_endpoints_return_expected_hierarchy_and_404_for_invalid_ids()

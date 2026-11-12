@@ -10,7 +10,8 @@
     - **11** Sub-Metropolitan Cities (`sub_metropolitan` / उपमहानगरपालिका)
     - **276** Municipalities (`municipality` / नगरपालिका)
     - **460** Rural Municipalities (`rural_municipality` / गाउँपालिका)
-- **Source:** Government of Nepal / MoFAGA administrative structure.
+  - **6,743** Total Verified Wards (each local government stores its verified `total_wards` count and 5-digit `code`, e.g., Kathmandu Metropolitan City = `32` wards, Biratnagar Metropolitan City = `19` wards, Pokhara Metropolitan City = `33` wards)
+- **Source & Verification:** Government of Nepal, MoFAGA & Department of Postal Services (`https://gpo.gov.np/pages/postal-code-1259614658/`), verified `2026-11-12` (dataset version `2026.11.12`).
 
 ## 2. Database Schema
 - `nepal_provinces`: `id`, `country_code`, `name`, `name_ne`, `code` (unique), `is_active`, `effective_date`, `data_source`, timestamps
@@ -23,7 +24,9 @@
 ```bash
 php artisan migrate
 php artisan db:seed --class=NepalGeographySeeder
-# Or strict CLI import:
+# Dry-run validation without DB writes:
+php artisan nepal:import-locations database/data/nepal_locations.json --dry-run --strict-official-counts
+# Strict CLI import (enforces 7/77/753, 6/11/276/460, 6743 wards, and unique codes):
 php artisan nepal:import-locations database/data/nepal_locations.json --strict-official-counts
 ```
 

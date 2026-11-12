@@ -367,10 +367,12 @@
             var $group = $(this).closest('.sms-nepal-address-group');
             var $district = $group.find('.sms-nepal-district');
             var $local = $group.find('.sms-nepal-local');
+            var $ward = $group.find('.sms-nepal-ward');
             var provinceId = $(this).val();
 
             resetSelect($district, '{{ __('Loading...') }}');
             resetSelect($local, $local.data('placeholder') || 'Select Local Government');
+            resetSelect($ward, $ward.data('placeholder') || 'Select Ward');
 
             if (!provinceId) {
                 resetSelect($district, $district.data('placeholder') || 'Select District');
@@ -395,15 +397,19 @@
                 if ($district.val()) {
                     $district.trigger('change');
                 }
+            }).fail(function() {
+                resetSelect($district, '{{ __('Failed to load districts') }}');
             });
         });
 
         $(document).on('change', '.sms-nepal-district', function() {
             var $group = $(this).closest('.sms-nepal-address-group');
             var $local = $group.find('.sms-nepal-local');
+            var $ward = $group.find('.sms-nepal-ward');
             var districtId = $(this).val();
 
             resetSelect($local, '{{ __('Loading...') }}');
+            resetSelect($ward, $ward.data('placeholder') || 'Select Ward');
 
             if (!districtId) {
                 resetSelect($local, $local.data('placeholder') || 'Select Local Government');
@@ -428,6 +434,8 @@
                 if ($local.val()) {
                     $local.trigger('change');
                 }
+            }).fail(function() {
+                resetSelect($local, '{{ __('Failed to load local governments') }}');
             });
         });
 
@@ -436,17 +444,17 @@
             var $ward = $group.find('.sms-nepal-ward');
             var localLevelId = $(this).val();
 
+            resetSelect($ward, '{{ __('Loading...') }}');
+
             if (!localLevelId) {
+                resetSelect($ward, $ward.data('placeholder') || 'Select Ward');
                 return;
             }
 
             $.getJSON('{{ route('nepal_locations.wards') }}', { local_level_id: localLevelId }, function(res) {
                 var items = res.data || [];
-                if (!items.length) {
-                    return;
-                }
-                var selectedWard = String($ward.attr('data-selected') || $ward.val() || '');
-                resetSelect($ward, $ward.data('placeholder') || 'Select Ward');
+                var selectedWard = String($ward.attr('data-selected') || '');
+                resetSelect($ward, items.length ? ($ward.data('placeholder') || 'Select Ward') : '{{ __('Ward data unavailable') }}');
                 $.each(items, function(_, item) {
                     var wNum = item.ward_number || item.id;
                     var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : (item.name || ('Ward ' + wNum));
@@ -460,6 +468,8 @@
                 if ($ward.hasClass('select2-hidden-accessible')) {
                     $ward.trigger('change.select2');
                 }
+            }).fail(function() {
+                resetSelect($ward, '{{ __('Failed to load wards') }}');
             });
         });
 
