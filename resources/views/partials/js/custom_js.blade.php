@@ -354,6 +354,117 @@
             clearTimeout(dockShrinkTimeout);
             $mobileDock.removeClass('dock-shrunk');
         });
+
+        // Nepal Cascading Address Selector (Province -> District -> Local Government -> Ward)
+        function resetSelect($el, placeholder) {
+            $el.empty().append($('<option>', { value: '', text: placeholder || '' }));
+            if ($el.hasClass('select2-hidden-accessible')) {
+                $el.trigger('change.select2');
+            }
+        }
+
+        $(document).on('change', '.sms-nepal-province', function() {
+            var $group = $(this).closest('.sms-nepal-address-group');
+            var $district = $group.find('.sms-nepal-district');
+            var $local = $group.find('.sms-nepal-local');
+            var provinceId = $(this).val();
+
+            resetSelect($district, $district.data('placeholder') || 'Select District');
+            resetSelect($local, $local.data('placeholder') || 'Select Local Government');
+
+            if (!provinceId) {
+                return;
+            }
+
+            $.getJSON('{{ route('nepal_locations.districts') }}', { province_id: provinceId }, function(res) {
+                var selectedId = String($district.attr('data-selected') || '');
+                $.each(res.data || [], function(_, item) {
+                    var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : item.name;
+                    var $opt = $('<option>', { value: item.id, text: label });
+                    if (selectedId && String(item.id) === selectedId) {
+                        $opt.prop('selected', true);
+                    }
+                    $district.append($opt);
+                });
+                $district.removeAttr('data-selected');
+                if ($district.hasClass('select2-hidden-accessible')) {
+                    $district.trigger('change.select2');
+                }
+                if ($district.val()) {
+                    $district.trigger('change');
+                }
+            });
+        });
+
+        $(document).on('change', '.sms-nepal-district', function() {
+            var $group = $(this).closest('.sms-nepal-address-group');
+            var $local = $group.find('.sms-nepal-local');
+            var districtId = $(this).val();
+
+            resetSelect($local, $local.data('placeholder') || 'Select Local Government');
+
+            if (!districtId) {
+                return;
+            }
+
+            $.getJSON('{{ route('nepal_locations.local_levels') }}', { district_id: districtId }, function(res) {
+                var selectedId = String($local.attr('data-selected') || '');
+                $.each(res.data || [], function(_, item) {
+                    var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : item.name;
+                    var $opt = $('<option>', { value: item.id, text: label });
+                    if (selectedId && String(item.id) === selectedId) {
+                        $opt.prop('selected', true);
+                    }
+                    $local.append($opt);
+                });
+                $local.removeAttr('data-selected');
+                if ($local.hasClass('select2-hidden-accessible')) {
+                    $local.trigger('change.select2');
+                }
+                if ($local.val()) {
+                    $local.trigger('change');
+                }
+            });
+        });
+
+        $(document).on('change', '.sms-nepal-local', function() {
+            var $group = $(this).closest('.sms-nepal-address-group');
+            var $ward = $group.find('.sms-nepal-ward');
+            var localLevelId = $(this).val();
+
+            if (!localLevelId) {
+                return;
+            }
+
+            $.getJSON('{{ route('nepal_locations.wards') }}', { local_level_id: localLevelId }, function(res) {
+                var items = res.data || [];
+                if (!items.length) {
+                    return;
+                }
+                var selectedWard = String($ward.attr('data-selected') || $ward.val() || '');
+                resetSelect($ward, $ward.data('placeholder') || 'Select Ward');
+                $.each(items, function(_, item) {
+                    var wNum = item.ward_number || item.id;
+                    var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : (item.name || ('Ward ' + wNum));
+                    var $opt = $('<option>', { value: wNum, text: label });
+                    if (selectedWard && String(wNum) === selectedWard) {
+                        $opt.prop('selected', true);
+                    }
+                    $ward.append($opt);
+                });
+                $ward.removeAttr('data-selected');
+                if ($ward.hasClass('select2-hidden-accessible')) {
+                    $ward.trigger('change.select2');
+                }
+            });
+        });
+
+        // Trigger initial cascade if province is preselected (e.g. old() input after validation)
+        $('.sms-nepal-province').each(function() {
+            if ($(this).val()) {
+                $(this).trigger('change');
+            }
+        });
     });
 
 </script>

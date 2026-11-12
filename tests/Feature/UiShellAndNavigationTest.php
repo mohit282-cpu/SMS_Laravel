@@ -123,6 +123,8 @@ class UiShellAndNavigationTest extends TestCase
 
     public function test_admit_student_page_renders_with_accessible_labels_and_design_system()
     {
+        $this->seed(\Database\Seeders\NepalGeographySeeder::class);
+
         $admin = $this->makeUser('super_admin');
         $response = $this->actingAs($admin)->get(route('students.create'));
 
@@ -130,9 +132,49 @@ class UiShellAndNavigationTest extends TestCase
         $response->assertSee('sms-card', false);
         $response->assertSee('sms-info-callout', false);
         $response->assertSee('for="student_name"', false);
-        $response->assertSee('for="state_id"', false);
-        $response->assertSee('for="lga_id"', false);
+        $response->assertSee('for="nepal_addr_main_province"', false);
+        $response->assertSee('for="nepal_addr_main_district"', false);
+        $response->assertSee('Koshi Province', false);
+        $response->assertDontSee('name="state_id"', false);
         $response->assertDontSee('apple-liquid-theme.css', false);
+    }
+
+    public function test_admit_student_stores_nepal_location_fields()
+    {
+        $this->seed(\Database\Seeders\NepalGeographySeeder::class);
+
+        $admin = $this->makeUser('super_admin');
+        $bagmati = \App\Models\NepalProvince::where('code', 'P3')->firstOrFail();
+        $kathmandu = \App\Models\NepalDistrict::where('province_id', $bagmati->id)->where('name', 'Kathmandu')->firstOrFail();
+        $myClass = \App\Models\MyClass::firstOrFail();
+        $section = \App\Models\Section::where('my_class_id', $myClass->id)->firstOrFail();
+        $nal = \App\Models\Nationality::firstOrFail();
+
+        $unique = mt_rand(10000, 99999);
+        $response = $this->actingAs($admin)->post(route('students.store'), [
+            'name' => 'Aarav Adhikari ' . $unique,
+            'address' => 'Baneshwor, Kathmandu',
+            'gender' => 'Male',
+            'nal_id' => $nal->id,
+            'province_id' => $bagmati->id,
+            'district_id' => $kathmandu->id,
+            'ward_no' => 10,
+            'tole' => 'New Baneshwor',
+            'street' => 'Madan Bhandari Path',
+            'my_class_id' => $myClass->id,
+            'section_id' => $section->id,
+            'year_admitted' => '2083',
+        ]);
+
+        $response->assertStatus(200);
+
+        $studentUser = \App\User::where('name', 'Aarav Adhikari ' . $unique)->firstOrFail();
+        $record = \App\Models\StudentRecord::where('user_id', $studentUser->id)->firstOrFail();
+        $this->assertEquals($bagmati->id, $record->province_id);
+        $this->assertEquals($kathmandu->id, $record->district_id);
+        $this->assertEquals(10, $record->ward_no);
+        $this->assertEquals('New Baneshwor', $record->tole);
+        $this->assertEquals('Madan Bhandari Path', $record->street);
     }
 }
 

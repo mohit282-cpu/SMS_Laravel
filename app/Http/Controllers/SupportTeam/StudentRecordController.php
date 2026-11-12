@@ -89,6 +89,7 @@ class StudentRecordController extends Controller
         $data['parents'] = $this->user->getUserByType('parent');
         $data['dorms'] = $this->student->getAllDorms();
         $data['states'] = $this->loc->getStates();
+        $data['provinces'] = \App\Models\NepalProvince::where('is_active', true)->orderBy('id')->get();
         $data['nationals'] = $this->loc->getAllNationals();
         $data['blood_groups'] = \App\Models\BloodGroup::all();
         return view('pages.support_team.students.add', $data);
@@ -238,6 +239,12 @@ class StudentRecordController extends Controller
             if ($req->filled('parent_relationship')) {
                 $sr['parent_relationship'] = ucwords(strtolower(trim($req->parent_relationship)));
             }
+            if (!empty($sr['local_level_id']) && empty($sr['municipality'])) {
+                $localLevel = \App\Models\NepalLocalLevel::find($sr['local_level_id']);
+                if ($localLevel) {
+                    $sr['municipality'] = $localLevel->name;
+                }
+            }
 
             $this->student->createRecord($sr);
 
@@ -342,6 +349,7 @@ class StudentRecordController extends Controller
         $data['parents'] = $this->user->getUserByType('parent');
         $data['dorms'] = $this->student->getAllDorms();
         $data['states'] = $this->loc->getStates();
+        $data['provinces'] = \App\Models\NepalProvince::where('is_active', true)->orderBy('id')->get();
         $data['nationals'] = $this->loc->getAllNationals();
         return view('pages.support_team.students.edit', $data);
     }

@@ -62,7 +62,7 @@
             </div>
 
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label for="student_dob">{{ __('Date of Birth (BS)') }}</label>
                         <input id="student_dob" name="dob" value="{{ old('dob') }}" type="text" class="form-control nepali-date" placeholder="YYYY-MM-DD (BS)">
@@ -70,39 +70,29 @@
                     </div>
                 </div>
 
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label for="nal_id">{{ __('Nationality') }} <span class="sms-required-mark" aria-hidden="true">*</span></label>
+                        @php
+                            $defaultNalId = old('nal_id');
+                            if (!$defaultNalId && isset($nationals)) {
+                                $nepalNal = $nationals->first(function ($n) {
+                                    return stripos($n->name, 'nepal') !== false;
+                                });
+                                $defaultNalId = $nepalNal ? $nepalNal->id : null;
+                            }
+                        @endphp
                         <select data-placeholder="{{ __('Choose...') }}" required name="nal_id" id="nal_id" class="select-search form-control">
                             <option value=""></option>
                             @foreach($nationals as $nal)
-                                <option {{ (old('nal_id') == $nal->id ? 'selected' : '') }} value="{{ $nal->id }}">{{ $nal->name }}</option>
+                                <option {{ ((string) $defaultNalId === (string) $nal->id ? 'selected' : '') }} value="{{ $nal->id }}">{{ $nal->name }}</option>
                             @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="state_id">{{ __('Province / State') }} <span class="sms-required-mark" aria-hidden="true">*</span></label>
-                        <select onchange="getLGA(this.value)" required data-placeholder="{{ __('Choose..') }}" class="select-search form-control" name="state_id" id="state_id">
-                            <option value=""></option>
-                            @foreach($states as $st)
-                                <option {{ (old('state_id') == $st->id ? 'selected' : '') }} value="{{ $st->id }}">{{ $st->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
-
-                <div class="col-md-3">
-                    <div class="form-group">
-                        <label for="lga_id">{{ __('District / Local Level') }} <span class="sms-required-mark" aria-hidden="true">*</span></label>
-                        <select required data-placeholder="{{ __('Select Province / State First') }}" class="select-search form-control" name="lga_id" id="lga_id">
-                            <option value=""></option>
                         </select>
                     </div>
                 </div>
             </div>
+
+            <x-nepal-address-selector :provinces="$provinces ?? null" :required="true" />
 
             <div class="row">
                 <div class="col-md-6">

@@ -7,6 +7,7 @@
     'tole' => null,
     'street' => null,
     'provinces' => null,
+    'required' => false,
 ])
 
 @php
@@ -27,8 +28,8 @@
     </div>
 
     <div class="col-md-4 mb-3">
-        <label for="{{ $uid }}_province">{{ __('Province (प्रदेश)') }}</label>
-        <select name="{{ $pField }}" id="{{ $uid }}_province" class="form-control sms-nepal-province" data-target-district="#{{ $uid }}_district">
+        <label for="{{ $uid }}_province">{{ __('Province (प्रदेश)') }}@if($required) <span class="text-danger">*</span>@endif</label>
+        <select name="{{ $pField }}" id="{{ $uid }}_province" class="select-search form-control sms-nepal-province" data-placeholder="{{ __('Select Province') }}" data-target-district="#{{ $uid }}_district" @if($required) required @endif>
             <option value="">{{ __('Select Province') }}</option>
             @foreach($provinceList as $prov)
                 <option value="{{ $prov->id }}" {{ (string) old($pField, $provinceId) === (string) $prov->id ? 'selected' : '' }}>
@@ -39,23 +40,28 @@
     </div>
 
     <div class="col-md-4 mb-3">
-        <label for="{{ $uid }}_district">{{ __('District (जिल्ला)') }}</label>
-        <select name="{{ $dField }}" id="{{ $uid }}_district" class="form-control sms-nepal-district" data-target-local="#{{ $uid }}_local" data-selected="{{ old($dField, $districtId) }}">
+        <label for="{{ $uid }}_district">{{ __('District (जिल्ला)') }}@if($required) <span class="text-danger">*</span>@endif</label>
+        <select name="{{ $dField }}" id="{{ $uid }}_district" class="select-search form-control sms-nepal-district" data-placeholder="{{ __('Select District') }}" data-target-local="#{{ $uid }}_local" data-selected="{{ old($dField, $districtId) }}" @if($required) required @endif>
             <option value="">{{ __('Select District') }}</option>
         </select>
     </div>
 
     <div class="col-md-4 mb-3">
         <label for="{{ $uid }}_local">{{ __('Local Government (स्थानीय तह)') }}</label>
-        <select name="{{ $lField }}" id="{{ $uid }}_local" class="form-control sms-nepal-local" data-target-ward="#{{ $uid }}_ward" data-selected="{{ old($lField, $localLevelId) }}">
+        <select name="{{ $lField }}" id="{{ $uid }}_local" class="select-search form-control sms-nepal-local" data-placeholder="{{ __('Select Local Government') }}" data-target-ward="#{{ $uid }}_ward" data-selected="{{ old($lField, $localLevelId) }}">
             <option value="">{{ __('Select Local Government') }}</option>
         </select>
     </div>
 
     <div class="col-md-4 mb-3">
         <label for="{{ $uid }}_ward">{{ __('Ward No. (वडा नं.)') }}</label>
-        <select name="{{ $wField }}" id="{{ $uid }}_ward" class="form-control sms-nepal-ward" data-selected="{{ old($wField, $wardNo) }}">
+        <select name="{{ $wField }}" id="{{ $uid }}_ward" class="select-search form-control sms-nepal-ward" data-placeholder="{{ __('Select Ward') }}" data-selected="{{ old($wField, $wardNo) }}">
             <option value="">{{ __('Select Ward') }}</option>
+            @for($w = 1; $w <= 32; $w++)
+                <option value="{{ $w }}" {{ (string) old($wField, $wardNo) === (string) $w ? 'selected' : '' }}>
+                    {{ __('Ward') }} {{ $w }} / वडा नं. {{ \App\Helpers\NepaliHelper::toDevanagari((string) $w) }}
+                </option>
+            @endfor
         </select>
     </div>
 
