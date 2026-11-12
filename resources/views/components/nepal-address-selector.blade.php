@@ -57,7 +57,7 @@
         <label for="{{ $uid }}_ward">{{ __('Ward No. (वडा नं.)') }}</label>
         <select name="{{ $wField }}" id="{{ $uid }}_ward" class="select-search form-control sms-nepal-ward" data-placeholder="{{ __('Select Ward') }}" data-selected="{{ old($wField, $wardNo) }}">
             <option value="">{{ __('Select Ward') }}</option>
-            @for($w = 1; $w <= 32; $w++)
+            @for($w = 1; $w <= 25; $w++)
                 <option value="{{ $w }}" {{ (string) old($wField, $wardNo) === (string) $w ? 'selected' : '' }}>
                     {{ __('Ward') }} {{ $w }} / वडा नं. {{ \App\Helpers\NepaliHelper::toDevanagari((string) $w) }}
                 </option>
