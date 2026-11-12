@@ -103,3 +103,4 @@ class ExtendNepalLocationHierarchy extends Migration
         }
     }
 }
+

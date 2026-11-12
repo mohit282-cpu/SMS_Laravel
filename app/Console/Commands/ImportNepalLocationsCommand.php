@@ -119,3 +119,4 @@ class ImportNepalLocationsCommand extends Command
         return 0;
     }
 }
+

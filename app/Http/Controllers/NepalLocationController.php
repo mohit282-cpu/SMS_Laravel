@@ -99,3 +99,4 @@ class NepalLocationController extends Controller
         return response()->json(['data' => $wards]);
     }
 }
+

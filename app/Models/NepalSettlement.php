@@ -15,3 +15,4 @@ class NepalSettlement extends Model
         return $this->belongsTo(NepalLocalLevel::class, 'local_level_id');
     }
 }
+
