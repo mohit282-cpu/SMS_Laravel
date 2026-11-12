@@ -1,0 +1,836 @@
+/**
+ * SMS Academy — Unified SaaS Design System
+ * Product: SMS Academy (Smart School Management. Simplified.)
+ * Organization: Sovryx Tech Pvt. Ltd.
+ *
+ * Compatible with Bootstrap 4, Limitless Admin Layout, DataTables, Select2,
+ * FullCalendar, and English + Nepali (Devanagari) typography.
+ */
+
+:root {
+  /* Brand & Semantic Color Tokens */
+  --sms-primary: #FF5700;
+  --sms-primary-hover: #E04800;
+  --sms-primary-active: #C23E00;
+  --sms-primary-soft: rgba(255, 87, 0, 0.08);
+  --sms-primary-border: rgba(255, 87, 0, 0.24);
+
+  --sms-navy: #111827;
+  --sms-navy-subtle: #1F2937;
+  --sms-navy-muted: #374151;
+
+  --sms-background: #F8FAFC;
+  --sms-surface: #FFFFFF;
+  --sms-surface-elevated: #FFFFFF;
+  --sms-surface-subtle: #F1F5F9;
+
+  --sms-text-primary: #111827;
+  --sms-text-secondary: #64748B;
+  --sms-text-muted: #94A3B8;
+  --sms-text-inverse: #FFFFFF;
+
+  --sms-border: #E2E8F0;
+  --sms-border-strong: #CBD5E1;
+
+  --sms-success: #16A34A;
+  --sms-success-soft: rgba(22, 163, 74, 0.10);
+  --sms-warning: #D97706;
+  --sms-warning-soft: rgba(217, 119, 6, 0.10);
+  --sms-danger: #DC2626;
+  --sms-danger-soft: rgba(220, 38, 38, 0.10);
+  --sms-info: #2563EB;
+  --sms-info-soft: rgba(37, 99, 235, 0.10);
+  --sms-disabled: #E2E8F0;
+
+  /* Typography */
+  --sms-font-sans: 'Roboto', 'Noto Sans Devanagari', -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --sms-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Spacing Scale */
+  --sms-space-1: 0.25rem;
+  --sms-space-2: 0.5rem;
+  --sms-space-3: 0.75rem;
+  --sms-space-4: 1rem;
+  --sms-space-5: 1.25rem;
+  --sms-space-6: 1.5rem;
+  --sms-space-8: 2rem;
+
+  /* Radii (8-12px SaaS Standard) */
+  --sms-radius-sm: 8px;
+  --sms-radius-md: 10px;
+  --sms-radius-lg: 12px;
+  --sms-radius-pill: 9999px;
+
+  /* Elevation */
+  --sms-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --sms-shadow-md: 0 4px 12px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  --sms-shadow-lg: 0 12px 28px rgba(15, 23, 42, 0.10), 0 4px 10px rgba(15, 23, 42, 0.04);
+
+  /* Transitions */
+  --sms-transition: 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* ==========================================================================
+   1. Base Typography & Document Canvas
+   ========================================================================== */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--sms-font-sans);
+  background-color: var(--sms-background);
+  color: var(--sms-text-primary);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-family: var(--sms-font-sans);
+  color: var(--sms-text-primary);
+  font-weight: 600;
+  letter-spacing: -0.015em;
+}
+
+a {
+  color: var(--sms-primary);
+  transition: color var(--sms-transition);
+}
+
+a:hover {
+  color: var(--sms-primary-hover);
+}
+
+/* Accessible Keyboard Focus */
+:focus-visible {
+  outline: 2px solid var(--sms-primary);
+  outline-offset: 2px;
+}
+
+.content-wrapper {
+  background-color: var(--sms-background);
+  min-width: 0;
+}
+
+.content {
+  padding: 1.25rem 1.5rem 2.5rem;
+}
+
+/* ==========================================================================
+   2. Top Navbar & Global Shell
+   ========================================================================== */
+.sms-navbar,
+.apple-navbar-glass {
+  background-color: var(--sms-navy);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 58px;
+  padding: 0.35rem 1.25rem;
+  box-shadow: var(--sms-shadow-sm);
+}
+
+.sms-brand-mark,
+.brand-liquid-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--sms-radius-sm);
+  background-color: var(--sms-primary);
+  color: var(--sms-text-inverse);
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.sms-brand-title,
+.app-brand-title {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--sms-text-inverse);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.sms-role-badge,
+.apple-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--sms-radius-pill);
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #E2E8F0;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sms-nav-pill,
+.apple-lang-pill,
+.apple-user-pill,
+.apple-nav-icon-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--sms-radius-sm);
+  color: #E2E8F0 !important;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition: background-color var(--sms-transition), color var(--sms-transition);
+}
+
+.sms-nav-pill:hover,
+.apple-lang-pill:hover,
+.apple-user-pill:hover,
+.apple-nav-icon-link:hover {
+  background-color: rgba(255, 255, 255, 0.10);
+  color: #FFFFFF !important;
+}
+
+.sms-avatar-sm {
+  width: 32px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 1.5px solid rgba(255, 255, 255, 0.35);
+}
+
+/* ==========================================================================
+   3. Sidebar Navigation
+   ========================================================================== */
+.sms-sidebar,
+.sidebar-dark.sidebar-main {
+  background-color: var(--sms-navy);
+  border-right: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.sms-sidebar-user {
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link {
+  color: #CBD5E1;
+  border-radius: var(--sms-radius-sm);
+  margin: 0.15rem 0.65rem;
+  padding: 0.58rem 0.85rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background-color var(--sms-transition), color var(--sms-transition);
+}
+
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.07);
+  color: #FFFFFF;
+}
+
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link.active,
+.sidebar-dark .nav-sidebar > .nav-item-open > .nav-link:not(.disabled) {
+  background-color: var(--sms-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+}
+
+.sidebar-dark .nav-sidebar .nav-group-sub {
+  background-color: rgba(0, 0, 0, 0.18);
+  padding: 0.25rem 0;
+}
+
+.sidebar-dark .nav-sidebar .nav-group-sub .nav-link {
+  color: #94A3B8;
+  font-size: 0.8125rem;
+  padding: 0.45rem 1rem 0.45rem 2.6rem;
+  border-radius: 0;
+}
+
+.sidebar-dark .nav-sidebar .nav-group-sub .nav-link:hover {
+  color: #FFFFFF;
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+.sidebar-dark .nav-sidebar .nav-group-sub .nav-link.active {
+  color: #FFFFFF;
+  font-weight: 600;
+  background-color: rgba(255, 87, 0, 0.16);
+  border-left: 3px solid var(--sms-primary);
+}
+
+/* ==========================================================================
+   4. Page Header & Breadcrumbs
+   ========================================================================== */
+.sms-page-header,
+.apple-page-header-glass {
+  background-color: var(--sms-surface);
+  border-bottom: 1px solid var(--sms-border);
+  padding: 1rem 1.5rem;
+}
+
+.sms-page-title,
+.page-title-heading {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--sms-text-primary);
+  line-height: 1.3;
+  margin: 0;
+}
+
+.sms-page-meta,
+.page-title-meta {
+  font-size: 0.8rem;
+  color: var(--sms-text-secondary);
+  margin-top: 0.15rem;
+}
+
+.sms-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.25rem 0 0;
+  font-size: 0.78rem;
+  color: var(--sms-text-secondary);
+}
+
+.sms-breadcrumb a {
+  color: var(--sms-text-secondary);
+  text-decoration: none;
+}
+
+.sms-breadcrumb a:hover {
+  color: var(--sms-primary);
+}
+
+.sms-session-pill,
+.apple-session-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.375rem 0.85rem;
+  border-radius: var(--sms-radius-pill);
+  background-color: var(--sms-surface-subtle);
+  border: 1px solid var(--sms-border);
+  color: var(--sms-text-primary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.sms-session-dot,
+.session-icon-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--sms-success);
+  display: inline-block;
+}
+
+/* ==========================================================================
+   5. Cards & Statistics Cards
+   ========================================================================== */
+.card,
+.sms-card {
+  background-color: var(--sms-surface);
+  border: 1px solid var(--sms-border);
+  border-radius: var(--sms-radius-lg);
+  box-shadow: var(--sms-shadow-sm);
+  margin-bottom: 1.25rem;
+}
+
+.card-header {
+  background-color: var(--sms-surface);
+  border-bottom: 1px solid var(--sms-border);
+  padding: 0.95rem 1.25rem;
+  border-top-left-radius: var(--sms-radius-lg);
+  border-top-right-radius: var(--sms-radius-lg);
+}
+
+.card-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--sms-text-primary);
+  margin-bottom: 0;
+}
+
+.card-body {
+  padding: 1.25rem;
+}
+
+.sms-stat-card,
+.apple-stat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--sms-surface);
+  border: 1px solid var(--sms-border);
+  border-radius: var(--sms-radius-lg);
+  padding: 1.15rem 1.25rem;
+  margin-bottom: 1.25rem;
+  box-shadow: var(--sms-shadow-sm);
+  transition: border-color var(--sms-transition), box-shadow var(--sms-transition);
+}
+
+.sms-stat-card:hover,
+.apple-stat-card:hover {
+  border-color: var(--sms-border-strong);
+  box-shadow: var(--sms-shadow-md);
+}
+
+.sms-stat-card .stat-number,
+.apple-stat-card .stat-number {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--sms-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.sms-stat-card .stat-label,
+.apple-stat-card .stat-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--sms-text-secondary);
+  margin-top: 0.25rem;
+}
+
+.stat-icon-wrapper {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--sms-radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.stat-icon-orange { background-color: var(--sms-primary-soft); color: var(--sms-primary); }
+.stat-icon-navy   { background-color: rgba(17, 24, 39, 0.08); color: var(--sms-navy); }
+.stat-icon-blue   { background-color: var(--sms-info-soft); color: var(--sms-info); }
+.stat-icon-indigo { background-color: rgba(79, 70, 229, 0.10); color: #4F46E5; }
+.stat-icon-emerald{ background-color: var(--sms-success-soft); color: var(--sms-success); }
+.stat-icon-amber  { background-color: var(--sms-warning-soft); color: var(--sms-warning); }
+.stat-icon-rose   { background-color: var(--sms-danger-soft); color: var(--sms-danger); }
+
+/* ==========================================================================
+   6. Buttons & Interactive Controls
+   ========================================================================== */
+.btn {
+  font-family: var(--sms-font-sans);
+  font-weight: 500;
+  font-size: 0.84rem;
+  border-radius: var(--sms-radius-sm);
+  padding: 0.5rem 1rem;
+  transition: background-color var(--sms-transition), border-color var(--sms-transition), color var(--sms-transition), box-shadow var(--sms-transition);
+}
+
+.btn-sm {
+  font-size: 0.78rem;
+  padding: 0.35rem 0.72rem;
+  border-radius: 6px;
+}
+
+.btn-primary {
+  background-color: var(--sms-primary);
+  border-color: var(--sms-primary);
+  color: #FFFFFF;
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+  background-color: var(--sms-primary-hover);
+  border-color: var(--sms-primary-hover);
+  color: #FFFFFF;
+}
+
+.btn-primary:active {
+  background-color: var(--sms-primary-active) !important;
+  border-color: var(--sms-primary-active) !important;
+}
+
+.btn-outline-primary {
+  color: var(--sms-primary);
+  border-color: var(--sms-primary);
+  background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+  background-color: var(--sms-primary);
+  border-color: var(--sms-primary);
+  color: #FFFFFF;
+}
+
+.btn-secondary {
+  background-color: var(--sms-navy);
+  border-color: var(--sms-navy);
+  color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+  background-color: var(--sms-navy-subtle);
+  border-color: var(--sms-navy-subtle);
+}
+
+.btn-light {
+  background-color: var(--sms-surface);
+  border-color: var(--sms-border);
+  color: var(--sms-text-primary);
+}
+
+.btn-light:hover {
+  background-color: var(--sms-surface-subtle);
+  border-color: var(--sms-border-strong);
+}
+
+.btn-success {
+  background-color: var(--sms-success);
+  border-color: var(--sms-success);
+}
+
+.btn-danger {
+  background-color: var(--sms-danger);
+  border-color: var(--sms-danger);
+}
+
+.btn-warning {
+  background-color: var(--sms-warning);
+  border-color: var(--sms-warning);
+  color: #FFFFFF;
+}
+
+.sms-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0.4rem;
+  border-radius: var(--sms-radius-sm);
+}
+
+/* ==========================================================================
+   7. Forms, Labels, Inputs & Select2
+   ========================================================================== */
+.form-group label,
+.col-form-label {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--sms-text-primary);
+  margin-bottom: 0.375rem;
+}
+
+.sms-required-mark {
+  color: var(--sms-danger);
+  margin-left: 0.15rem;
+}
+
+.form-control {
+  border: 1px solid var(--sms-border-strong);
+  border-radius: var(--sms-radius-sm);
+  color: var(--sms-text-primary);
+  background-color: var(--sms-surface);
+  font-size: 0.875rem;
+  min-height: 38px;
+  padding: 0.45rem 0.75rem;
+  transition: border-color var(--sms-transition), box-shadow var(--sms-transition);
+}
+
+.form-control:focus {
+  border-color: var(--sms-primary);
+  box-shadow: 0 0 0 3px var(--sms-primary-soft);
+}
+
+.form-control:disabled,
+.form-control[readonly] {
+  background-color: var(--sms-surface-subtle);
+  color: var(--sms-text-secondary);
+}
+
+.form-text {
+  font-size: 0.76rem;
+  color: var(--sms-text-secondary);
+}
+
+.select2-container--default .select2-selection--single {
+  border: 1px solid var(--sms-border-strong);
+  border-radius: var(--sms-radius-sm);
+  min-height: 38px;
+  padding: 0.25rem 0.5rem;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single {
+  border-color: var(--sms-primary);
+  box-shadow: 0 0 0 3px var(--sms-primary-soft);
+}
+
+/* ==========================================================================
+   8. Tables, DataTables & Pagination
+   ========================================================================== */
+.table {
+  color: var(--sms-text-primary);
+  margin-bottom: 0;
+}
+
+.table thead th {
+  background-color: var(--sms-surface-subtle);
+  color: var(--sms-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-top: 1px solid var(--sms-border);
+  border-bottom: 1px solid var(--sms-border);
+  padding: 0.75rem 0.9rem;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 0.75rem 0.9rem;
+  vertical-align: middle;
+  border-top: 1px solid var(--sms-border);
+  font-size: 0.84rem;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.dataTables_wrapper .dataTables_filter input,
+.dataTables_wrapper .dataTables_length select {
+  border: 1px solid var(--sms-border-strong);
+  border-radius: var(--sms-radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.82rem;
+}
+
+.page-item.active .page-link {
+  background-color: var(--sms-primary);
+  border-color: var(--sms-primary);
+  color: #FFFFFF;
+}
+
+.page-link {
+  color: var(--sms-text-primary);
+  border-color: var(--sms-border);
+}
+
+/* ==========================================================================
+   9. Badges, Alerts, Dropdowns & Modals
+   ========================================================================== */
+.badge {
+  font-weight: 600;
+  border-radius: 6px;
+  padding: 0.3em 0.6em;
+  font-size: 0.74rem;
+}
+
+.badge-primary { background-color: var(--sms-primary); color: #FFFFFF; }
+.badge-success { background-color: var(--sms-success-soft); color: var(--sms-success); }
+.badge-warning { background-color: var(--sms-warning-soft); color: var(--sms-warning); }
+.badge-danger  { background-color: var(--sms-danger-soft); color: var(--sms-danger); }
+.badge-info    { background-color: var(--sms-info-soft); color: var(--sms-info); }
+
+.alert {
+  border-radius: var(--sms-radius-md);
+  border: 1px solid transparent;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.85rem;
+}
+
+.dropdown-menu {
+  border: 1px solid var(--sms-border);
+  border-radius: var(--sms-radius-md);
+  box-shadow: var(--sms-shadow-lg);
+  padding: 0.35rem;
+}
+
+.dropdown-item {
+  border-radius: 6px;
+  padding: 0.48rem 0.8rem;
+  font-size: 0.84rem;
+  color: var(--sms-text-primary);
+}
+
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: var(--sms-surface-subtle);
+  color: var(--sms-text-primary);
+}
+
+.dropdown-item.active,
+.dropdown-item:active {
+  background-color: var(--sms-primary);
+  color: #FFFFFF;
+}
+
+.modal-content {
+  border: 1px solid var(--sms-border);
+  border-radius: var(--sms-radius-lg);
+  box-shadow: var(--sms-shadow-lg);
+}
+
+.modal-header {
+  border-bottom: 1px solid var(--sms-border);
+  padding: 1rem 1.25rem;
+}
+
+.modal-footer {
+  border-top: 1px solid var(--sms-border);
+  padding: 0.85rem 1.25rem;
+}
+
+/* ==========================================================================
+   10. Empty States, Loading States & Footer
+   ========================================================================== */
+.sms-empty-state {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  color: var(--sms-text-secondary);
+}
+
+.sms-empty-state-icon {
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 0.85rem;
+  border-radius: var(--sms-radius-lg);
+  background-color: var(--sms-surface-subtle);
+  color: var(--sms-text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.sms-footer {
+  background-color: var(--sms-surface);
+  border-top: 1px solid var(--sms-border);
+  padding: 0.85rem 1.5rem;
+  font-size: 0.78rem;
+  color: var(--sms-text-secondary);
+}
+
+/* ==========================================================================
+   11. Mobile Dock & Responsive Refinements
+   ========================================================================== */
+.sms-mobile-dock,
+.apple-mobile-dock {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  background-color: var(--sms-surface);
+  border-top: 1px solid var(--sms-border);
+  box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.08);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.sms-mobile-dock-inner,
+.apple-mobile-dock-inner {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  min-height: 60px;
+}
+
+.sms-dock-item,
+.apple-dock-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0.35rem 0.2rem;
+  color: var(--sms-text-secondary);
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  font-size: 0.68rem;
+  font-weight: 500;
+  position: relative;
+}
+
+.sms-dock-item i,
+.apple-dock-item i {
+  font-size: 1.15rem;
+  margin-bottom: 0.15rem;
+}
+
+.sms-dock-item.active,
+.apple-dock-item.active {
+  color: var(--sms-primary);
+  font-weight: 600;
+}
+
+.dock-badge-dot,
+.mobile-notification-dot {
+  position: absolute;
+  top: 6px;
+  right: 28%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--sms-primary);
+}
+
+@media (max-width: 991.98px) {
+  .content {
+    padding: 1rem 0.9rem 5.5rem;
+  }
+  .sms-footer {
+    padding-bottom: 5rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .sms-page-header,
+  .apple-page-header-glass {
+    padding: 0.85rem 1rem;
+  }
+  .btn,
+  .form-control {
+    min-height: 42px;
+  }
+}
+
+/* ==========================================================================
+   12. Reduced Motion & Print Safety
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@media print {
+  .navbar,
+  .sidebar,
+  .sms-mobile-dock,
+  .apple-mobile-dock,
+  .sms-footer,
+  .no-print {
+    display: none !important;
+  }
+  body,
+  .content-wrapper,
+  .content {
+    background-color: #FFFFFF !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .card {
+    border: 1px solid #CBD5E1 !important;
+    box-shadow: none !important;
+  }
+}
