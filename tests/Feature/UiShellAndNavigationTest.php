@@ -91,7 +91,19 @@ class UiShellAndNavigationTest extends TestCase
         $response->assertSee('sms-navbar', false);
         $response->assertSee('sms-sidebar', false);
         $response->assertSee('sms-footer', false);
+        $response->assertSee('sms-skip-link', false);
+        $response->assertSee('id="main-content"', false);
         $response->assertSee('Sovryx Tech Pvt. Ltd.', false);
+    }
+
+    public function test_parent_children_page_renders_direct_fees_button_and_responsive_table()
+    {
+        $parent = $this->makeUser('parent');
+        $response = $this->actingAs($parent)->get(route('my_children'));
+
+        $response->assertStatus(200);
+        $response->assertSee('sms-card', false);
+        $response->assertSee('No Children Currently Linked');
     }
 }
 
