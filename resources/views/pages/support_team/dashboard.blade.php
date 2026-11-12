@@ -2,18 +2,18 @@
 @section('page_title', __('My Dashboard'))
 @section('content')
 
-    {{-- Clean Apple Executive Header --}}
-    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-2 border-bottom">
+    {{-- Executive Dashboard Header --}}
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-3 border-bottom">
         <div>
             <div class="d-flex align-items-center mb-1">
-                <span class="badge badge-primary mr-2"><i class="icon-shield-check mr-1"></i> {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}</span>
+                <span class="badge badge-primary mr-2"><i class="icon-shield-check mr-1" aria-hidden="true"></i> {{ __(ucwords(str_replace('_', ' ', Auth::user()->user_type))) }}</span>
                 <span class="text-muted font-size-sm font-weight-medium">{{ date('l, F j, Y') }}</span>
             </div>
-            <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.4rem; letter-spacing: -0.02em;">{{ __('Welcome back') }}, {{ Auth::user()->name }}</h2>
+            <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.35rem;">{{ __('Welcome back') }}, {{ Auth::user()->name }}</h2>
         </div>
-        <div class="d-none d-md-flex align-items-center mt-3 mt-md-0">
-            <a href="{{ route('notices.index') }}" class="btn btn-light mr-2 shadow-sm"><i class="icon-bell2 mr-1"></i> {{ __('Notices') }}</a>
-            <a href="{{ route('my_account') }}" class="btn btn-outline-primary shadow-sm"><i class="icon-cog5 mr-1"></i> {{ __('Account Settings') }}</a>
+        <div class="d-none d-md-flex align-items-center mt-3 mt-md-0" style="gap: 0.5rem;">
+            <a href="{{ route('notices.index') }}" class="btn btn-light"><i class="icon-bell2 mr-1" aria-hidden="true"></i> {{ __('Notices') }}</a>
+            <a href="{{ route('my_account') }}" class="btn btn-outline-primary"><i class="icon-cog5 mr-1" aria-hidden="true"></i> {{ __('Account Settings') }}</a>
         </div>
     </div>
 
@@ -21,7 +21,7 @@
     @if(Qs::userIsTeamSA() && isset($users))
        <div class="row">
            <div class="col-sm-6 col-xl-3">
-               <div class="apple-stat-card">
+               <div class="sms-stat-card">
                    <div>
                        <div class="stat-number">{{ Qs::formatNumber($users->where('user_type', 'student')->count()) }}</div>
                        <div class="stat-label">{{ __('Total Students') }}</div>
@@ -33,7 +33,7 @@
            </div>
 
            <div class="col-sm-6 col-xl-3">
-               <div class="apple-stat-card">
+               <div class="sms-stat-card">
                    <div>
                        <div class="stat-number">{{ Qs::formatNumber($users->where('user_type', 'teacher')->count()) }}</div>
                        <div class="stat-label">{{ __('Total Teachers') }}</div>
@@ -45,7 +45,7 @@
            </div>
 
            <div class="col-sm-6 col-xl-3">
-               <div class="apple-stat-card">
+               <div class="sms-stat-card">
                    <div>
                        <div class="stat-number">{{ Qs::formatNumber($users->where('user_type', 'admin')->count()) }}</div>
                        <div class="stat-label">{{ __('Administrators') }}</div>
@@ -57,7 +57,7 @@
            </div>
 
            <div class="col-sm-6 col-xl-3">
-               <div class="apple-stat-card">
+               <div class="sms-stat-card">
                    <div>
                        <div class="stat-number">{{ Qs::formatNumber($users->where('user_type', 'parent')->count()) }}</div>
                        <div class="stat-label">{{ __('Total Parents') }}</div>
@@ -74,7 +74,7 @@
     @if(Qs::userIsTeacher())
         <div class="row">
             <div class="col-sm-6 col-xl-4">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ count($my_sections ?? []) }}</div>
                         <div class="stat-label">{{ __('Assigned Classes') }}</div>
@@ -85,7 +85,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-4">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ count($my_subjects ?? []) }}</div>
                         <div class="stat-label">{{ __('Assigned Subjects') }}</div>
@@ -96,7 +96,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-4">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $my_materials_count ?? 0 }}</div>
                         <div class="stat-label">{{ __('Study Materials') }}</div>
@@ -113,7 +113,7 @@
     @if(Qs::userIsAccountant())
         <div class="row">
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number" style="font-size: 1.6rem;">{{ Qs::formatMoney($total_receipts_amount ?? 0) }}</div>
                         <div class="stat-label">{{ __('Total Revenue') }}</div>
@@ -124,7 +124,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $total_payments ?? 0 }}</div>
                         <div class="stat-label">{{ __('Fee Structures') }}</div>
@@ -135,7 +135,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $cleared_records ?? 0 }}</div>
                         <div class="stat-label">{{ __('Cleared Invoices') }}</div>
@@ -146,13 +146,13 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $uncleared_records ?? 0 }}</div>
                         <div class="stat-label">{{ __('Pending Invoices') }}</div>
                     </div>
-                    <div class="stat-icon-wrapper stat-icon-orange" style="background: rgba(239,68,68,0.12); color: #EF4444;">
-                        <i class="icon-hour-glass2"></i>
+                    <div class="stat-icon-wrapper stat-icon-rose">
+                        <i class="icon-hour-glass2" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
@@ -163,7 +163,7 @@
     @if(Qs::userIsLibrarian())
         <div class="row">
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $total_books ?? 0 }}</div>
                         <div class="stat-label">{{ __('Books Catalog') }}</div>
@@ -174,7 +174,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $issued_books ?? 0 }}</div>
                         <div class="stat-label">{{ __('Active Loans') }}</div>
@@ -185,18 +185,18 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $pending_requests ?? 0 }}</div>
                         <div class="stat-label">{{ __('Pending Requests') }}</div>
                     </div>
-                    <div class="stat-icon-wrapper stat-icon-orange" style="background: rgba(239,68,68,0.12); color: #EF4444;">
-                        <i class="icon-notification2"></i>
+                    <div class="stat-icon-wrapper stat-icon-rose">
+                        <i class="icon-notification2" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $total_categories ?? 0 }}</div>
                         <div class="stat-label">{{ __('Book Categories') }}</div>
@@ -213,7 +213,7 @@
     @if(Qs::userIsStudent())
         <div class="row">
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number" style="font-size: 1.4rem;">{{ $student_record->my_class->name ?? '-' }} ({{ $student_record->section->name ?? '-' }})</div>
                         <div class="stat-label">{{ __('My Class & Section') }}</div>
@@ -224,7 +224,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ count($my_books ?? []) }}</div>
                         <div class="stat-label">{{ __('Active Book Loans') }}</div>
@@ -235,7 +235,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ $my_materials_count ?? 0 }}</div>
                         <div class="stat-label">{{ __('Study Materials') }}</div>
@@ -246,7 +246,7 @@
                 </div>
             </div>
             <div class="col-sm-6 col-xl-3">
-                <div class="apple-stat-card">
+                <div class="sms-stat-card">
                     <div>
                         <div class="stat-number">{{ count($my_payments ?? []) }}</div>
                         <div class="stat-label">{{ __('Invoices / Fees') }}</div>
@@ -261,14 +261,14 @@
 
     {{-- Parent Dashboard Cards --}}
     @if(Qs::userIsParent())
-        <div class="card shadow-sm mb-4" style="border-radius: 16px; border: 1px solid rgba(255, 87, 0, 0.15);">
-            <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between py-3" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
+        <div class="card sms-card mb-4">
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between">
                 <div class="d-flex align-items-center">
-                    <div class="d-inline-flex align-items-center justify-content-center mr-3" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 87, 0, 0.1);">
-                        <i class="icon-users4 icon-2x" style="color: #FF5700;"></i>
+                    <div class="stat-icon-wrapper stat-icon-orange mr-3" aria-hidden="true">
+                        <i class="icon-users4"></i>
                     </div>
                     <div>
-                        <h2 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.15rem;">{{ __('Parent Portal — My Children') }}</h2>
+                        <h2 class="card-title mb-0">{{ __('Parent Portal — My Children') }}</h2>
                         <span class="text-muted font-size-sm">{{ __('Overview of academic progress, attendance, and fee status for your linked students') }}</span>
                     </div>
                 </div>
@@ -318,10 +318,10 @@
                         @foreach($children as $ch)
                             <div class="tab-pane fade {{ $loop->first ? 'show active' : '' }}" id="pane-student-{{ $ch->id }}" role="tabpanel">
                                 {{-- Student Header Card --}}
-                                <div class="p-3 mb-4 rounded" style="background: linear-gradient(135deg, rgba(255, 87, 0, 0.05) 0%, rgba(255, 87, 0, 0.01) 100%); border: 1px solid rgba(255, 87, 0, 0.12);">
+                                <div class="p-3 mb-4 rounded border" style="background-color: var(--sms-surface-subtle);">
                                     <div class="d-flex flex-wrap align-items-center justify-content-between">
                                         <div class="d-flex align-items-center">
-                                            <img src="{{ $ch->user->photo }}" class="rounded-circle mr-3" style="width: 64px; height: 64px; object-fit: cover; border: 3px solid #FF5700; box-shadow: 0 2px 8px rgba(255,87,0,0.2);" alt="{{ $ch->user->name }}">
+                                            <img src="{{ $ch->user->photo }}" class="rounded-circle mr-3" style="width: 56px; height: 56px; object-fit: cover; border: 2px solid var(--sms-border-strong);" alt="{{ $ch->user->name }}">
                                             <div>
                                                 <h4 class="font-weight-bold text-dark mb-0">{{ $ch->user->name }}</h4>
                                                 <div class="d-flex flex-wrap align-items-center mt-1 gap-2 font-size-sm">
