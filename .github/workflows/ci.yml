@@ -59,6 +59,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
+      - name: Log evaluated commit SHA
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Checked-out SHA (github.sha): ${{ github.sha }}"
+          echo "PR Head SHA: ${{ github.event.pull_request.head.sha || github.sha }}"
+
       - name: Set up PHP 8.2
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0
         with:
@@ -113,6 +119,9 @@ jobs:
 
       - name: Verify disposable CI database
         run: php .github/scripts/verify-ci-database.php --connection=mysql_test
+
+      - name: Check expand-and-contract migration safety
+        run: php .github/scripts/check-migration-safety.php
 
       - name: Verify migration rollback and re-apply
         run: |
@@ -228,6 +237,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - name: Log evaluated commit SHA
+        run: |
+          echo "Event: ${{ github.event_name }}"
+          echo "Checked-out SHA (github.sha): ${{ github.sha }}"
+          echo "PR Head SHA: ${{ github.event.pull_request.head.sha || github.sha }}"
 
       - name: Set up PHP 8.2
         uses: shivammathur/setup-php@44454db4f0199b8b9685a5d763dc37cbf79108e1 # v2.36.0

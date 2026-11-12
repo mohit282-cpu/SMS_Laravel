@@ -120,4 +120,29 @@ class HealthCheckTest extends TestCase
         $response->assertStatus(200);
         $response->assertJson(['status' => 'healthy']);
     }
+
+    public function test_readiness_endpoint_includes_no_store_header_and_release_sha_when_present()
+    {
+        $releaseFile = base_path('.release_sha');
+        $hadFile = file_exists($releaseFile);
+        $previous = $hadFile ? file_get_contents($releaseFile) : null;
+        $testSha = str_repeat('b', 40);
+        file_put_contents($releaseFile, $testSha . "\n");
+
+        try {
+            $response = $this->get('/health/readiness');
+            $response->assertStatus(200);
+            $response->assertJson([
+                'status' => 'ready',
+                'release' => $testSha,
+            ]);
+            $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+        } finally {
+            if ($hadFile) {
+                file_put_contents($releaseFile, $previous);
+            } else {
+                @unlink($releaseFile);
+            }
+        }
+    }
 }

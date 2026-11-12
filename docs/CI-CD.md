@@ -14,6 +14,11 @@ SMS Academy uses two GitHub Actions workflows:
 | `npm-audit` | `npm audit gate (Node 22)` | Ubuntu 22.04, Node 22 | Runs `.github/scripts/npm-audit-checker.js` against `package-lock.json` and `.github/security/npm-exceptions.json` |
 | `integration-gate` | `CI Integration Gate` | Ubuntu 22.04 | `if: always()`; fails unless all 4 upstream jobs report `success` |
 
+## 2.1 Exact Commit SHA Semantics
+- **Branch pushes (`main`, `testing`):** CI checks out and tests `github.sha` directly.
+- **Pull requests:** `actions/checkout` tests the GitHub-synthesized merge preview (`github.sha`) while logging `github.event.pull_request.head.sha`.
+- **CD (`cd.yml`):** Deploys only an explicit `github.sha` from a branch dispatch and verifies via paginated GitHub Actions Workflow Runs + Check Runs APIs that `.github/workflows/ci.yml` (`CI Integration Gate`) completed with `success` on that exact SHA.
+
 ## 3. Branch Protection & Repository Security
 Recommended settings for `main` and `testing`:
 - Require a pull request before merging (minimum 1 approval on `main`).

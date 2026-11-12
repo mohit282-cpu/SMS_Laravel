@@ -18,10 +18,10 @@ Deployments use atomic symlinked releases under `DEPLOY_PATH` (default `/var/www
 ## 2. Pre-Deployment Gate
 Before any deployment runs, `.github/workflows/cd.yml` (`pre-deploy-validation`) enforces:
 1. Valid 40-character commit SHA.
-2. `CI Integration Gate` concluded `success` on that exact `github.sha` via GitHub Check Runs API.
+2. `ci.yml` workflow run and `CI Integration Gate` concluded `success` on that exact `github.sha` (paginated GitHub API verification).
 3. `composer validate --strict` and `composer install --no-dev --optimize-autoloader`.
 4. `npm ci && npm run prod` on Node 14 with verified `public/js/app.js`, `public/css/app.css`, and `public/mix-manifest.json`.
-5. Explicit allowlist archive (`app`, `bootstrap`, `config`, `database/data`, `database/migrations`, `database/seeders`, `public`, `resources/views`, `resources/lang`, `routes`, `vendor`, `artisan`, `composer.json`, `composer.lock`, `.release_sha`) with SHA-256 checksum.
+5. Explicit allowlist archive (`.release_sha`, `app`, `bootstrap`, `config`, `database/data`, `database/migrations`, `database/seeders`, `public`, `resources/views`, `resources/lang`, `routes`, `vendor`, `artisan`, `composer.json`, `composer.lock`) validated by `.github/scripts/verify-release-archive.php` (both on the CI runner and on the target host prior to extraction) with SHA-256 checksum.
 
 ## 3. Manual Deployment Steps
 1. Open **Actions → CD (Deployment) → Run workflow**.

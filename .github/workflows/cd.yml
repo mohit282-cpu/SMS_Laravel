@@ -30,6 +30,7 @@ permissions:
   contents: read
   checks: read
   statuses: read
+  actions: read
 
 jobs:
   pre-deploy-validation:
@@ -55,16 +56,26 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          echo "Checking CI Integration Gate status for ${REPO}@${SHA}..."
-          CONCLUSION=$(gh api "/repos/${REPO}/commits/${SHA}/check-runs" \
-            --jq '.check_runs[] | select(.name == "CI Integration Gate" and .status == "completed") | .conclusion' \
-            | head -n 1 || true)
+          echo "Checking CI workflow (ci.yml) and CI Integration Gate for ${REPO}@${SHA}..."
 
-          if [ "${CONCLUSION}" != "success" ]; then
-            echo "::error::Commit ${SHA} has not passed 'CI Integration Gate' (found: '${CONCLUSION:-none}'). Aborting deployment of untested commit."
+          WORKFLOW_RUNS=$(gh api --paginate "/repos/${REPO}/actions/workflows/ci.yml/runs?head_sha=${SHA}&per_page=100" \
+            --jq '[.workflow_runs[] | select(.head_sha == env.SHA)]')
+          SUCCESSFUL_RUNS=$(printf '%s' "${WORKFLOW_RUNS}" | jq '[.[] | select(.status == "completed" and .conclusion == "success")] | length')
+          if [ "${SUCCESSFUL_RUNS}" -lt 1 ]; then
+            echo "::error::No completed successful ci.yml workflow run found for ${REPO}@${SHA}."
             exit 1
           fi
-          echo "Verified: 'CI Integration Gate' passed for commit ${SHA}."
+
+          CHECK_RUNS=$(gh api --paginate "/repos/${REPO}/commits/${SHA}/check-runs?per_page=100" \
+            --jq '[.check_runs[] | select(.name == "CI Integration Gate")]')
+          PASSED_GATES=$(printf '%s' "${CHECK_RUNS}" | jq '[.[] | select(.status == "completed" and .conclusion == "success")] | length')
+          FAILED_OR_INCOMPLETE=$(printf '%s' "${CHECK_RUNS}" | jq '[.[] | select(.status != "completed" or .conclusion != "success")] | length')
+
+          if [ "${PASSED_GATES}" -lt 1 ] || [ "${FAILED_OR_INCOMPLETE}" -gt 0 ]; then
+            echo "::error::Commit ${SHA} failed mandatory 'CI Integration Gate' verification (passed=${PASSED_GATES}, non_success=${FAILED_OR_INCOMPLETE})."
+            exit 1
+          fi
+          echo "Verified: ci.yml and 'CI Integration Gate' passed cleanly for ${REPO}@${SHA}."
 
       - name: Checkout Source
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
@@ -136,6 +147,8 @@ jobs:
           sha256sum "release-${SHA}.tar.gz" > "release-${SHA}.tar.gz.sha256"
           cat "release-${SHA}.tar.gz.sha256"
           cd ..
+          php .github/scripts/verify-release-archive.php "${TAR_FILE}"
+          cp .github/scripts/verify-release-archive.php "release-dist/verify-release-archive.php"
 
       - name: Upload Release Artifact and Checksum
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -144,6 +157,7 @@ jobs:
           path: |
             release-dist/release-${{ github.sha }}.tar.gz
             release-dist/release-${{ github.sha }}.tar.gz.sha256
+            release-dist/verify-release-archive.php
           if-no-files-found: error
           retention-days: 7
 
@@ -194,8 +208,8 @@ jobs:
             echo "::error::DEPLOY_SSH_KNOWN_HOSTS secret must be configured in '${TARGET_ENV}' to prevent MITM attacks."
             exit 1
           fi
-          if [ -z "${APP_URL}" ]; then
-            echo "::error::APP_URL environment variable is mandatory for readiness verification."
+          if [ -z "${APP_URL}" ] || ! [[ "${APP_URL}" =~ ^https?:// ]]; then
+            echo "::error::APP_URL environment variable must be a valid http(s):// URL for readiness verification."
             exit 1
           fi
           if ! [[ "${DEPLOY_PORT}" =~ ^[0-9]+$ ]]; then
@@ -236,6 +250,7 @@ jobs:
           scp -P "${DEPLOY_PORT}" "${SSH_OPTS[@]}" \
             "deploy-dist/release-${SHA}.tar.gz" \
             "deploy-dist/release-${SHA}.tar.gz.sha256" \
+            "deploy-dist/verify-release-archive.php" \
             "${DEPLOY_USER}@${DEPLOY_HOST}:/tmp/"
 
           ssh -T -p "${DEPLOY_PORT}" "${SSH_OPTS[@]}" "${DEPLOY_USER}@${DEPLOY_HOST}" \
@@ -245,6 +260,9 @@ jobs:
             MAINTENANCE="${MAINTENANCE}" \
             MIGRATIONS="${MIGRATIONS}" \
             SHA="${SHA}" \
+            HEALTH_MAX_ATTEMPTS="${{ vars.HEALTH_MAX_ATTEMPTS || '6' }}" \
+            HEALTH_RETRY_INTERVAL="${{ vars.HEALTH_RETRY_INTERVAL || '5' }}" \
+            HEALTH_REQUEST_TIMEOUT="${{ vars.HEALTH_REQUEST_TIMEOUT || '15' }}" \
             bash -s <<'REMOTE_SCRIPT'
             set -euo pipefail
 
@@ -265,12 +283,13 @@ jobs:
             probe_readiness() {
               local url="$1"
               local expected_sha="$2"
-              local max_attempts=6
-              local interval=5
+              local max_attempts="${HEALTH_MAX_ATTEMPTS:-6}"
+              local interval="${HEALTH_RETRY_INTERVAL:-5}"
+              local req_timeout="${HEALTH_REQUEST_TIMEOUT:-15}"
               local attempt=1
               while [ "${attempt}" -le "${max_attempts}" ]; do
                 local resp body code status rel
-                resp=$(curl -s -S -w "\n%{http_code}" --max-time 15 "${url}/health/readiness" || true)
+                resp=$(curl -s -S -w "\n%{http_code}" --max-time "${req_timeout}" "${url}/health/readiness" || true)
                 body=$(printf '%s\n' "${resp}" | sed '$d')
                 code=$(printf '%s\n' "${resp}" | tail -n 1)
                 status=$(printf '%s\n' "${body}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
@@ -289,9 +308,10 @@ jobs:
               return 1
             }
 
-            # 1. Verify incoming archive on server
+            # 1. Verify incoming archive checksum & entries on server BEFORE extraction
             cd /tmp
             sha256sum -c "release-${SHA}.tar.gz.sha256"
+            php /tmp/verify-release-archive.php "/tmp/release-${SHA}.tar.gz"
 
             # 2. Identify currently active release for rollback
             PREVIOUS_RELEASE=""
@@ -341,7 +361,7 @@ jobs:
             # 4. Extract into new release directory
             mkdir -p "${RELEASE_DIR}"
             tar -xzf "/tmp/release-${SHA}.tar.gz" -C "${RELEASE_DIR}"
-            rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256"
+            rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256" "/tmp/verify-release-archive.php"
 
             # Validate extracted package
             test -f "${RELEASE_DIR}/artisan"
