@@ -10,7 +10,7 @@
             <div class="text-uppercase font-weight-bold text-muted mb-1" style="font-size: 0.72rem; letter-spacing: 0.06em;">
                 {{ Qs::getSystemName() ?: 'SMS Academy' }}
             </div>
-            <h1 class="h4 font-weight-bold text-dark mb-1">{{ __('Sign in to your account') }}</h1>
+            <h1 class="h4 font-weight-bold text-dark mb-1">{{ __('Login to your account') }}</h1>
             <p class="text-muted mb-0" style="font-size: 0.84rem;">
                 {{ __('Smart School Management. Simplified.') }}
             </p>

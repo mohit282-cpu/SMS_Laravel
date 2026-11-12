@@ -9,13 +9,13 @@
     if (Qs::userIsTeamSA()) {
         $academicsRoute = route('classes.index');
         $academicsActive = in_array(Route::currentRouteName(), ['classes.index', 'classes.edit', 'students.list']);
-    } elseif (Qs::userIsAcademic()) {
-        $academicsRoute = route('tt.index');
-        $academicsActive = in_array(Route::currentRouteName(), ['tt.index', 'ttr.edit', 'ttr.show', 'ttr.manage', 'tt.my_timetable']);
     } elseif (Qs::userIsTeacher() || Qs::userIsStudent()) {
         $academicsRoute = route('tt.my_timetable');
         $academicsLabel = __('Timetable');
         $academicsActive = Route::is('tt.my_timetable');
+    } elseif (Qs::userIsAcademic()) {
+        $academicsRoute = route('tt.index');
+        $academicsActive = in_array(Route::currentRouteName(), ['tt.index', 'ttr.edit', 'ttr.show', 'ttr.manage', 'tt.my_timetable']);
     } elseif (Qs::userIsParent()) {
         $academicsRoute = route('my_children');
         $academicsLabel = __('Children');
