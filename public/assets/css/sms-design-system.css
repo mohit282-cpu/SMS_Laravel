@@ -105,15 +105,38 @@ a:hover {
   color: var(--sms-primary-hover);
 }
 
-/* Accessible Keyboard Focus */
+/* Accessible Keyboard Focus & Skip Link */
 :focus-visible {
   outline: 2px solid var(--sms-primary);
   outline-offset: 2px;
 }
 
+.sms-skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 2000;
+  background-color: var(--sms-navy);
+  color: #FFFFFF;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--sms-radius-sm);
+  font-weight: 600;
+  text-decoration: none;
+}
+
 .content-wrapper {
   background-color: var(--sms-background);
   min-width: 0;
+}
+
+.card-body {
+  min-width: 0;
+}
+
+.dataTables_wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .content {

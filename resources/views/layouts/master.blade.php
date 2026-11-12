@@ -17,13 +17,14 @@
 
 <body class="{{ in_array(Route::currentRouteName(), ['payments.invoice', 'marks.tabulation', 'marks.show', 'ttr.manage', 'ttr.show']) ? 'sidebar-xs' : '' }}">
 
+<a href="#main-content" class="sr-only sr-only-focusable sms-skip-link">{{ __('Skip to main content') }}</a>
 @include('partials.top_menu')
 <div class="page-content">
     @include('partials.menu')
     <div class="content-wrapper">
         @include('partials.header')
 
-        <div class="content">
+        <main id="main-content" class="content" tabindex="-1">
             {{-- Flash Alert Area --}}
             @if(session('flash_success'))
                 <div class="alert alert-success border-0 alert-dismissible shadow-sm fade show" role="alert">
@@ -65,7 +66,7 @@
             <div id="ajax-alert" style="display: none"></div>
 
             @yield('content')
-        </div>
+        </main>
         @include('partials.footer')
     </div>
 </div>
