@@ -63,3 +63,4 @@ class ShellComposer
         $view->with(self::$requestCache[$cacheKey]);
     }
 }
+

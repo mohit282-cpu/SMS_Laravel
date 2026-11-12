@@ -8,3 +8,4 @@
         <span>&copy; {{ date('Y') }} {{ __('Powered by') }} <strong>Sovryx Tech Pvt. Ltd.</strong></span>
     </div>
 </footer>
+
