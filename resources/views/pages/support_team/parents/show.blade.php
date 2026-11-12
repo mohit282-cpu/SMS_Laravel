@@ -24,7 +24,7 @@
     <div class="row">
         {{-- Parent Profile Info Card --}}
         <div class="col-lg-4 mb-4">
-            <div class="card shadow-sm" style="border-radius: 16px;">
+            <div class="card sms-card">
                 <div class="card-body text-center p-4">
                     <img src="{{ $parent->photo }}" class="rounded-circle mb-3" style="width: 84px; height: 84px; object-fit: cover; border: 3px solid #FF5700;" alt="{{ $parent->name }}">
                     <h4 class="font-weight-bold text-dark mb-0">{{ $parent->name }}</h4>
@@ -68,7 +68,7 @@
             </div>
 
             {{-- Quick Edit Parent Details --}}
-            <div class="card shadow-sm" style="border-radius: 16px;">
+            <div class="card sms-card">
                 <div class="card-header bg-white py-3">
                     <h6 class="font-weight-bold mb-0 text-dark"><i class="icon-pencil5 mr-2 text-primary"></i>{{ __('Edit Parent Details') }}</h6>
                 </div>
@@ -102,7 +102,7 @@
 
         {{-- Linked Students & Management Column --}}
         <div class="col-lg-8">
-            <div class="card shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card sms-card mb-4">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
                     <div>
                         <h5 class="font-weight-bold mb-0 text-dark"><i class="icon-users4 mr-2" style="color: #FF5700;"></i>{{ __('Linked Students') }}</h5>

@@ -29,7 +29,7 @@
         }
         .offline-card {
             background: #ffffff;
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 15px 35px rgba(0, 0, 0, 0.25);
             max-width: 580px;
             width: 100%;
@@ -59,7 +59,7 @@
             color: #c62828;
             font-weight: 600;
             padding: 6px 14px;
-            border-radius: 20px;
+            border-radius: 12px;
             font-size: 13px;
             margin-bottom: 16px;
             letter-spacing: 0.5px;

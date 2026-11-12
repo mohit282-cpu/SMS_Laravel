@@ -2,8 +2,8 @@
 @section('page_title', $event->title)
 @section('content')
 
-    <div class="card shadow-sm border-0" style="border-radius: 16px;">
-        <div class="card-header d-flex align-items-center justify-content-between" style="background: #111827; color: #FFFFFF; border-radius: 16px 16px 0 0;">
+    <div class="card sms-card">
+        <div class="card-header d-flex align-items-center justify-content-between" style="background: var(--sms-navy); color: #FFFFFF;">
             <div class="d-flex align-items-center">
                 <span class="badge mr-2 px-3 py-1 font-size-sm" style="background: {{ $event->category_color }}; color: #FFFFFF;">
                     {{ $event->category_name }}

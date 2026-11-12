@@ -21,7 +21,7 @@
         </div>
     @endif
 
-    <div class="card shadow-sm" style="border-radius: 16px;">
+    <div class="card sms-card">
         <div class="card-header bg-white d-flex flex-wrap align-items-center justify-content-between py-3" style="border-top-left-radius: 16px; border-top-right-radius: 16px;">
             <div class="d-flex align-items-center">
                 <div class="d-inline-flex align-items-center justify-content-center mr-3" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(255, 87, 0, 0.1);">
@@ -182,7 +182,7 @@
     {{-- Create Parent Modal --}}
     <div id="modal-add-parent" class="modal fade" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content" style="border-radius: 16px;">
+            <div class="modal-content">
                 <div class="modal-header bg-white py-3">
                     <h5 class="modal-title font-weight-bold text-dark"><i class="icon-user-plus mr-2" style="color: #FF5700;"></i>{{ __('Create Parent Account') }}</h5>
                     <button type="button" class="close" data-dismiss="modal">&times;</button>

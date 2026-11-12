@@ -361,7 +361,7 @@
     {{-- Event Details Modal --}}
     <div class="modal fade" id="eventDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
+            <div class="modal-content">
                 <div class="modal-header d-flex align-items-center justify-content-between" style="background: #111827; color: #FFFFFF; border-bottom: 1px solid rgba(255,255,255,0.08);">
                     <h6 class="modal-title font-weight-bold mb-0 text-white" id="eventModalTitle">{{ __('Event Details') }}</h6>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">

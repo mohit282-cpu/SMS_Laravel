@@ -2,7 +2,7 @@
 @section('page_title', __('Edit Event'))
 @section('content')
 
-    <div class="card shadow-sm border-0" style="border-radius: 16px;">
+    <div class="card sms-card">
         <div class="card-header d-flex align-items-center justify-content-between">
             <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
                 <i class="icon-pencil mr-2" style="color: #FF5700;"></i>{{ __('Edit School Event') }} &bull; {{ $event->title }}

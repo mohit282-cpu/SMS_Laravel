@@ -451,7 +451,7 @@
 
         {{-- Recent School Notices for Parents --}}
         @if(!empty($recent_notices) && $recent_notices->isNotEmpty())
-            <div class="card shadow-sm mb-4" style="border-radius: 16px;">
+            <div class="card sms-card mb-4">
                 <div class="card-header bg-white d-flex align-items-center justify-content-between py-3">
                     <h5 class="font-weight-bold mb-0 text-dark"><i class="icon-newspaper mr-2" style="color: #FF5700;"></i>{{ __('Recent School Notices & Circulars') }}</h5>
                     <a href="{{ route('notices.index') }}" class="btn btn-sm btn-link text-primary font-weight-semibold">{{ __('View All Notices') }} <i class="icon-arrow-right5 ml-1"></i></a>
@@ -505,7 +505,7 @@
     {{-- Event / Notice Details Modal --}}
     <div class="modal fade" id="eventDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content shadow-lg border-0" style="border-radius: 20px;">
+            <div class="modal-content">
                 <div class="modal-header d-flex align-items-center justify-content-between" style="background: #111827; color: #FFFFFF; border-bottom: 1px solid rgba(255,255,255,0.08);">
                     <h3 class="modal-title font-weight-bold mb-0 text-white" id="eventModalTitle" style="font-size: 1.15rem;">{{ __('Event Details') }}</h3>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
