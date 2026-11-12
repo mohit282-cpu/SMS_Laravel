@@ -9,7 +9,7 @@
 </li>
 
 @php
-    $studentRec = App\Models\StudentRecord::where('user_id', Auth::user()->id)->first();
+    $studentRec = $shellStudentRecord ?? null;
 @endphp
 @if($studentRec)
 <li class="nav-item">

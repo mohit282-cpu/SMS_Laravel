@@ -1,6 +1,6 @@
 @php
     $currentUser = Auth::user();
-    $studentRec = ($currentUser && Qs::userIsStudent()) ? Qs::findStudentRecord($currentUser->id) : null;
+    $studentRec = ($currentUser && Qs::userIsStudent()) ? ($shellStudentRecord ?? Qs::findStudentRecord($currentUser->id)) : null;
     $myProfileUrl = $studentRec ? route('students.show', Qs::hash($studentRec->id)) : ($currentUser ? route('users.show', Qs::hash($currentUser->id)) : route('my_account'));
     $noticeCount = $shellNoticeCount ?? 0;
 @endphp

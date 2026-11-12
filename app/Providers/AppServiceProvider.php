@@ -18,7 +18,7 @@ class AppServiceProvider extends ServiceProvider
         }
 
         \Illuminate\Support\Facades\View::composer(
-            ['partials.top_menu', 'partials.mobile_dock', 'partials.menu', 'partials.header'],
+            ['partials.top_menu', 'partials.mobile_dock', 'partials.menu', 'partials.header', 'pages.student.menu'],
             \App\Http\View\Composers\ShellComposer::class
         );
     }
