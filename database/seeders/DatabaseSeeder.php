@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
         $this->call(UserTypesTableSeeder::class);
         $this->call(MyClassesTableSeeder::class);
         $this->call(NationalitiesTableSeeder::class);
+        $this->call(NepalGeographySeeder::class);
         $this->call(StatesTableSeeder::class);
         $this->call(LgasTableSeeder::class);
         $this->call(SettingsTableSeeder::class);

@@ -168,5 +168,70 @@ class NepalLocationHierarchyTest extends TestCase
             File::delete($tmpPath);
         }
     }
+
+    public function test_nepal_geography_seeder_populates_exact_official_7_77_753_counts()
+    {
+        $this->seed(NepalGeographySeeder::class);
+
+        $report = app(NepalLocationService::class)->getDatasetCompletenessReport();
+
+        $this->assertEquals(7, $report['provinces']['actual']);
+        $this->assertEquals(77, $report['districts']['actual']);
+        $this->assertEquals(753, $report['local_levels']['actual']);
+        $this->assertEquals(6, $report['by_type']['metropolitan']['actual']);
+        $this->assertEquals(11, $report['by_type']['sub_metropolitan']['actual']);
+        $this->assertEquals(276, $report['by_type']['municipality']['actual']);
+        $this->assertEquals(460, $report['by_type']['rural_municipality']['actual']);
+        $this->assertTrue($report['is_complete_official_dataset']);
+    }
+
+    public function test_rest_api_endpoints_return_expected_hierarchy_and_404_for_invalid_ids()
+    {
+        $this->seed(NepalGeographySeeder::class);
+
+        $koshi = NepalProvince::where('code', 'P1')->firstOrFail();
+        $morang = NepalDistrict::where('province_id', $koshi->id)->where('name', 'Morang')->firstOrFail();
+        $biratnagar = NepalLocalLevel::where('district_id', $morang->id)
+            ->where('name', 'Biratnagar Metropolitan City')
+            ->firstOrFail();
+
+        $this->getJson('/api/provinces')
+            ->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Koshi Province', 'name_ne' => 'कोशी प्रदेश']);
+
+        $this->getJson("/api/provinces/{$koshi->id}/districts")
+            ->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Morang', 'name_ne' => 'मोरङ']);
+
+        $this->getJson("/api/districts/{$morang->id}/local-governments")
+            ->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Biratnagar Metropolitan City']);
+
+        $this->getJson("/api/local-governments/{$biratnagar->id}")
+            ->assertStatus(200)
+            ->assertJsonFragment(['name' => 'Biratnagar Metropolitan City']);
+
+        $this->getJson('/api/provinces/999999/districts')->assertStatus(404);
+        $this->getJson('/api/districts/999999/local-governments')->assertStatus(404);
+        $this->getJson('/api/local-governments/999999')->assertStatus(404);
+    }
+
+    public function test_admin_location_management_directory_and_toggle_audit()
+    {
+        $this->seed(NepalGeographySeeder::class);
+        $admin = $this->makeAuthUser();
+        $local = NepalLocalLevel::firstOrFail();
+
+        $this->actingAs($admin)
+            ->get(route('nepal_locations.manage'))
+            ->assertStatus(200)
+            ->assertSee('Verified Complete (7/77/753)');
+
+        $this->actingAs($admin)
+            ->post(route('nepal_locations.toggle', ['type' => 'local_level', 'id' => $local->id]))
+            ->assertRedirect();
+
+        $this->assertFalse((bool) $local->fresh()->is_active);
+    }
 }
 

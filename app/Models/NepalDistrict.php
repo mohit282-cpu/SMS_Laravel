@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class NepalDistrict extends Model
 {
-    protected $fillable = ['province_id', 'name', 'name_ne', 'code'];
+    protected $fillable = ['province_id', 'name', 'name_ne', 'code', 'is_active', 'effective_date', 'data_source'];
 
     public function province()
     {

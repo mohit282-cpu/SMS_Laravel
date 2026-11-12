@@ -85,16 +85,38 @@
                                 <td>{{$sr->user->nationality->name }}</td>
                             </tr>
                             @endif
-                            @if($sr->user->state_id)
+                            @if($sr->province)
+                            <tr>
+                                <td class="font-weight-bold">{{ __('Province (प्रदेश)') }}</td>
+                                <td>{{ $sr->province->name }} / {{ $sr->province->name_ne }}</td>
+                            </tr>
+                            @elseif($sr->user->state_id)
                             <tr>
                                 <td class="font-weight-bold">State</td>
                                 <td>{{$sr->user->state->name }}</td>
                             </tr>
                             @endif
-                            @if($sr->user->lga_id)
+                            @if($sr->district)
+                            <tr>
+                                <td class="font-weight-bold">{{ __('District (जिल्ला)') }}</td>
+                                <td>{{ $sr->district->name }} / {{ $sr->district->name_ne }}</td>
+                            </tr>
+                            @elseif($sr->user->lga_id)
                             <tr>
                                 <td class="font-weight-bold">LGA</td>
                                 <td>{{$sr->user->lga->name }}</td>
+                            </tr>
+                            @endif
+                            @if($sr->localLevel)
+                            <tr>
+                                <td class="font-weight-bold">{{ __('Local Government (स्थानीय तह)') }}</td>
+                                <td>{{ $sr->localLevel->name }} / {{ $sr->localLevel->name_ne }}@if($sr->ward_no), {{ __('Ward') }} {{ $sr->ward_no }}@endif</td>
+                            </tr>
+                            @endif
+                            @if($sr->tole || $sr->street)
+                            <tr>
+                                <td class="font-weight-bold">{{ __('Tole / Street') }}</td>
+                                <td>{{ implode(', ', array_filter([$sr->tole, $sr->street])) }}</td>
                             </tr>
                             @endif
                             @if($sr->dorm_id)

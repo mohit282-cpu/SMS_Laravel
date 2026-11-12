@@ -47,8 +47,8 @@
     </div>
 
     <div class="col-md-4 mb-3">
-        <label for="{{ $uid }}_local">{{ __('Local Government (स्थानीय तह)') }}</label>
-        <select name="{{ $lField }}" id="{{ $uid }}_local" class="select-search form-control sms-nepal-local" data-placeholder="{{ __('Select Local Government') }}" data-target-ward="#{{ $uid }}_ward" data-selected="{{ old($lField, $localLevelId) }}">
+        <label for="{{ $uid }}_local">{{ __('Local Government (स्थानीय तह)') }}@if($required) <span class="text-danger">*</span>@endif</label>
+        <select name="{{ $lField }}" id="{{ $uid }}_local" class="select-search form-control sms-nepal-local" data-placeholder="{{ __('Select Local Government') }}" data-target-ward="#{{ $uid }}_ward" data-selected="{{ old($lField, $localLevelId) }}" @if($required) required @endif>
             <option value="">{{ __('Select Local Government') }}</option>
         </select>
     </div>

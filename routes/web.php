@@ -309,4 +309,8 @@ Route::group(['middleware' => 'auth', 'prefix' => 'nepal-locations'], function (
     Route::get('/districts', 'NepalLocationController@districts')->name('nepal_locations.districts');
     Route::get('/local-levels', 'NepalLocationController@localLevels')->name('nepal_locations.local_levels');
     Route::get('/wards', 'NepalLocationController@wards')->name('nepal_locations.wards');
+
+    Route::get('/manage', 'SupportTeam\NepalLocationAdminController@index')->name('nepal_locations.manage');
+    Route::post('/manage/{type}/{id}/toggle', 'SupportTeam\NepalLocationAdminController@toggleStatus')->name('nepal_locations.toggle');
+    Route::put('/manage/{type}/{id}', 'SupportTeam\NepalLocationAdminController@update')->name('nepal_locations.update');
 });

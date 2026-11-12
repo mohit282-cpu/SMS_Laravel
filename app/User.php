@@ -5,6 +5,9 @@ namespace App;
 use App\Models\BloodGroup;
 use App\Models\Lga;
 use App\Models\Nationality;
+use App\Models\NepalDistrict;
+use App\Models\NepalLocalLevel;
+use App\Models\NepalProvince;
 use App\Models\StaffRecord;
 use App\Models\State;
 use App\Models\StudentRecord;
@@ -23,7 +26,7 @@ class User extends Authenticatable
      * @var array
      */
     protected $fillable = [
-        'name', 'username', 'email', 'phone', 'phone2', 'dob', 'gender', 'photo', 'address', 'bg_id', 'password', 'nal_id', 'state_id', 'lga_id', 'code', 'user_type', 'email_verified_at', 'locale', 'calendar_display', 'activation_token', 'activation_token_expires_at', 'is_active'
+        'name', 'username', 'email', 'phone', 'phone2', 'dob', 'gender', 'photo', 'address', 'bg_id', 'password', 'nal_id', 'state_id', 'lga_id', 'province_id', 'district_id', 'local_level_id', 'ward_no', 'tole', 'street', 'code', 'user_type', 'email_verified_at', 'locale', 'calendar_display', 'activation_token', 'activation_token_expires_at', 'is_active'
     ];
 
     /**
@@ -58,6 +61,21 @@ class User extends Authenticatable
     public function lga()
     {
         return $this->belongsTo(Lga::class);
+    }
+
+    public function province()
+    {
+        return $this->belongsTo(NepalProvince::class, 'province_id');
+    }
+
+    public function district()
+    {
+        return $this->belongsTo(NepalDistrict::class, 'district_id');
+    }
+
+    public function localLevel()
+    {
+        return $this->belongsTo(NepalLocalLevel::class, 'local_level_id');
     }
 
     public function state()

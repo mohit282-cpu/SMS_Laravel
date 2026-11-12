@@ -97,24 +97,18 @@
                         </div>
                     </div>
 
+                    <x-nepal-address-selector
+                        :provinces="$provinces ?? null"
+                        :provinceId="$user->province_id"
+                        :districtId="$user->district_id"
+                        :localLevelId="$user->local_level_id"
+                        :wardNo="$user->ward_no"
+                        :tole="$user->tole"
+                        :street="$user->street"
+                        :required="true"
+                    />
+
                     <div class="row">
-                        <div class="col-md-4">
-                            <label for="state_id">State: <span class="text-danger">*</span></label>
-                            <select onchange="getLGA(this.value)" required data-placeholder="Choose.." class="select-search form-control" name="state_id" id="state_id">
-                                <option value=""></option>
-                                @foreach($states as $st)
-                                    <option {{ ($user->state_id == $st->id ? 'selected' : '') }} value="{{ $st->id }}">{{ $st->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-4">
-                            <label for="lga_id">LGA: <span class="text-danger">*</span></label>
-                            <select required data-placeholder="Select State First" class="select-search form-control" name="lga_id" id="lga_id">
-                                <option value="{{ $user->lga_id ?? '' }}">{{ $user->lga->name ?? '' }}</option>
-                            </select>
-                        </div>
-
                         <div class="col-md-4">
                             <div class="form-group">
                                 <label for="bg_id">Blood Group: </label>

@@ -381,6 +381,12 @@ class StudentRecordController extends Controller
         $this->user->update($sr->user->id, $d); // Update User Details
 
         $srec = $req->only(Qs::getStudentData());
+        if (!empty($srec['local_level_id']) && empty($srec['municipality'])) {
+            $localLevel = \App\Models\NepalLocalLevel::find($srec['local_level_id']);
+            if ($localLevel) {
+                $srec['municipality'] = $localLevel->name;
+            }
+        }
 
         if (!empty($srec['section_id']) && !empty($srec['my_class_id'])) {
             $validSection = \App\Models\Section::where('id', $srec['section_id'])->where('my_class_id', $srec['my_class_id'])->exists();

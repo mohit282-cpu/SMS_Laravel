@@ -369,14 +369,16 @@
             var $local = $group.find('.sms-nepal-local');
             var provinceId = $(this).val();
 
-            resetSelect($district, $district.data('placeholder') || 'Select District');
+            resetSelect($district, '{{ __('Loading...') }}');
             resetSelect($local, $local.data('placeholder') || 'Select Local Government');
 
             if (!provinceId) {
+                resetSelect($district, $district.data('placeholder') || 'Select District');
                 return;
             }
 
             $.getJSON('{{ route('nepal_locations.districts') }}', { province_id: provinceId }, function(res) {
+                resetSelect($district, $district.data('placeholder') || 'Select District');
                 var selectedId = String($district.attr('data-selected') || '');
                 $.each(res.data || [], function(_, item) {
                     var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : item.name;
@@ -401,13 +403,15 @@
             var $local = $group.find('.sms-nepal-local');
             var districtId = $(this).val();
 
-            resetSelect($local, $local.data('placeholder') || 'Select Local Government');
+            resetSelect($local, '{{ __('Loading...') }}');
 
             if (!districtId) {
+                resetSelect($local, $local.data('placeholder') || 'Select Local Government');
                 return;
             }
 
             $.getJSON('{{ route('nepal_locations.local_levels') }}', { district_id: districtId }, function(res) {
+                resetSelect($local, $local.data('placeholder') || 'Select Local Government');
                 var selectedId = String($local.attr('data-selected') || '');
                 $.each(res.data || [], function(_, item) {
                     var label = item.name_ne ? (item.name + ' / ' + item.name_ne) : item.name;

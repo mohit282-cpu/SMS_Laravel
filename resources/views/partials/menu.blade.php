@@ -228,6 +228,11 @@
                         <a href="{{ route('holidays.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['holidays.index', 'holidays.edit']) ? 'active' : '' }}"><i class="icon-calendar"></i> <span>{{ __('Holiday Calendar') }}</span></a>
                     </li>
 
+                    {{--Nepal Administrative Locations--}}
+                    <li class="nav-item">
+                        <a href="{{ route('nepal_locations.manage') }}" class="nav-link {{ Route::is('nepal_locations.manage') ? 'active' : '' }}"><i class="icon-location4"></i> <span>{{ __('Nepal Locations') }}</span></a>
+                    </li>
+
                     {{--Library Management--}}
                     <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['books.index', 'books.edit', 'books.show', 'books.circulations', 'books.categories', 'book_requests.index']) ? 'nav-item-expanded nav-item-open' : '' }}">
                         <a href="#" class="nav-link"><i class="icon-books"></i> <span>{{ __('Library') }}</span></a>

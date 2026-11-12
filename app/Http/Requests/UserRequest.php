@@ -30,8 +30,14 @@ class UserRequest extends FormRequest
             'username' => 'sometimes|nullable|alpha_dash|min:8|max:100|unique:users',
             'photo' => 'sometimes|nullable|image|mimes:jpeg,gif,png,jpg|max:2048',
             'address' => 'required|string|min:6|max:120',
-            'state_id' => 'required',
-            'lga_id' => 'required',
+            'state_id' => 'required_without:province_id|nullable',
+            'lga_id' => 'required_without:district_id|nullable',
+            'province_id' => 'required_without:state_id|nullable|integer|exists:nepal_provinces,id',
+            'district_id' => 'required_without:lga_id|nullable|integer|exists:nepal_districts,id',
+            'local_level_id' => 'sometimes|nullable|integer|exists:nepal_local_levels,id',
+            'ward_no' => 'sometimes|nullable|integer|min:1|max:35',
+            'tole' => 'sometimes|nullable|string|max:150',
+            'street' => 'sometimes|nullable|string|max:191',
             'nal_id' => 'required',
         ];
         $update =  [
@@ -42,8 +48,14 @@ class UserRequest extends FormRequest
             'email' => 'sometimes|nullable|email|max:100|unique:users,email,'.$this->user,
             'photo' => 'sometimes|nullable|image|mimes:jpeg,gif,png,jpg|max:2048',
             'address' => 'required|string|min:6|max:120',
-            'state_id' => 'required',
-            'lga_id' => 'required',
+            'state_id' => 'required_without:province_id|nullable',
+            'lga_id' => 'required_without:district_id|nullable',
+            'province_id' => 'required_without:state_id|nullable|integer|exists:nepal_provinces,id',
+            'district_id' => 'required_without:lga_id|nullable|integer|exists:nepal_districts,id',
+            'local_level_id' => 'sometimes|nullable|integer|exists:nepal_local_levels,id',
+            'ward_no' => 'sometimes|nullable|integer|min:1|max:35',
+            'tole' => 'sometimes|nullable|string|max:150',
+            'street' => 'sometimes|nullable|string|max:191',
             'nal_id' => 'required',
         ];
         return ($this->method() === 'POST') ? $store : $update;
@@ -77,5 +89,22 @@ class UserRequest extends FormRequest
 
         return parent::getValidatorInstance();
 
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if ($this->filled('province_id') || $this->filled('district_id') || $this->filled('local_level_id')) {
+                $geoError = app(\App\Services\NepalLocationService::class)->validateHierarchy(
+                    $this->filled('province_id') ? (int) $this->province_id : null,
+                    $this->filled('district_id') ? (int) $this->district_id : null,
+                    $this->filled('local_level_id') ? (int) $this->local_level_id : null,
+                    $this->filled('ward_no') ? (int) $this->ward_no : null
+                );
+                if ($geoError !== null) {
+                    $validator->errors()->add('district_id', $geoError);
+                }
+            }
+        });
     }
 }

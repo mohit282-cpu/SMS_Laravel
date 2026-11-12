@@ -65,7 +65,7 @@
                     </div>
 
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label>{{ __('Date of Birth (BS)') }}:</label>
                                 <input name="dob" value="{{ App\Helpers\NepaliHelper::adToBs($sr->user->dob) ?: $sr->user->dob }}" type="text" class="form-control nepali-date" placeholder="YYYY-MM-DD (BS)">
@@ -75,7 +75,7 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="nal_id">Nationality: <span class="text-danger">*</span></label>
                                 <select data-placeholder="Choose..." required name="nal_id" id="nal_id" class="select-search form-control">
@@ -87,26 +87,18 @@
                             </div>
                         </div>
 
-                        <div class="col-md-3">
-                            <label for="state_id">State: <span class="text-danger">*</span></label>
-                            <select onchange="getLGA(this.value)" required data-placeholder="Choose.." class="select-search form-control" name="state_id" id="state_id">
-                                <option value=""></option>
-                                @foreach($states as $st)
-                                    <option {{ ($sr->user->state_id  == $st->id ? 'selected' : '') }} value="{{ $st->id }}">{{ $st->name }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        <div class="col-md-3">
-                            <label for="lga_id">LGA: <span class="text-danger">*</span></label>
-                            <select required data-placeholder="Select State First" class="select-search form-control" name="lga_id" id="lga_id">
-                                @if($sr->user->lga_id)
-                                    <option selected value="{{ $sr->user->lga_id }}">{{ $sr->user->lga->name}}</option>
-                                @endif
-                            </select>
-                        </div>
-
                     </div>
+
+                    <x-nepal-address-selector
+                        :provinces="$provinces ?? null"
+                        :provinceId="$sr->province_id ?? $sr->user->province_id"
+                        :districtId="$sr->district_id ?? $sr->user->district_id"
+                        :localLevelId="$sr->local_level_id ?? $sr->user->local_level_id"
+                        :wardNo="$sr->ward_no ?? $sr->user->ward_no"
+                        :tole="$sr->tole ?? $sr->user->tole"
+                        :street="$sr->street ?? $sr->user->street"
+                        :required="true"
+                    />
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -134,7 +126,7 @@
                 <h6>Student Data</h6>
                 <fieldset>
                     <div class="row">
-                        <div class="col-md-3">
+                        <div class="col-md-6">
                             <div class="form-group">
                                 <label for="my_class_id">Class: </label>
                                 <select onchange="getClassSections(this.value)" name="my_class_id" required id="my_class_id" class="form-control select-search" data-placeholder="Select Class">
