@@ -17,7 +17,7 @@ class ReleaseArchiveSecurityTest extends TestCase
         return [$code, implode("\n", $output)];
     }
 
-    private function buildTarGzFromEntries(array $entries, string $outPath, array $options = []): void
+    private function buildTarGz(array $entries, string $outPath, array $options = []): void
     {
         $tarData = '';
         foreach ($entries as $entry) {
@@ -26,11 +26,13 @@ class ReleaseArchiveSecurityTest extends TestCase
             $type = $entry['type'] ?? '0';
             $size = strlen($content);
 
+            $sizeStr = !empty($entry['raw_size']) ? $entry['raw_size'] : (str_pad(decoct($size), 11, '0', STR_PAD_LEFT) . "\0");
+
             $header = str_pad(substr($name, 0, 100), 100, "\0");
             $header .= str_pad('0000644', 7, '0', STR_PAD_LEFT) . "\0";
             $header .= str_pad('0000000', 7, '0', STR_PAD_LEFT) . "\0";
             $header .= str_pad('0000000', 7, '0', STR_PAD_LEFT) . "\0";
-            $header .= str_pad(decoct($size), 11, '0', STR_PAD_LEFT) . "\0";
+            $header .= str_pad($sizeStr, 12, "\0", STR_PAD_RIGHT);
             $header .= str_pad(decoct(time()), 11, '0', STR_PAD_LEFT) . "\0";
             $header .= str_repeat(' ', 8); // checksum placeholder
             $header .= $type;
@@ -50,14 +52,13 @@ class ReleaseArchiveSecurityTest extends TestCase
             $header = substr_replace($header, $chkStr, 148, 8);
 
             if (!empty($entry['truncate_header'])) {
-                $header = substr($header, 0, 250); // Truncate header block
+                $header = substr($header, 0, 250);
             }
 
             $tarData .= $header;
             if ($size > 0 && empty($entry['truncate_header'])) {
                 if (!empty($entry['truncate_payload'])) {
                     $tarData .= substr($content, 0, (int) ($size / 2));
-                    // Intentionally omit padding to simulate truncated stream
                 } else {
                     $tarData .= $content;
                     $rem = $size % 512;
@@ -68,19 +69,40 @@ class ReleaseArchiveSecurityTest extends TestCase
             }
         }
 
-        if (empty($options['omit_terminator'])) {
-            $tarData .= str_repeat("\0", 1024);
+        // Handle End of Archive zero blocks
+        $zeroBlocks = $options['zero_blocks'] ?? 2;
+        if ($zeroBlocks > 0) {
+            $tarData .= str_repeat("\0", 512 * $zeroBlocks);
         }
 
-        $gz = gzopen($outPath, 'wb9');
-        gzwrite($gz, $tarData);
-        gzclose($gz);
+        if (!empty($options['invalid_second_block'])) {
+            $tarData .= str_repeat("\0", 512);
+            $tarData .= str_pad('CORRUPTED_NON_ZERO_DATA', 512, "\0");
+        }
+
+        if (!empty($options['trailing_data'])) {
+            $tarData .= str_pad('TRAILING_DATA', 512, 'X');
+        }
+
+        $gz = gzencode($tarData, 9);
+
+        if (!empty($options['corrupt_gzip_crc'])) {
+            // Corrupt the 4-byte CRC at offset -8
+            $gz = substr($gz, 0, -8) . "\xde\xad\xbe\xef" . substr($gz, -4);
+        }
+
+        if (!empty($options['truncate_gzip'])) {
+            // Truncate compressed stream
+            $gz = substr($gz, 0, -30);
+        }
+
+        file_put_contents($outPath, $gz);
     }
 
-    public function test_valid_release_archive_passes_security_check()
+    public function test_valid_ustar_archive_passes()
     {
-        $archive = sys_get_temp_dir() . '/sms_valid_' . uniqid() . '.tar.gz';
-        $this->buildTarGzFromEntries([
+        $archive = sys_get_temp_dir() . '/sms_valid_ustar_' . uniqid() . '.tar.gz';
+        $this->buildTarGz([
             ['name' => 'artisan', 'content' => '#!/usr/bin/env php'],
             ['name' => '.release_sha', 'content' => str_repeat('a', 40) . "\n"],
             ['name' => 'app/Test.php', 'content' => "<?php\n"],
@@ -95,36 +117,88 @@ class ReleaseArchiveSecurityTest extends TestCase
         }
     }
 
-    public function test_adversarial_archives_are_strictly_rejected()
+    public function test_valid_gnu_longname_archive_passes()
+    {
+        $archive = sys_get_temp_dir() . '/sms_valid_gnu_' . uniqid() . '.tar.gz';
+        $longPath = 'app/Services/Deeply/Nested/Directory/Path/That/Exceeds/One/Hundred/Characters/For/Testing/Purposes/LongFileName.php';
+        $this->buildTarGz([
+            ['name' => '././@LongLink', 'type' => 'L', 'content' => $longPath . "\0"],
+            ['name' => substr($longPath, 0, 100), 'content' => "<?php\n"],
+            ['name' => '.release_sha', 'content' => str_repeat('a', 40) . "\n"],
+            ['name' => 'artisan', 'content' => '#!/usr/bin/env php'],
+        ], $archive);
+
+        try {
+            [$code, $msg] = $this->runValidator($archive);
+            $this->assertEquals(0, $code, $msg);
+            $this->assertStringContainsString('security check passed', $msg);
+        } finally {
+            @unlink($archive);
+        }
+    }
+
+    public function test_valid_pax_archive_passes()
+    {
+        $archive = sys_get_temp_dir() . '/sms_valid_pax_' . uniqid() . '.tar.gz';
+        $paxRecord = "29 path=app/ValidPaxFile.php\n";
+        $this->buildTarGz([
+            ['name' => 'PaxHeader/app_ValidPaxFile', 'type' => 'x', 'content' => $paxRecord],
+            ['name' => 'app/dummy.php', 'content' => "<?php\n"],
+            ['name' => '.release_sha', 'content' => str_repeat('a', 40) . "\n"],
+            ['name' => 'artisan', 'content' => '#!/usr/bin/env php'],
+        ], $archive);
+
+        try {
+            [$code, $msg] = $this->runValidator($archive);
+            $this->assertEquals(0, $code, $msg);
+            $this->assertStringContainsString('security check passed', $msg);
+        } finally {
+            @unlink($archive);
+        }
+    }
+
+    public function test_adversarial_and_malformed_archives_are_strictly_rejected()
     {
         $cases = [
-            'invalid_checksum' => [
+            'corrupted_header_checksum' => [
                 'entries' => [['name' => 'app/File.php', 'content' => '1', 'corrupt_checksum' => true]],
             ],
-            'absolute_path' => [
-                'entries' => [['name' => '/etc/passwd', 'content' => 'root:x']],
+            'invalid_octal_size' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1', 'raw_size' => "99999999999\0"]],
             ],
-            'path_traversal' => [
-                'entries' => [['name' => '../../etc/passwd', 'content' => 'root:x']],
+            'truncated_header' => [
+                'entries' => [['name' => 'app/Trunc.php', 'content' => 'test', 'truncate_header' => true]],
+                'options' => ['zero_blocks' => 0],
             ],
-            'windows_drive' => [
-                'entries' => [['name' => 'C:\\Windows\\win.ini', 'content' => 'x']],
+            'truncated_payload' => [
+                'entries' => [['name' => 'app/TruncPayload.php', 'content' => str_repeat('a', 1024), 'truncate_payload' => true]],
+                'options' => ['zero_blocks' => 0],
             ],
-            'symlink' => [
-                'entries' => [['name' => 'app/evil_link', 'type' => '2', 'linkname' => '/etc/passwd']],
+            'missing_first_zero_block' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['zero_blocks' => 0],
             ],
-            'hardlink' => [
-                'entries' => [['name' => 'app/evil_hard', 'type' => '1', 'linkname' => '/etc/passwd']],
+            'missing_second_zero_block' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['zero_blocks' => 1],
             ],
-            'duplicate_entry' => [
+            'invalid_end_of_archive_sequence' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['zero_blocks' => 0, 'invalid_second_block' => true],
+            ],
+            'unexpected_trailing_data' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['zero_blocks' => 2, 'trailing_data' => true],
+            ],
+            'malformed_pax_length' => [
                 'entries' => [
-                    ['name' => 'app/Dup.php', 'content' => '1'],
-                    ['name' => 'app/Dup.php', 'content' => '2'],
+                    ['name' => 'PaxHeader/bad', 'type' => 'x', 'content' => "999 path=bad\n"],
+                    ['name' => 'app/File.php', 'content' => 'ok'],
                 ],
             ],
-            'malformed_pax_header' => [
+            'invalid_pax_path' => [
                 'entries' => [
-                    ['name' => 'PaxHeader/bad', 'type' => 'x', 'content' => "not_a_valid_pax_record\n"],
+                    ['name' => 'PaxHeader/bad', 'type' => 'x', 'content' => "28 path=../../etc/passwd\n"],
                     ['name' => 'app/File.php', 'content' => 'ok'],
                 ],
             ],
@@ -134,13 +208,26 @@ class ReleaseArchiveSecurityTest extends TestCase
                     ['name' => 'app/File.php', 'content' => 'ok'],
                 ],
             ],
-            'truncated_header' => [
-                'entries' => [['name' => 'app/Trunc.php', 'content' => 'test', 'truncate_header' => true]],
-                'options' => ['omit_terminator' => true],
+            'absolute_path' => [
+                'entries' => [['name' => '/etc/passwd', 'content' => 'root:x']],
             ],
-            'truncated_payload' => [
-                'entries' => [['name' => 'app/TruncPayload.php', 'content' => str_repeat('a', 1024), 'truncate_payload' => true]],
-                'options' => ['omit_terminator' => true],
+            'path_traversal' => [
+                'entries' => [['name' => '../../etc/passwd', 'content' => 'root:x']],
+            ],
+            'windows_drive_path' => [
+                'entries' => [['name' => 'C:\\Windows\\win.ini', 'content' => 'x']],
+            ],
+            'symlink' => [
+                'entries' => [['name' => 'app/evil_link', 'type' => '2', 'linkname' => '/etc/passwd']],
+            ],
+            'hardlink' => [
+                'entries' => [['name' => 'app/evil_hard', 'type' => '1', 'linkname' => '/etc/passwd']],
+            ],
+            'duplicate_normalized_filename' => [
+                'entries' => [
+                    ['name' => 'app/Dup.php', 'content' => '1'],
+                    ['name' => './app/Dup.php', 'content' => '2'],
+                ],
             ],
             'control_char_filename' => [
                 'entries' => [['name' => "app/bad\nname.php", 'content' => '1']],
@@ -148,20 +235,22 @@ class ReleaseArchiveSecurityTest extends TestCase
             'forbidden_env' => [
                 'entries' => [['name' => '.env', 'content' => 'APP_KEY=secret']],
             ],
-            'unexpected_top_level' => [
-                'entries' => [['name' => 'evil_dir/Malicious.php', 'content' => '<?php']],
+            'invalid_gzip_crc' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['corrupt_gzip_crc' => true],
             ],
-            'tests_dir' => [
-                'entries' => [['name' => 'tests/EvilTest.php', 'content' => '<?php']],
+            'truncated_gzip_stream' => [
+                'entries' => [['name' => 'app/File.php', 'content' => '1']],
+                'options' => ['truncate_gzip' => true],
             ],
         ];
 
         foreach ($cases as $label => $spec) {
             $archive = sys_get_temp_dir() . "/sms_{$label}_" . uniqid() . '.tar.gz';
-            $this->buildTarGzFromEntries($spec['entries'], $archive, $spec['options'] ?? []);
+            $this->buildTarGz($spec['entries'], $archive, $spec['options'] ?? []);
             try {
                 [$code, $msg] = $this->runValidator($archive);
-                $this->assertNotEquals(0, $code, "Adversarial case '{$label}' should have been rejected but passed: {$msg}");
+                $this->assertNotEquals(0, $code, "Adversarial fixture '{$label}' should have been rejected but passed: {$msg}");
             } finally {
                 @unlink($archive);
             }

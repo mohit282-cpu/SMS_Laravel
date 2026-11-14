@@ -121,7 +121,7 @@ jobs:
         run: php .github/scripts/verify-ci-database.php --connection=mysql_test
 
       - name: Check expand-and-contract migration safety
-        run: php .github/scripts/check-migration-safety.php
+        run: php .github/scripts/check-migration-safety.php --strict
 
       - name: Verify migration rollback and re-apply
         run: |

@@ -7,21 +7,23 @@
  * metadata support) with strict cryptographic, structural, and path checks.
  *
  * Fails closed on:
- *   - Gzip header corruption (missing 1F 8B magic header)
- *   - Corrupted TAR header checksums or malformed octal numbers
- *   - Truncated 512-byte headers or truncated file payloads
- *   - Archive size > 150 MB
- *   - Entry count > 50,000
- *   - Individual uncompressed file > 25 MB
- *   - Total uncompressed size > 500 MB or compression ratio > 100:1 (> 1 MB)
- *   - Symlinks, hard links, FIFOs, device nodes, or unknown entry types
- *   - Malformed GNU LongName or PAX extended headers
- *   - Control characters / newlines / NUL bytes in filenames
- *   - Absolute paths (/...) or Windows drive paths (C:\...)
- *   - Path traversal (.. segments with / or \)
- *   - Duplicate normalized paths
- *   - Unexpected top-level paths outside the production allowlist
- *   - Forbidden files (.env, .git, node_modules, tests, storage/logs, *.sql)
+ *   - Missing or invalid gzip magic header (0x1F, 0x8B)
+ *   - Gzip footer CRC32 mismatch or ISIZE mismatch
+ *   - Truncated gzip stream or premature EOF
+ *   - Corrupted TAR header checksums (signed & unsigned)
+ *   - Malformed or non-octal numeric fields (mode, uid, gid, size, mtime, chksum)
+ *   - Truncated 512-byte headers, file payloads, or block padding
+ *   - Missing or malformed end-of-archive markers (requires two 512-byte zero blocks)
+ *   - Unexpected non-zero trailing content after end-of-archive
+ *   - Malformed GNU LongName records
+ *   - Malformed PAX records (invalid length, missing newline, invalid key=val)
+ *   - Unsupported / dangerous PAX keys (linkpath, etc.)
+ *   - Symlinks, hard links, FIFOs, device nodes, or unsupported TAR types
+ *   - Absolute paths (/...), Windows drive paths (C:\...), or path traversal (..)
+ *   - Control characters, newlines, or NUL bytes in filenames
+ *   - Duplicate normalized archive paths
+ *   - Files outside the production allowlist or matching forbidden patterns (.env, tests, etc.)
+ *   - Resource limits (archive size, single file, total uncompressed, compression ratio)
  *
  * Usage:
  *   php .github/scripts/verify-release-archive.php /path/to/release.tar.gz
@@ -45,23 +47,36 @@ const MAX_TOTAL_UNCOMPRESSED = 524288000; // 500 MB
 const MAX_COMPRESSION_RATIO = 100.0;
 
 $archiveBytes = (int) filesize($archivePath);
-if ($archiveBytes <= 0 || $archiveBytes > MAX_ARCHIVE_BYTES) {
+if ($archiveBytes < 18 || $archiveBytes > MAX_ARCHIVE_BYTES) {
     fwrite(STDERR, "::error::Release archive size ({$archiveBytes} bytes) is invalid or exceeds limit (" . MAX_ARCHIVE_BYTES . " bytes).\n");
     exit(1);
 }
 
-// 1. Verify Gzip Magic Bytes (0x1F, 0x8B)
-$magicCheck = @fopen($archivePath, 'rb');
-if ($magicCheck === false) {
+// 1. Verify Gzip Magic Bytes (0x1F, 0x8B) & Footer
+$fp = @fopen($archivePath, 'rb');
+if ($fp === false) {
     fwrite(STDERR, "::error::Unable to read archive file: {$archivePath}\n");
     exit(1);
 }
-$magic = fread($magicCheck, 2);
-fclose($magicCheck);
+$magic = fread($fp, 2);
 if ($magic !== "\x1f\x8b") {
+    fclose($fp);
     fwrite(STDERR, "::error::Release archive is not a valid gzip file (missing gzip 1F 8B magic header).\n");
     exit(1);
 }
+
+// Read gzip trailer (last 8 bytes: CRC32, ISIZE)
+fseek($fp, -8, SEEK_END);
+$trailer = fread($fp, 8);
+fclose($fp);
+
+if (strlen($trailer) < 8) {
+    fwrite(STDERR, "::error::Truncated gzip archive: missing 8-byte footer.\n");
+    exit(1);
+}
+$unpackedTrailer = unpack('Vcrc/Visize', $trailer);
+$expectedGzCrc = (int) $unpackedTrailer['crc'];
+$expectedGzIsize = (int) $unpackedTrailer['isize'];
 
 $allowedTopLevel = [
     '.release_sha',
@@ -93,7 +108,9 @@ if ($gz === false) {
     exit(1);
 }
 
-function readExact($gz, int $bytes): array
+$crcContext = hash_init('crc32b');
+
+function readExactTracked($gz, int $bytes, $crcContext): array
 {
     $buf = '';
     while (strlen($buf) < $bytes && !gzeof($gz)) {
@@ -103,10 +120,13 @@ function readExact($gz, int $bytes): array
         }
         $buf .= $chunk;
     }
+    if ($buf !== '') {
+        hash_update($crcContext, $buf);
+    }
     return [strlen($buf) === $bytes, $buf];
 }
 
-function skipBytesExact($gz, int $bytes): bool
+function skipBytesTracked($gz, int $bytes, $crcContext): bool
 {
     $remaining = $bytes;
     while ($remaining > 0 && !gzeof($gz)) {
@@ -114,12 +134,13 @@ function skipBytesExact($gz, int $bytes): bool
         if ($chunk === false || $chunk === '') {
             break;
         }
+        hash_update($crcContext, $chunk);
         $remaining -= strlen($chunk);
     }
     return $remaining === 0;
 }
 
-function parsePaxRecords(string $data): ?array
+function parsePaxRecordsStrict(string $data, array &$violations): ?array
 {
     $records = [];
     $len = strlen($data);
@@ -127,31 +148,55 @@ function parsePaxRecords(string $data): ?array
     while ($offset < $len) {
         $spacePos = strpos($data, ' ', $offset);
         if ($spacePos === false) {
+            $violations[] = "Malformed PAX extended header: missing space delimiter.";
             return null;
         }
         $lenStr = substr($data, $offset, $spacePos - $offset);
         if (!preg_match('/^[0-9]+$/', $lenStr)) {
+            $violations[] = "Malformed PAX extended header: non-numeric length '{$lenStr}'.";
             return null;
         }
         $recordLen = (int) $lenStr;
         if ($recordLen < 5 || $offset + $recordLen > $len) {
+            $violations[] = "Malformed PAX extended header: invalid record length {$recordLen}.";
             return null;
         }
         $record = substr($data, $offset, $recordLen);
         if ($record[$recordLen - 1] !== "\n") {
+            $violations[] = "Malformed PAX extended header: record does not terminate with newline.";
             return null;
         }
         $content = substr($record, strlen($lenStr) + 1, -1);
         $eqPos = strpos($content, '=');
         if ($eqPos === false) {
+            $violations[] = "Malformed PAX extended header: missing '=' in record.";
             return null;
         }
         $key = substr($content, 0, $eqPos);
         $val = substr($content, $eqPos + 1);
+
+        if (in_array(strtolower($key), ['linkpath', 'schily.dev', 'schily.ino', 'schily.nlink'], true)) {
+            $violations[] = "Unsupported dangerous PAX attribute '{$key}' rejected.";
+            return null;
+        }
+
         $records[$key] = $val;
         $offset += $recordLen;
     }
     return $records;
+}
+
+function validateOctalField(string $raw, string $field, string $name, array &$violations): ?int
+{
+    $trimmed = trim($raw, "\0 ");
+    if ($trimmed === '') {
+        return 0;
+    }
+    if (!preg_match('/^[0-7]+$/', $trimmed)) {
+        $violations[] = "Malformed or non-octal {$field} field ('{$trimmed}') in TAR header for '{$name}'.";
+        return null;
+    }
+    return (int) octdec($trimmed);
 }
 
 $violations = [];
@@ -160,12 +205,16 @@ $entryCount = 0;
 $totalUncompressed = 0;
 $pendingLongName = null;
 $pendingPaxPath = null;
+$hasEoaFirstBlock = false;
+$hasEoaSecondBlock = false;
 
 while (!gzeof($gz)) {
-    [$has512, $header] = readExact($gz, 512);
+    [$has512, $header] = readExactTracked($gz, 512, $crcContext);
     if ($header === '') {
         break;
     }
+    $totalUncompressed += strlen($header);
+
     if (!$has512) {
         $violations[] = "Truncated TAR header: expected 512 bytes, received " . strlen($header) . " bytes.";
         break;
@@ -173,25 +222,50 @@ while (!gzeof($gz)) {
 
     // Two consecutive zero blocks mark end-of-archive
     if ($header === str_repeat("\0", 512)) {
-        [$hasSecondZero, $secondBlock] = readExact($gz, 512);
-        if ($hasSecondZero && $secondBlock !== str_repeat("\0", 512)) {
-            $violations[] = "Malformed archive termination: expected zero block after end-of-archive marker.";
+        $hasEoaFirstBlock = true;
+        [$hasSecondZero, $secondBlock] = readExactTracked($gz, 512, $crcContext);
+        if ($secondBlock !== '') {
+            $totalUncompressed += strlen($secondBlock);
+        }
+        if (!$hasSecondZero) {
+            $violations[] = "Malformed archive termination: missing second 512-byte zero block (stream ended prematurely).";
+            break;
+        }
+        if ($secondBlock !== str_repeat("\0", 512)) {
+            $violations[] = "Malformed archive termination: expected second 512-byte zero block, found non-zero data.";
+            break;
+        }
+        $hasEoaSecondBlock = true;
+
+        // Verify remaining stream is all zero padding
+        while (!gzeof($gz)) {
+            [$hasMore, $trailingChunk] = readExactTracked($gz, 512, $crcContext);
+            if ($trailingChunk === '') {
+                break;
+            }
+            $totalUncompressed += strlen($trailingChunk);
+            if ($trailingChunk !== str_repeat("\0", strlen($trailingChunk))) {
+                $violations[] = "Unexpected non-zero trailing data found after end-of-archive marker.";
+                break;
+            }
         }
         break;
     }
 
     $nameField = rtrim(substr($header, 0, 100), "\0");
     $prefixField = rtrim(substr($header, 345, 155), "\0");
-    $sizeOctal = trim(substr($header, 124, 12), "\0 ");
     $typeFlag = $header[156];
 
+    // Validate numeric fields strictly
+    validateOctalField(substr($header, 100, 8), 'mode', $nameField, $violations);
+    validateOctalField(substr($header, 108, 8), 'uid', $nameField, $violations);
+    validateOctalField(substr($header, 116, 8), 'gid', $nameField, $violations);
+    $size = validateOctalField(substr($header, 124, 12), 'size', $nameField, $violations);
+    validateOctalField(substr($header, 136, 12), 'mtime', $nameField, $violations);
+    $storedChk = validateOctalField(substr($header, 148, 8), 'checksum', $nameField, $violations);
+
     // Verify TAR header checksum
-    $chkRaw = substr($header, 148, 8);
-    $chkOctal = trim($chkRaw, "\0 ");
-    if (!preg_match('/^[0-7]+$/', $chkOctal)) {
-        $violations[] = "Malformed or non-octal checksum in TAR header for '{$nameField}'.";
-    } else {
-        $storedChk = (int) octdec($chkOctal);
+    if ($storedChk !== null) {
         $dummyHeader = substr($header, 0, 148) . str_repeat(' ', 8) . substr($header, 156, 356);
         $unsignedSum = 0;
         $signedSum = 0;
@@ -205,11 +279,8 @@ while (!gzeof($gz)) {
         }
     }
 
-    if ($sizeOctal !== '' && !preg_match('/^[0-7]+$/', $sizeOctal)) {
-        $violations[] = "Malformed or non-octal size field in TAR header for '{$nameField}'.";
-        $size = -1;
-    } else {
-        $size = $sizeOctal !== '' ? (int) octdec($sizeOctal) : 0;
+    if ($size === null || $size < 0) {
+        $size = 0;
     }
 
     $paddedSize = $size > 0 ? (int) (ceil($size / 512) * 512) : 0;
@@ -220,14 +291,18 @@ while (!gzeof($gz)) {
             $violations[] = "Invalid GNU LongName record length ({$size} bytes).";
             continue;
         }
-        [$ok, $data] = readExact($gz, $size);
+        [$ok, $data] = readExactTracked($gz, $size, $crcContext);
+        $totalUncompressed += strlen($data);
         if (!$ok) {
             $violations[] = "Truncated GNU LongName payload.";
             break;
         }
-        if ($paddedSize > $size && !skipBytesExact($gz, $paddedSize - $size)) {
-            $violations[] = "Truncated GNU LongName padding.";
-            break;
+        if ($paddedSize > $size) {
+            if (!skipBytesTracked($gz, $paddedSize - $size, $crcContext)) {
+                $violations[] = "Truncated GNU LongName padding.";
+                break;
+            }
+            $totalUncompressed += ($paddedSize - $size);
         }
         $pendingLongName = rtrim($data, "\0");
         if ($pendingLongName === '' || preg_match('/[\r\n\0]/', $pendingLongName)) {
@@ -243,29 +318,32 @@ while (!gzeof($gz)) {
             $violations[] = "Invalid PAX extended header length ({$size} bytes).";
             continue;
         }
-        [$ok, $data] = readExact($gz, $size);
+        [$ok, $data] = readExactTracked($gz, $size, $crcContext);
+        $totalUncompressed += strlen($data);
         if (!$ok) {
             $violations[] = "Truncated PAX extended header payload.";
             break;
         }
-        if ($paddedSize > $size && !skipBytesExact($gz, $paddedSize - $size)) {
-            $violations[] = "Truncated PAX header padding.";
-            break;
+        if ($paddedSize > $size) {
+            if (!skipBytesTracked($gz, $paddedSize - $size, $crcContext)) {
+                $violations[] = "Truncated PAX header padding.";
+                break;
+            }
+            $totalUncompressed += ($paddedSize - $size);
         }
-        $paxRecords = parsePaxRecords($data);
-        if ($paxRecords === null) {
-            $violations[] = "Malformed PAX extended header structure.";
-        } elseif ($typeFlag === 'x' && isset($paxRecords['path'])) {
+        $paxRecords = parsePaxRecordsStrict($data, $violations);
+        if ($paxRecords !== null && $typeFlag === 'x' && isset($paxRecords['path'])) {
             $pendingPaxPath = $paxRecords['path'];
         }
         continue;
     }
 
     if ($paddedSize > 0) {
-        if (!skipBytesExact($gz, $paddedSize)) {
+        if (!skipBytesTracked($gz, $paddedSize, $crcContext)) {
             $violations[] = "Truncated file payload for '{$nameField}' (expected {$paddedSize} padded bytes).";
             break;
         }
+        $totalUncompressed += $paddedSize;
     }
 
     $entryPath = $pendingPaxPath ?? $pendingLongName ?? ($prefixField !== '' ? $prefixField . '/' . $nameField : $nameField);
@@ -289,7 +367,6 @@ while (!gzeof($gz)) {
         continue;
     }
 
-    $totalUncompressed += $size;
     if ($totalUncompressed > MAX_TOTAL_UNCOMPRESSED) {
         $violations[] = "Total uncompressed size exceeds limit (" . MAX_TOTAL_UNCOMPRESSED . " bytes).";
         break;
@@ -342,6 +419,20 @@ while (!gzeof($gz)) {
 }
 
 gzclose($gz);
+
+// Validate end of archive marker
+if (!$hasEoaFirstBlock || !$hasEoaSecondBlock) {
+    $violations[] = "Archive is missing required two 512-byte end-of-archive zero blocks.";
+}
+
+// Verify Gzip CRC32 and uncompressed ISIZE
+$computedCrc = hexdec(hash_final($crcContext));
+if ($computedCrc !== $expectedGzCrc) {
+    $violations[] = sprintf("Gzip CRC32 checksum mismatch: computed 0x%08X, footer contains 0x%08X.", $computedCrc, $expectedGzCrc);
+}
+if (($totalUncompressed & 0xFFFFFFFF) !== $expectedGzIsize) {
+    $violations[] = sprintf("Gzip uncompressed size mismatch: computed %d bytes, footer specifies %d bytes.", $totalUncompressed, $expectedGzIsize);
+}
 
 if ($entryCount === 0 && empty($violations)) {
     $violations[] = 'Archive is empty or contains no valid files.';

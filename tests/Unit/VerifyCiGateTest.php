@@ -57,6 +57,76 @@ class VerifyCiGateTest extends TestCase
         $this->assertStringContainsString('Verified: mohit282-cpu/SMS_Laravel@', $out);
     }
 
+    public function test_deterministic_rerun_policy_accepts_latest_successful_run()
+    {
+        $sha = str_repeat('a', 40);
+        [$code, $out] = $this->runVerifier([
+            'workflow_runs' => [
+                [
+                    'id' => 1001,
+                    'head_sha' => $sha,
+                    'status' => 'completed',
+                    'conclusion' => 'failure',
+                    'check_suite_id' => 501,
+                    'path' => '.github/workflows/ci.yml',
+                    'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
+                ],
+                [
+                    'id' => 1002,
+                    'head_sha' => $sha,
+                    'status' => 'completed',
+                    'conclusion' => 'success',
+                    'check_suite_id' => 502,
+                    'path' => '.github/workflows/ci.yml',
+                    'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
+                ],
+            ],
+            'check_runs_by_suite' => [
+                '502' => [[
+                    'id' => 9002,
+                    'name' => 'CI Integration Gate',
+                    'status' => 'completed',
+                    'conclusion' => 'success',
+                    'check_suite' => ['id' => 502],
+                ]],
+            ],
+        ], $sha);
+
+        $this->assertEquals(0, $code, $out);
+        $this->assertStringContainsString('run #1002', $out);
+    }
+
+    public function test_deterministic_rerun_policy_rejects_when_latest_rerun_is_failed()
+    {
+        $sha = str_repeat('a', 40);
+        [$code, $out] = $this->runVerifier([
+            'workflow_runs' => [
+                [
+                    'id' => 1001,
+                    'head_sha' => $sha,
+                    'status' => 'completed',
+                    'conclusion' => 'success',
+                    'check_suite_id' => 501,
+                    'path' => '.github/workflows/ci.yml',
+                    'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
+                ],
+                [
+                    'id' => 1002,
+                    'head_sha' => $sha,
+                    'status' => 'completed',
+                    'conclusion' => 'failure',
+                    'check_suite_id' => 502,
+                    'path' => '.github/workflows/ci.yml',
+                    'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
+                ],
+            ],
+            'check_runs_by_suite' => [],
+        ], $sha);
+
+        $this->assertNotEquals(0, $code);
+        $this->assertStringContainsString('run #1002 for ' . $sha . ' is not completed+success', $out);
+    }
+
     public function test_rejects_wrong_repository()
     {
         $sha = str_repeat('a', 40);
@@ -88,7 +158,6 @@ class VerifyCiGateTest extends TestCase
                 'conclusion' => 'success',
                 'check_suite_id' => 555,
                 'path' => '.github/workflows/ci.yml',
-                // repository is omitted
             ]],
             'check_runs_by_suite' => ['555' => []],
         ], $sha);
@@ -127,7 +196,6 @@ class VerifyCiGateTest extends TestCase
                 'status' => 'completed',
                 'conclusion' => 'success',
                 'check_suite_id' => 555,
-                // path is omitted
                 'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
             ]],
             'check_runs_by_suite' => ['555' => []],
@@ -239,7 +307,6 @@ class VerifyCiGateTest extends TestCase
                 'head_sha' => $sha,
                 'status' => 'completed',
                 'conclusion' => 'success',
-                // check_suite_id omitted
                 'path' => '.github/workflows/ci.yml',
                 'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
             ]],
@@ -343,15 +410,47 @@ class VerifyCiGateTest extends TestCase
         $this->assertStringContainsString('failed/incomplete', $out);
     }
 
-    public function test_rejects_api_error_response()
+    public function test_rejects_skipped_or_cancelled_integration_gate()
     {
         $sha = str_repeat('a', 40);
-        [$code, $out] = $this->runVerifier([
-            'api_error' => true,
-        ], $sha);
+        foreach (['skipped', 'cancelled'] as $concl) {
+            [$code, $out] = $this->runVerifier([
+                'workflow_runs' => [[
+                    'id' => 1009,
+                    'head_sha' => $sha,
+                    'status' => 'completed',
+                    'conclusion' => 'success',
+                    'check_suite_id' => 999,
+                    'path' => '.github/workflows/ci.yml',
+                    'repository' => ['full_name' => 'mohit282-cpu/SMS_Laravel'],
+                ]],
+                'check_runs_by_suite' => [
+                    '999' => [[
+                        'id' => 1,
+                        'name' => 'CI Integration Gate',
+                        'status' => 'completed',
+                        'conclusion' => $concl,
+                        'check_suite' => ['id' => 999],
+                    ]],
+                ],
+            ], $sha);
 
-        $this->assertNotEquals(0, $code);
-        $this->assertStringContainsString('Simulated GitHub API error', $out);
+            $this->assertNotEquals(0, $code);
+            $this->assertStringContainsString('failed/incomplete', $out);
+        }
+    }
+
+    public function test_rejects_api_401_403_404_429()
+    {
+        $sha = str_repeat('a', 40);
+        foreach ([401 => '401 Unauthorized', 403 => '403 Forbidden', 404 => '404 Not Found', 429 => '429 Too Many Requests'] as $status => $needle) {
+            [$code, $out] = $this->runVerifier([
+                'http_code' => $status,
+            ], $sha);
+
+            $this->assertNotEquals(0, $code);
+            $this->assertStringContainsString($needle, $out);
+        }
     }
 
     public function test_rejects_malformed_json_response()
@@ -372,7 +471,6 @@ class VerifyCiGateTest extends TestCase
             . ' --sha=' . escapeshellarg($sha) . ' 2>&1';
         $output = [];
         $code = 0;
-        // Run with cleared GH_TOKEN / GITHUB_TOKEN
         $descriptors = [
             1 => ['pipe', 'w'],
             2 => ['pipe', 'w'],

@@ -1,0 +1,6 @@
+{
+    "policy": "migration-destructive-exceptions",
+    "version": 1,
+    "description": "Documented, time-bound risk acceptance for destructive database migrations. Every approved entry must name the migration file, exact destructive operation, business justification, data preservation strategy, recovery strategy, owner, approval date, and expiration date.",
+    "exceptions": []
+}

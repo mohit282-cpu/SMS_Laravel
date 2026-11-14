@@ -7,20 +7,33 @@
  * single path passed via --file=...) without being fooled by comments, strings,
  * anonymous classes, or unusual formatting.
  *
- * Checks for:
+ * Fails closed by default on:
  *   - Destructive Schema operations inside up(): dropColumn, drop, dropIfExists, renameColumn, rename, truncate
  *   - Static Schema operations inside up(): Schema::drop, Schema::dropIfExists, Schema::rename
  *   - Raw SQL destructive statements inside up(): DB::statement/unprepared with DROP, TRUNCATE, DELETE
- *   - Missing down() rollback methods
- *   - Honors @approved-destructive: <reason> annotations for verified schema refactors
+ *   - Missing down() rollback methods (warnings by default, errors in strict mode)
+ *
+ * Approvals require an unexpired, complete record in .github/security/migration-exceptions.json
+ * or a fully-qualified JSON annotation:
+ *   @approved-destructive: {"operation": "...", "justification": "...", "preservationStrategy": "...", "recoveryStrategy": "...", "owner": "...", "approvalDate": "YYYY-MM-DD", "expires": "YYYY-MM-DD"}
+ * Generic, unverified annotations are strictly rejected.
  *
  * Usage:
- *   php .github/scripts/check-migration-safety.php [--strict] [--file=path/to/migration.php]
+ *   php .github/scripts/check-migration-safety.php [--file=path/to/migration.php] [--allow-warnings]
  */
 
-$options = getopt('', ['strict', 'file::', 'allow-approved']);
-$strict = array_key_exists('strict', $options);
+$options = getopt('', ['strict', 'allow-warnings', 'file::']);
+$warnOnly = array_key_exists('allow-warnings', $options);
 $singleFile = $options['file'] ?? null;
+
+$policyFile = dirname(__DIR__) . '/security/migration-exceptions.json';
+$policyExceptions = [];
+if (is_file($policyFile)) {
+    $decodedPolicy = json_decode((string) file_get_contents($policyFile), true);
+    if (is_array($decodedPolicy) && isset($decodedPolicy['exceptions']) && is_array($decodedPolicy['exceptions'])) {
+        $policyExceptions = $decodedPolicy['exceptions'];
+    }
+}
 
 $files = [];
 if (is_string($singleFile) && $singleFile !== '') {
@@ -43,14 +56,53 @@ $destructiveOps = ['dropColumn', 'dropIfExists', 'drop', 'renameColumn', 'rename
 $warnings = [];
 $errors = [];
 
-function scanMigrationFile(string $path, array $destructiveOps): array
+function validateApproval(array $approval, string $filename, string $operation): ?string
+{
+    $requiredKeys = [
+        'operation' => 'Exact destructive operation',
+        'justification' => 'Business justification',
+        'preservationStrategy' => 'Data preservation strategy',
+        'recoveryStrategy' => 'Rollback or recovery strategy',
+        'owner' => 'Reviewer/owner',
+        'approvalDate' => 'Approval date',
+        'expires' => 'Expiration date',
+    ];
+
+    foreach ($requiredKeys as $k => $label) {
+        if (empty($approval[$k]) || !is_string($approval[$k])) {
+            return "Missing or invalid '{$k}' ({$label}) in approval.";
+        }
+    }
+
+    if (strcasecmp(trim($approval['operation']), trim($operation)) !== 0) {
+        return "Approval operation '{$approval['operation']}' does not match detected operation '{$operation}'.";
+    }
+
+    $today = date('Y-m-d');
+    if ($approval['expires'] < $today) {
+        return "Approval expired on {$approval['expires']}.";
+    }
+
+    return null;
+}
+
+function scanMigrationFile(string $path, array $destructiveOps, array $policyExceptions): array
 {
     $code = (string) file_get_contents($path);
+    $filename = basename($path);
 
-    // Check for approved-destructive annotation
-    $approvedReason = null;
-    if (preg_match('/@approved-destructive:\s*([^\r\n*]+)/i', $code, $m)) {
-        $approvedReason = trim($m[1]);
+    // Extract inline structured approval if present
+    $inlineApproval = null;
+    $inlineApprovalError = null;
+    if (preg_match('/@approved-destructive:\s*(\{[^\r\n*]+\})/i', $code, $m)) {
+        $json = json_decode($m[1], true);
+        if (is_array($json)) {
+            $inlineApproval = $json;
+        } else {
+            $inlineApprovalError = "Malformed JSON in @approved-destructive annotation.";
+        }
+    } elseif (preg_match('/@approved-destructive:\s*([^\r\n*]+)/i', $code, $m)) {
+        $inlineApprovalError = "Generic @approved-destructive string rejected. Must be a complete structured JSON object with all required fields.";
     }
 
     $tokens = token_get_all($code);
@@ -188,30 +240,65 @@ function scanMigrationFile(string $path, array $destructiveOps): array
     return [
         'hasUp' => $hasUp,
         'hasDown' => $hasDown,
-        'approvedReason' => $approvedReason,
+        'inlineApproval' => $inlineApproval,
+        'inlineApprovalError' => $inlineApprovalError,
         'findings' => $findings,
     ];
 }
 
 foreach ($files as $file) {
     $name = basename($file);
-    $res = scanMigrationFile($file, $destructiveOps);
+    $res = scanMigrationFile($file, $destructiveOps, $policyExceptions);
 
     if ($res['hasUp'] && !$res['hasDown']) {
-        $warnings[] = "{$name}: missing down() rollback method.";
+        $msg = "{$name}: missing down() rollback method.";
+        if ($warnOnly) {
+            $warnings[] = $msg;
+        } else {
+            $errors[] = $msg;
+        }
+    }
+
+    if (!empty($res['inlineApprovalError'])) {
+        $errors[] = "{$name}: {$res['inlineApprovalError']}";
     }
 
     foreach ($res['findings'] as $f) {
-        if ($res['approvedReason'] !== null) {
-            $warnings[] = "{$name} (line {$f['line']}): up() calls '{$f['op']}' [APPROVED: {$res['approvedReason']}].";
+        $op = $f['op'];
+
+        // Check if covered by policy exceptions or inline approval
+        $approved = null;
+        if (!empty($res['inlineApproval'])) {
+            $err = validateApproval($res['inlineApproval'], $name, $op);
+            if ($err === null) {
+                $approved = $res['inlineApproval'];
+            } else {
+                $errors[] = "{$name} (line {$f['line']}): invalid inline approval: {$err}";
+            }
+        }
+
+        if ($approved === null) {
+            foreach ($policyExceptions as $pex) {
+                if (isset($pex['migration']) && (basename($pex['migration']) === $name || $pex['migration'] === $name)) {
+                    $err = validateApproval($pex, $name, $op);
+                    if ($err === null) {
+                        $approved = $pex;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ($approved !== null) {
+            $warnings[] = "{$name} (line {$f['line']}): up() calls '{$op}' [APPROVED by {$approved['owner']}: {$approved['justification']}].";
             continue;
         }
 
-        $msg = "{$name} (line {$f['line']}): up() calls '{$f['op']}', which may break backward compatibility or cause data loss.";
-        if ($strict) {
-            $errors[] = $msg;
-        } else {
+        $msg = "{$name} (line {$f['line']}): up() calls destructive operation '{$op}', which may cause data loss or break zero-downtime deployment.";
+        if ($warnOnly) {
             $warnings[] = $msg;
+        } else {
+            $errors[] = $msg;
         }
     }
 }

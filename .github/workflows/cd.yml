@@ -303,16 +303,27 @@ jobs:
               local req_timeout="${HEALTH_REQUEST_TIMEOUT:-15}"
               local attempt=1
               while [ "${attempt}" -le "${max_attempts}" ]; do
-                local resp body code status rel
+                local resp body code status rel parsed
                 resp=$(curl -s -S -w "\n%{http_code}" --max-time "${req_timeout}" "${url}/health/readiness" || true)
                 body=$(printf '%s\n' "${resp}" | sed '$d')
                 code=$(printf '%s\n' "${resp}" | tail -n 1)
-                status=$(printf '%s\n' "${body}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
-                rel=$(printf '%s\n' "${body}" | grep -o '"release"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
 
-                echo "Readiness probe attempt ${attempt}/${max_attempts}: HTTP=${code}, status=${status}, release=${rel:-none}"
+                parsed=$(php -r '
+                  $input = file_get_contents("php://stdin");
+                  $json = json_decode($input, true);
+                  if (!is_array($json)) { exit(1); }
+                  $status = trim((string) ($json["status"] ?? ""));
+                  $rel = trim((string) ($json["release"] ?? ""));
+                  echo $status . "\t" . $rel;
+                ' <<< "${body}" 2>/dev/null || true)
+
+                status=$(printf '%s\n' "${parsed}" | cut -f1)
+                rel=$(printf '%s\n' "${parsed}" | cut -f2)
+
+                echo "Readiness probe attempt ${attempt}/${max_attempts}: HTTP=${code}, status=${status:-invalid}, release=${rel:-none}"
                 if [ "${code}" = "200" ] && { [ "${status}" = "ready" ] || [ "${status}" = "healthy" ]; }; then
                   if [ -n "${expected_sha}" ] && [[ "${rel}" =~ ^[0-9a-f]{40}$ ]] && [ "${rel}" = "${expected_sha}" ]; then
+                    echo "Readiness probe succeeded: release ${rel} is healthy and active."
                     return 0
                   fi
                   echo "Release mismatch or missing release SHA: expected '${expected_sha}', got '${rel:-missing}'."
@@ -411,7 +422,7 @@ jobs:
             cd "${RELEASE_DIR}"
             test -d "${RELEASE_DIR}/bootstrap/cache" || mkdir -p "${RELEASE_DIR}/bootstrap/cache"
             chmod 775 "${RELEASE_DIR}/bootstrap/cache"
-            find "${RELEASE_DIR}/bootstrap/cache" -mindepth 1 -maxdepth 2 -exec chmod ug+rw {} + 2>/dev/null || true
+            chmod -R ug+rwX "${RELEASE_DIR}/bootstrap/cache"
 
             # 6. Pre-migration database backup
             if [ "${MIGRATIONS}" = "true" ]; then
@@ -484,13 +495,23 @@ jobs:
             HTTP_RESPONSE=$(curl -s -S -w "\n%{http_code}" --max-time 15 "${HEALTH_URL}" || true)
             HTTP_BODY=$(printf '%s\n' "${HTTP_RESPONSE}" | sed '$d')
             HTTP_CODE=$(printf '%s\n' "${HTTP_RESPONSE}" | tail -n 1)
-            STATUS=$(printf '%s\n' "${HTTP_BODY}" | grep -o '"status"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
-            RELEASE=$(printf '%s\n' "${HTTP_BODY}" | grep -o '"release"[[:space:]]*:[[:space:]]*"[^"]*"' | head -n1 | cut -d'"' -f4 || true)
 
-            echo "External probe ${attempt}/${max_attempts}: HTTP=${HTTP_CODE}, status=${STATUS}, release=${RELEASE:-none}"
+            PARSED=$(php -r '
+              $input = file_get_contents("php://stdin");
+              $json = json_decode($input, true);
+              if (!is_array($json)) { exit(1); }
+              $status = trim((string) ($json["status"] ?? ""));
+              $rel = trim((string) ($json["release"] ?? ""));
+              echo $status . "\t" . $rel;
+            ' <<< "${HTTP_BODY}" 2>/dev/null || true)
+
+            STATUS=$(printf '%s\n' "${PARSED}" | cut -f1)
+            RELEASE=$(printf '%s\n' "${PARSED}" | cut -f2)
+
+            echo "External probe attempt ${attempt}/${max_attempts}: HTTP=${HTTP_CODE}, status=${STATUS:-invalid}, release=${RELEASE:-missing}"
             if [ "${HTTP_CODE}" = "200" ] && { [ "${STATUS}" = "ready" ] || [ "${STATUS}" = "healthy" ]; }; then
               if [[ "${RELEASE}" =~ ^[0-9a-f]{40}$ ]] && [ "${RELEASE}" = "${SHA}" ]; then
-                echo "External health check PASSED for release ${SHA}."
+                echo "External health check PASSED: verified release ${SHA} is live."
                 exit 0
               fi
               echo "Release mismatch or missing SHA: expected ${SHA}, got ${RELEASE:-missing}."

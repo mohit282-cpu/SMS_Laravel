@@ -63,6 +63,15 @@ function ghPaginatedGet(string $endpoint): array
         curl_close($ch);
 
         if ($body === false || $httpCode < 200 || $httpCode >= 300) {
+            if ($httpCode === 401) {
+                ciGateFail("GitHub API error at {$url} (HTTP 401 Unauthorized): Invalid or expired GH_TOKEN.");
+            } elseif ($httpCode === 403) {
+                ciGateFail("GitHub API error at {$url} (HTTP 403 Forbidden): API rate limit exceeded or missing scope.");
+            } elseif ($httpCode === 404) {
+                ciGateFail("GitHub API error at {$url} (HTTP 404 Not Found): Repository or workflow not found.");
+            } elseif ($httpCode === 429) {
+                ciGateFail("GitHub API error at {$url} (HTTP 429 Too Many Requests): API rate limit reached.");
+            }
             ciGateFail("GitHub API error at {$url} (HTTP {$httpCode}): {$err}");
         }
 
@@ -97,6 +106,20 @@ if (is_string($fixtureFile) && $fixtureFile !== '') {
     if (!is_array($fixture)) {
         ciGateFail("Invalid fixture JSON: {$fixtureFile}");
     }
+    if (!empty($fixture['http_code'])) {
+        $hc = (int) $fixture['http_code'];
+        if ($hc === 401) {
+            ciGateFail("GitHub API error (HTTP 401 Unauthorized): Invalid or expired GH_TOKEN.");
+        } elseif ($hc === 403) {
+            ciGateFail("GitHub API error (HTTP 403 Forbidden): API rate limit exceeded or missing scope.");
+        } elseif ($hc === 404) {
+            ciGateFail("GitHub API error (HTTP 404 Not Found): Repository or workflow not found.");
+        } elseif ($hc === 429) {
+            ciGateFail("GitHub API error (HTTP 429 Too Many Requests): Secondary rate limit reached.");
+        } else {
+            ciGateFail("GitHub API error (HTTP {$hc}).");
+        }
+    }
     if (!empty($fixture['api_error'])) {
         ciGateFail('Simulated GitHub API error.');
     }
@@ -127,8 +150,9 @@ if (empty($matchingRuns)) {
     ciGateFail("No '{$workflow}' workflow run found for {$repo}@{$sha}.");
 }
 
-// Reject any incomplete or non-success run among the latest/active runs unless clearly superseded,
-// and require the latest run (highest run_number / id) to be completed + success.
+// Deterministic policy for workflow reruns:
+// Sort runs descending by ID (highest ID = most recent run).
+// The latest run MUST be completed and success. If a newer rerun was executed and failed/in-progress, reject!
 usort($matchingRuns, fn ($a, $b) => ((int) ($b['id'] ?? 0)) <=> ((int) ($a['id'] ?? 0)));
 $latestRun = $matchingRuns[0];
 
@@ -171,4 +195,3 @@ if (($gate['status'] ?? '') !== 'completed' || ($gate['conclusion'] ?? '') !== '
 
 fwrite(STDOUT, "Verified: {$repo}@{$sha} passed {$workflow} run #{$latestRun['id']} (suite #{$checkSuiteId}) and '{$gateName}'.\n");
 exit(0);
-
