@@ -96,3 +96,4 @@ flowchart LR
 - Incrementally upgrade Laravel 8 -> Laravel 9 -> Laravel 10.
 - Update dependencies to modern major versions (`league/flysystem` v3, `guzzlehttp/psr7` v2).
 - Complete migration of Vue 2 components to Vue 3.
+

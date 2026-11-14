@@ -177,3 +177,4 @@ class StudentRecordAuthorizationSecurityTest extends TestCase
             ->assertStatus(200);
     }
 }
+

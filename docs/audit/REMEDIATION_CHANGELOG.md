@@ -56,3 +56,4 @@
 - Hardened `.github/scripts/verify-ci-gate.php` with fail-closed pagination and rerun safety.
 - Made `.github/scripts/check-migration-safety.php` run in strict mode by default.
 - Removed error suppression (`|| true`) from deployment rollback paths.
+

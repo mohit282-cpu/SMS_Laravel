@@ -90,3 +90,4 @@ The repository enforces migration safety via `.github/scripts/check-migration-sa
 
 ### 5.2 CI Database Isolation Gate
 - `.github/scripts/verify-ci-database.php` validates that database connections in CI and automated testing point exclusively to dedicated test instances (`sms_laravel_test`), preventing accidental test execution against live or development data.
+

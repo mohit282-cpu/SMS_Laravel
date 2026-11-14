@@ -68,3 +68,4 @@ The application routes data queries through repositories (`StudentRepo`, `MyClas
 
 ### 5.2 Session & Cache Driver Tuning
 - In production with high concurrent users (>500 active sessions), migrate session storage from `file` to `redis` or `database` with connection pooling.
+

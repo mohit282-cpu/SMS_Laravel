@@ -103,3 +103,4 @@ The test suite is structured into Unit and Feature layers, covering both functio
 - Local testing database (`sms_laravel_test`) mirrors the CI workflow MySQL service container.
 - `verify-ci-database.php` ensures tests never run against a production or shared database.
 - Database migrations execute cleanly via `php artisan migrate --database=mysql_test`.
+

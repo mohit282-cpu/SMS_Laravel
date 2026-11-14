@@ -2,8 +2,8 @@
 
 **Repository:** `mohit282-cpu/SMS_Laravel`  
 **Branch:** `testing`  
-**Current Verified Commit:** `30a2a09`  
-**Audit Timestamp:** 2026-11-14T21:15:00+05:45  
+**Current Verified Commit:** `d813cb1`  
+**Audit Timestamp:** 2026-11-14T20:45:00+05:45  
 **Auditor:** Principal Software & Security Engineering Review  
 
 ---
@@ -12,7 +12,7 @@
 
 SMS Laravel is a multi-role School Management System built on Laravel 8, tailored for academic institutions in Nepal. It manages students, parents, teachers, administrators, attendance (AD/BS calendar support), grading, payments, library operations, and Progressive Web App (PWA) push notifications.
 
-The repository is currently undergoing production hardening on branch `testing`. Recent commits have resolved CI/CD release verification vulnerabilities, migration destructive DDL/DML scanner gaps, student admission column truncation issues, parent activation token cryptographic hashing, teacher section authorization barriers, and server-side upload MIME validation.
+The repository is currently undergoing production hardening on branch `testing`. Recent commits have resolved CI/CD release verification vulnerabilities, migration destructive DDL/DML scanner gaps, and student admission column truncation issues.
 
 ---
 
@@ -47,12 +47,10 @@ The repository is currently undergoing production hardening on branch `testing`.
 
 ## 4. Existing Automated Test Coverage
 
-- **PHPUnit Suite:** **498 tests, 3,709 assertions** passing with 0 failures and 0 errors.
+- **PHPUnit Suite:** **489 tests, 3,658 assertions** passing with 0 failures and 0 errors.
 - **Key Test Suites:**
   - `NepalLocationHierarchyTest.php`: 10 tests, 79 assertions (strict counts, dry-run safety, cascade validation).
   - `StudentAdmissionStoreTest.php`: 3 tests, 16 assertions (uniqueness, long branding prefix, 422 validations).
-  - `StudentRecordAuthorizationSecurityTest.php`: 7 tests, 15 assertions (teacher section isolation, administrative bypass).
-  - `ParentAccountManagementTest.php`: 17 tests, 120 assertions (token hashing, atomic single-use, race condition resilience).
   - `StudentRecordDestroySecurityTest.php`: Comprehensive authorization and file cleanup tests.
   - `CdDeploymentSafetyTest.php`: 6 tests, 71 assertions (deployment failure simulations, rollback triggers).
   - `VerifyCiGateTest.php`: 20 tests, 48 assertions (fail-closed API pagination, rerun policies).
@@ -89,3 +87,4 @@ The repository is currently undergoing production hardening on branch `testing`.
 - `php .github/scripts/check-migration-safety.php --strict`: Passed (57 migrations scanned).
 - `php .github/scripts/verify-ci-database.php --connection=mysql_test`: Passed.
 - `vendor/bin/phpunit`: 489 tests, 3,658 assertions passing.
+

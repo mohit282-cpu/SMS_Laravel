@@ -99,3 +99,4 @@ Deployments adhere to the standard atomic directory structure:
    - **Fix:** Added `--no-same-owner` flag to tar command during release unpacking.
 3. **Automated CD Test Coverage:**
    - Added `tests/Unit/CdDeploymentSafetyTest.php` (6 tests, 71 assertions) verifying rollback triggers and fail-safe transitions.
+
