@@ -114,10 +114,10 @@ $matchingRuns = array_values(array_filter($workflowRuns, function ($run) use ($s
     if (strtolower((string) ($run['head_sha'] ?? '')) !== strtolower($sha)) {
         return false;
     }
-    if (isset($run['repository']['full_name']) && strcasecmp($run['repository']['full_name'], $repo) !== 0) {
+    if (empty($run['repository']['full_name']) || strcasecmp($run['repository']['full_name'], $repo) !== 0) {
         return false;
     }
-    if (isset($run['path']) && substr((string) $run['path'], -strlen($workflow)) !== $workflow) {
+    if (empty($run['path']) || substr((string) $run['path'], -strlen($workflow)) !== $workflow) {
         return false;
     }
     return true;
@@ -151,7 +151,7 @@ $gateRuns = array_values(array_filter($checkRuns, function ($cr) use ($gateName,
     if (!is_array($cr) || ($cr['name'] ?? '') !== $gateName) {
         return false;
     }
-    if (isset($cr['check_suite']['id']) && (int) $cr['check_suite']['id'] !== (int) $checkSuiteId) {
+    if (!isset($cr['check_suite']['id']) || (int) $cr['check_suite']['id'] !== (int) $checkSuiteId) {
         return false;
     }
     return true;

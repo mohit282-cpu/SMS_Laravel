@@ -82,6 +82,87 @@ PHP);
         }
     }
 
+    public function test_static_schema_drop_and_rename_are_detected()
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'mig_static_') . '.php';
+        file_put_contents($tmp, <<<'PHP'
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up()
+    {
+        Schema::dropIfExists('old_table');
+    }
+    public function down() {}
+};
+PHP);
+
+        try {
+            [$code, $out] = $this->runScanner($tmp, true);
+            $this->assertEquals(1, $code, $out);
+            $this->assertStringContainsString('Schema::dropIfExists', $out);
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
+    public function test_raw_destructive_sql_is_detected()
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'mig_raw_') . '.php';
+        file_put_contents($tmp, <<<'PHP'
+<?php
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\DB;
+
+return new class extends Migration {
+    public function up()
+    {
+        DB::statement("DROP TABLE students_archive");
+    }
+    public function down() {}
+};
+PHP);
+
+        try {
+            [$code, $out] = $this->runScanner($tmp, true);
+            $this->assertEquals(1, $code, $out);
+            $this->assertStringContainsString('raw destructive SQL', $out);
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
+    public function test_approved_destructive_migration_passes_strict_mode()
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'mig_appr_') . '.php';
+        file_put_contents($tmp, <<<'PHP'
+<?php
+/**
+ * @approved-destructive: verified complete archival migration step 3
+ */
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration {
+    public function up()
+    {
+        Schema::dropIfExists('obsolete_temp_table');
+    }
+    public function down() {}
+};
+PHP);
+
+        try {
+            [$code, $out] = $this->runScanner($tmp, true);
+            $this->assertEquals(0, $code, $out);
+            $this->assertStringContainsString('APPROVED: verified complete archival', $out);
+        } finally {
+            @unlink($tmp);
+        }
+    }
+
     public function test_missing_down_method_emits_warning()
     {
         $tmp = tempnam(sys_get_temp_dir(), 'mig_nodown_') . '.php';
@@ -104,4 +185,3 @@ PHP);
         }
     }
 }
-

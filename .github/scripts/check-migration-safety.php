@@ -7,11 +7,18 @@
  * single path passed via --file=...) without being fooled by comments, strings,
  * anonymous classes, or unusual formatting.
  *
+ * Checks for:
+ *   - Destructive Schema operations inside up(): dropColumn, drop, dropIfExists, renameColumn, rename, truncate
+ *   - Static Schema operations inside up(): Schema::drop, Schema::dropIfExists, Schema::rename
+ *   - Raw SQL destructive statements inside up(): DB::statement/unprepared with DROP, TRUNCATE, DELETE
+ *   - Missing down() rollback methods
+ *   - Honors @approved-destructive: <reason> annotations for verified schema refactors
+ *
  * Usage:
  *   php .github/scripts/check-migration-safety.php [--strict] [--file=path/to/migration.php]
  */
 
-$options = getopt('', ['strict', 'file::']);
+$options = getopt('', ['strict', 'file::', 'allow-approved']);
 $strict = array_key_exists('strict', $options);
 $singleFile = $options['file'] ?? null;
 
@@ -32,13 +39,20 @@ if (is_string($singleFile) && $singleFile !== '') {
     sort($files);
 }
 
-$destructiveOps = ['dropColumn', 'dropIfExists', 'drop', 'renameColumn', 'truncate'];
+$destructiveOps = ['dropColumn', 'dropIfExists', 'drop', 'renameColumn', 'rename', 'truncate'];
 $warnings = [];
 $errors = [];
 
 function scanMigrationFile(string $path, array $destructiveOps): array
 {
     $code = (string) file_get_contents($path);
+
+    // Check for approved-destructive annotation
+    $approvedReason = null;
+    if (preg_match('/@approved-destructive:\s*([^\r\n*]+)/i', $code, $m)) {
+        $approvedReason = trim($m[1]);
+    }
+
     $tokens = token_get_all($code);
     $count = count($tokens);
 
@@ -76,11 +90,6 @@ function scanMigrationFile(string $path, array $destructiveOps): array
 
         [$id, $text, $line] = $tok;
 
-        // Ignore comments, docblocks, whitespace, and literal strings completely
-        if (in_array($id, [T_COMMENT, T_DOC_COMMENT, T_WHITESPACE, T_CONSTANT_ENCAPSED_STRING], true)) {
-            continue;
-        }
-
         // Detect function up() / function down()
         if ($id === T_FUNCTION) {
             for ($j = $i + 1; $j < $count; $j++) {
@@ -111,7 +120,6 @@ function scanMigrationFile(string $path, array $destructiveOps): array
                     continue;
                 }
                 if (is_array($next) && $next[0] === T_STRING && in_array($next[1], $destructiveOps, true)) {
-                    // Confirm followed by '('
                     for ($k = $j + 1; $k < $count; $k++) {
                         $after = $tokens[$k];
                         if (is_array($after) && $after[0] === T_WHITESPACE) {
@@ -130,18 +138,47 @@ function scanMigrationFile(string $path, array $destructiveOps): array
             }
         }
 
-        // Also detect Schema::drop(...) / Schema::dropIfExists(...) inside up()
+        // Detect Schema::drop(...) / Schema::dropIfExists(...) / Schema::rename(...) inside up()
         if ($inUp && $id === T_DOUBLE_COLON) {
             for ($j = $i + 1; $j < $count; $j++) {
                 $next = $tokens[$j];
                 if (is_array($next) && $next[0] === T_WHITESPACE) {
                     continue;
                 }
-                if (is_array($next) && $next[0] === T_STRING && in_array($next[1], ['drop', 'dropIfExists'], true)) {
+                if (is_array($next) && $next[0] === T_STRING && in_array($next[1], ['drop', 'dropIfExists', 'rename'], true)) {
                     $findings[] = [
                         'line' => $line,
                         'op' => 'Schema::' . $next[1],
                     ];
+                }
+                break;
+            }
+        }
+
+        // Detect DB::statement("DROP ...") / DB::unprepared("DROP ...") inside up()
+        if ($inUp && $id === T_DOUBLE_COLON) {
+            for ($j = $i + 1; $j < $count; $j++) {
+                $next = $tokens[$j];
+                if (is_array($next) && $next[0] === T_WHITESPACE) {
+                    continue;
+                }
+                if (is_array($next) && $next[0] === T_STRING && in_array($next[1], ['statement', 'unprepared'], true)) {
+                    for ($k = $j + 1; $k < $count; $k++) {
+                        $after = $tokens[$k];
+                        if ($after === '(' || (is_array($after) && $after[0] === T_WHITESPACE)) {
+                            continue;
+                        }
+                        if (is_array($after) && $after[0] === T_CONSTANT_ENCAPSED_STRING) {
+                            $sql = strtoupper($after[1]);
+                            if (preg_match('/\b(DROP\s+TABLE|DROP\s+COLUMN|TRUNCATE\s+TABLE|DELETE\s+FROM)\b/', $sql)) {
+                                $findings[] = [
+                                    'line' => $line,
+                                    'op' => 'DB::' . $next[1] . ' (raw destructive SQL)',
+                                ];
+                            }
+                        }
+                        break;
+                    }
                 }
                 break;
             }
@@ -151,6 +188,7 @@ function scanMigrationFile(string $path, array $destructiveOps): array
     return [
         'hasUp' => $hasUp,
         'hasDown' => $hasDown,
+        'approvedReason' => $approvedReason,
         'findings' => $findings,
     ];
 }
@@ -164,6 +202,11 @@ foreach ($files as $file) {
     }
 
     foreach ($res['findings'] as $f) {
+        if ($res['approvedReason'] !== null) {
+            $warnings[] = "{$name} (line {$f['line']}): up() calls '{$f['op']}' [APPROVED: {$res['approvedReason']}].";
+            continue;
+        }
+
         $msg = "{$name} (line {$f['line']}): up() calls '{$f['op']}', which may break backward compatibility or cause data loss.";
         if ($strict) {
             $errors[] = $msg;

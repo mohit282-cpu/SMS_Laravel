@@ -264,6 +264,36 @@ jobs:
             fi
 
             RELEASE_DIR="${TARGET_DIR}/releases/${SHA}"
+            MAINTENANCE_ACTIVE="false"
+
+            reload_php_fpm() {
+              local service=""
+              for svc in php8.2-fpm php-fpm php8.1-fpm; do
+                if sudo systemctl is-active --quiet "${svc}" 2>/dev/null; then
+                  service="${svc}"
+                  break
+                fi
+              done
+
+              if [ -z "${service}" ]; then
+                echo "::error::No active PHP-FPM service detected (checked php8.2-fpm, php-fpm, php8.1-fpm)."
+                return 1
+              fi
+
+              echo "Reloading detected active PHP-FPM service: ${service}..."
+              if ! sudo systemctl reload "${service}"; then
+                echo "::error::Failed to reload PHP-FPM service '${service}'."
+                return 1
+              fi
+
+              if ! sudo systemctl is-active --quiet "${service}"; then
+                echo "::error::PHP-FPM service '${service}' is not active after reload."
+                return 1
+              fi
+
+              echo "PHP-FPM service '${service}' successfully reloaded and confirmed active."
+              return 0
+            }
 
             probe_readiness() {
               local url="$1"
@@ -317,10 +347,14 @@ jobs:
                 php artisan config:cache || rollback_errors=$((rollback_errors + 1))
                 php artisan route:cache || rollback_errors=$((rollback_errors + 1))
                 php artisan view:cache || rollback_errors=$((rollback_errors + 1))
-                if [ "${MAINTENANCE}" = "true" ]; then
-                  php artisan up || rollback_errors=$((rollback_errors + 1))
+                if [ "${MAINTENANCE_ACTIVE:-false}" = "true" ] || [ "${MAINTENANCE}" = "true" ]; then
+                  echo "Disabling maintenance mode during rollback..."
+                  php artisan up || {
+                    echo "::error::Failed to disable maintenance mode on previous release."
+                    rollback_errors=$((rollback_errors + 1))
+                  }
                 fi
-                if ! (sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm); then
+                if ! reload_php_fpm; then
                   echo "::error::PHP-FPM reload failed during rollback."
                   rollback_errors=$((rollback_errors + 1))
                 fi
@@ -346,7 +380,10 @@ jobs:
                 echo "::error::No previous release directory found to roll back to."
                 if [ -d "${RELEASE_DIR}" ]; then
                   cd "${RELEASE_DIR}"
-                  php artisan up || true
+                  if [ "${MAINTENANCE_ACTIVE:-false}" = "true" ]; then
+                    echo "Attempting to disable maintenance mode on failed release..."
+                    php artisan up || echo "::error::Unable to exit maintenance mode."
+                  fi
                 fi
               fi
               rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256" "/tmp/verify-release-archive.php"
@@ -372,7 +409,9 @@ jobs:
             ln -sfn "${TARGET_DIR}/shared/.env" "${RELEASE_DIR}/.env"
 
             cd "${RELEASE_DIR}"
-            chmod -R ug+rwX bootstrap/cache || true
+            test -d "${RELEASE_DIR}/bootstrap/cache" || mkdir -p "${RELEASE_DIR}/bootstrap/cache"
+            chmod 775 "${RELEASE_DIR}/bootstrap/cache"
+            find "${RELEASE_DIR}/bootstrap/cache" -mindepth 1 -maxdepth 2 -exec chmod ug+rw {} + 2>/dev/null || true
 
             # 6. Pre-migration database backup
             if [ "${MIGRATIONS}" = "true" ]; then
@@ -382,7 +421,9 @@ jobs:
 
             # 7. Maintenance mode
             if [ "${MAINTENANCE}" = "true" ]; then
+              echo "Enabling maintenance mode..."
               php artisan down --message="SMS Academy is temporarily updating. Please refresh in a moment." --retry=60
+              MAINTENANCE_ACTIVE="true"
             fi
 
             # 8. Run pending migrations
@@ -399,11 +440,13 @@ jobs:
             ln -sfn "${RELEASE_DIR}" "${TARGET_DIR}/current"
 
             # 11. Reload PHP-FPM safely
-            sudo systemctl reload php8.2-fpm || sudo systemctl reload php-fpm || true
+            reload_php_fpm
 
             # 12. Exit maintenance mode
-            if [ "${MAINTENANCE}" = "true" ]; then
+            if [ "${MAINTENANCE_ACTIVE}" = "true" ]; then
+              echo "Disabling maintenance mode..."
               php artisan up
+              MAINTENANCE_ACTIVE="false"
             fi
 
             # 13. In-band bounded-retry readiness verification
