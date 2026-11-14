@@ -21,7 +21,8 @@ Before any deployment runs, `.github/workflows/cd.yml` (`pre-deploy-validation`)
 2. `ci.yml` workflow run and `CI Integration Gate` concluded `success` on that exact `github.sha` (paginated GitHub API verification).
 3. `composer validate --strict` and `composer install --no-dev --optimize-autoloader`.
 4. `npm ci && npm run prod` on Node 14 with verified `public/js/app.js`, `public/css/app.css`, and `public/mix-manifest.json`.
-5. Explicit allowlist archive (`.release_sha`, `app`, `bootstrap`, `config`, `database/data`, `database/migrations`, `database/seeders`, `public`, `resources/views`, `resources/lang`, `routes`, `vendor`, `artisan`, `composer.json`, `composer.lock`) validated by `.github/scripts/verify-release-archive.php` (both on the CI runner and on the target host prior to extraction) with SHA-256 checksum.
+5. Explicit allowlist archive (`.release_sha`, `app`, `bootstrap`, `config`, `database/data`, `database/migrations`, `database/seeders`, `public`, `resources/views`, `resources/lang`, `routes`, `vendor`, `artisan`, `composer.json`, `composer.lock`) validated by `.github/scripts/verify-release-archive.php` (both on the CI runner and on the target host prior to extraction) with SHA-256 checksum, TAR checksum validation, strict octal checks, and end-of-archive validation. Extraction is executed safely with `--no-same-owner`.
+6. PHP-FPM service auto-detection (`php8.2-fpm`, `php-fpm`, `php8.1-fpm`) with active verification after reload.
 
 ## 3. Manual Deployment Steps
 1. Open **Actions → CD (Deployment) → Run workflow**.

@@ -17,6 +17,9 @@ Configure these separately under **Settings → Environments → `staging`** and
 | `DEPLOY_PATH` | No | `/var/www/sms_academy` | Absolute non-root path on the target host containing `releases/`, `shared/`, and `current` |
 | `DEPLOY_PORT` | No | `22` | SSH/SCP port on the target host |
 | `KEEP_RELEASES` | No | `5` | Number of recent releases retained after successful deployment |
+| `HEALTH_MAX_ATTEMPTS` | No | `6` | Maximum readiness probe attempts during post-deployment verification |
+| `HEALTH_RETRY_INTERVAL` | No | `5` | Delay in seconds between readiness probe retry attempts |
+| `HEALTH_REQUEST_TIMEOUT` | No | `15` | Timeout in seconds for individual readiness HTTP requests |
 
 > **Security Note:** Never commit `.env` files, private keys, or host credentials to the repository. Production should enable **Required reviewers** on the `production` GitHub Environment.
 

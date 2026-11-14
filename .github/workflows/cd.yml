@@ -404,7 +404,7 @@ jobs:
 
             # 4. Extract into new release directory
             mkdir -p "${RELEASE_DIR}"
-            tar -xzf "/tmp/release-${SHA}.tar.gz" -C "${RELEASE_DIR}"
+            tar -xzf "/tmp/release-${SHA}.tar.gz" --no-same-owner -C "${RELEASE_DIR}"
             rm -f "/tmp/release-${SHA}.tar.gz" "/tmp/release-${SHA}.tar.gz.sha256" "/tmp/verify-release-archive.php"
 
             # Validate extracted package

@@ -84,4 +84,29 @@ class CiSecurityPolicyTest extends TestCase
         // PHP >= 8.2, so advertising PHP 7.x/8.0/8.1 support is misleading.
         $this->assertSame('^8.2', $composer['require']['php']);
     }
+
+    public function test_migration_exception_policy_is_valid_and_not_expired(): void
+    {
+        $policy = $this->readJson($this->rootPath('.github/security/migration-exceptions.json'));
+
+        $this->assertSame('migration-destructive-exceptions', $policy['policy'] ?? null);
+        $this->assertSame(1, $policy['version'] ?? null);
+        $this->assertNotEmpty($policy['description'] ?? null);
+        $this->assertIsArray($policy['exceptions'] ?? null);
+
+        foreach ($policy['exceptions'] as $exception) {
+            foreach (['migration', 'operation', 'justification', 'preservationStrategy', 'recoveryStrategy', 'owner', 'approvalDate', 'expires'] as $field) {
+                $this->assertArrayHasKey($field, $exception, "Migration exception is missing {$field}.");
+                $this->assertNotEmpty($exception[$field], "Migration exception field {$field} must not be empty.");
+            }
+
+            $expires = \DateTimeImmutable::createFromFormat('!Y-m-d', (string) $exception['expires']);
+            $this->assertNotFalse($expires, 'Migration exception expiry must be YYYY-MM-DD.');
+            $this->assertGreaterThanOrEqual(
+                new \DateTimeImmutable('today'),
+                $expires,
+                "Migration exception for {$exception['migration']} has expired and must be re-reviewed."
+            );
+        }
+    }
 }
