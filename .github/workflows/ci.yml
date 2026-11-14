@@ -72,7 +72,6 @@ jobs:
           extensions: mbstring, xml, ctype, json, bcmath, gd, zip, pdo_mysql, mysqli, sqlite, pdo_sqlite, gmp
           coverage: none
           tools: composer:v2
-          cache: composer
 
       - name: Validate Composer manifest
         run: composer validate --strict
@@ -251,7 +250,6 @@ jobs:
           extensions: mbstring, xml, ctype, json, zip
           coverage: none
           tools: composer:v2
-          cache: composer
 
       - name: Validate Composer manifest
         run: composer validate --strict
