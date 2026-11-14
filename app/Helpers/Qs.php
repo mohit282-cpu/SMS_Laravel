@@ -260,9 +260,11 @@ class Qs
 
     public static function getFileMetaData($file)
     {
-        //$dataFile['name'] = $file->getClientOriginalName();
-        $dataFile['ext'] = $file->getClientOriginalExtension();
-        $dataFile['type'] = $file->getClientMimeType();
+        // Guess extension based on server-verified MIME inspection first, fallback to safe sanitized extension
+        $guessed = method_exists($file, 'extension') ? $file->extension() : null;
+        $clientExt = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', (string)$file->getClientOriginalExtension()));
+        $dataFile['ext'] = $guessed ?: ($clientExt ?: 'bin');
+        $dataFile['type'] = method_exists($file, 'getMimeType') ? $file->getMimeType() : $file->getClientMimeType();
         $dataFile['size'] = self::formatBytes($file->getSize());
         return $dataFile;
     }

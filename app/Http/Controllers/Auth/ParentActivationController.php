@@ -29,9 +29,13 @@ class ParentActivationController extends Controller
     public function showActivateForm($token)
     {
         $cleanToken = trim($token);
+        $tokenHash = hash('sha256', $cleanToken);
 
-        $parent = User::where('activation_token', $cleanToken)
-            ->where('user_type', 'parent')
+        $parent = User::where('user_type', 'parent')
+            ->where(function ($q) use ($cleanToken, $tokenHash) {
+                $q->where('activation_token', $tokenHash)
+                  ->orWhere('activation_token', $cleanToken);
+            })
             ->first();
 
         if (!$parent) {
@@ -73,9 +77,13 @@ class ParentActivationController extends Controller
         ]);
 
         $cleanToken = trim($token);
+        $tokenHash = hash('sha256', $cleanToken);
 
-        $parent = User::where('activation_token', $cleanToken)
-            ->where('user_type', 'parent')
+        $parent = User::where('user_type', 'parent')
+            ->where(function ($q) use ($cleanToken, $tokenHash) {
+                $q->where('activation_token', $tokenHash)
+                  ->orWhere('activation_token', $cleanToken);
+            })
             ->first();
 
         if (!$parent) {
@@ -86,14 +94,24 @@ class ParentActivationController extends Controller
             return redirect()->route('login')->with('flash_danger', __('This activation link has expired. Please request a new activation link from the school administration.'));
         }
 
-        // Atomically set password, activate account, and revoke the single-use token
-        $parent->update([
-            'password' => Hash::make($request->password),
-            'activation_token' => null,
-            'activation_token_expires_at' => null,
-            'is_active' => true,
-            'email_verified_at' => $parent->email_verified_at ?: now(),
-        ]);
+        // Atomically set password, activate account, and consume token to prevent race conditions / replay
+        $updated = User::where('id', $parent->id)
+            ->where('user_type', 'parent')
+            ->where(function ($q) use ($cleanToken, $tokenHash) {
+                $q->where('activation_token', $tokenHash)
+                  ->orWhere('activation_token', $cleanToken);
+            })
+            ->update([
+                'password' => Hash::make($request->password),
+                'activation_token' => null,
+                'activation_token_expires_at' => null,
+                'is_active' => true,
+                'email_verified_at' => $parent->email_verified_at ?: now(),
+            ]);
+
+        if (!$updated) {
+            return redirect()->route('login')->with('flash_danger', __('The activation token is invalid or has already been consumed.'));
+        }
 
         $this->auditLog->log(
             'parent.activated',

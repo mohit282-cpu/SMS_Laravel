@@ -197,6 +197,7 @@ class StudentRecordController extends Controller
                     $parentCode = strtoupper(Str::random(10));
                     $tempParentPassword = Str::random(32); // Secure non-predictable password
                     $activationToken = Str::random(64);
+                    $activationTokenHash = hash('sha256', $activationToken);
                     $tokenExpiresAt = now()->addDays(7);
 
                     $baseUsername = $normPhone ? 'p_' . $normPhone : 'p_' . Str::slug($parentName, '_');
@@ -226,7 +227,7 @@ class StudentRecordController extends Controller
                         'tole' => $data['tole'] ?? null,
                         'street' => $data['street'] ?? null,
                         'nal_id' => $data['nal_id'] ?? null,
-                        'activation_token' => $activationToken,
+                        'activation_token' => $activationTokenHash,
                         'activation_token_expires_at' => $tokenExpiresAt,
                         'is_active' => true,
                     ]);
@@ -288,10 +289,29 @@ class StudentRecordController extends Controller
     public function listByClass($class_id)
     {
         $data['my_class'] = $mc = $this->my_class->getMC(['id' => $class_id])->first();
+        if (is_null($mc)) {
+            return Qs::goWithDanger();
+        }
+
+        // Restrict teachers to classes/sections they teach
+        if (Qs::userIsTeacher()) {
+            $user = Auth::user();
+            $teachesClass = \App\Models\Subject::where('my_class_id', $class_id)
+                ->where('teacher_id', $user->id)
+                ->exists()
+                || \App\Models\Section::where('my_class_id', $class_id)
+                ->where('teacher_id', $user->id)
+                ->exists();
+
+            if (!$teachesClass) {
+                abort(403, __('msg.denied'));
+            }
+        }
+
         $data['students'] = $this->student->findStudentsByClass($class_id);
         $data['sections'] = $this->my_class->getClassSections($class_id);
 
-        return is_null($mc) ? Qs::goWithDanger() : view('pages.support_team.students.list', $data);
+        return view('pages.support_team.students.list', $data);
     }
 
     public function graduated()
@@ -340,9 +360,24 @@ class StudentRecordController extends Controller
         $data['sr'] = $this->student->getRecord(['id' => $sr_id])->first();
         if(!$data['sr']){return Qs::goWithDanger();}
 
-        /* Prevent Other Students/Parents from viewing Profile of others */
-        if(Auth::user()->id != $data['sr']->user_id && !Qs::userIsTeamSAT() && !Qs::userIsMyChild($data['sr']->user_id, Auth::user()->id)){
-            if (Qs::userIsParent() || request()->expectsJson()) {
+        /* Authorization: Self, Linked Parent, TeamSA (admin/super_admin), or Authorized Teacher */
+        $user = Auth::user();
+        $isSelf = (int)$user->id === (int)$data['sr']->user_id;
+        $isParentOfChild = Qs::userIsParent() && Qs::userIsMyChild($data['sr']->user_id, $user->id);
+        $isTeamSA = Qs::userIsTeamSA();
+
+        $isAuthorizedTeacher = false;
+        if (Qs::userIsTeacher()) {
+            $isAuthorizedTeacher = \App\Models\Subject::where('my_class_id', $data['sr']->my_class_id)
+                ->where('teacher_id', $user->id)
+                ->exists()
+                || \App\Models\Section::where('id', $data['sr']->section_id)
+                ->where('teacher_id', $user->id)
+                ->exists();
+        }
+
+        if (!$isSelf && !$isParentOfChild && !$isTeamSA && !$isAuthorizedTeacher) {
+            if (Qs::userIsParent() || Qs::userIsTeacher() || request()->expectsJson()) {
                 abort(403, __('msg.denied'));
             }
             return redirect(route('dashboard'))->with('pop_error', __('msg.denied'));

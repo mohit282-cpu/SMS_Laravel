@@ -121,7 +121,8 @@ class BookController extends Controller
 
         if ($req->hasFile('cover_image')) {
             $image = $req->file('cover_image');
-            $filename = 'book_' . time() . '_' . Str::random(8) . '.' . $image->getClientOriginalExtension();
+            $ext = $image->extension() ?: 'jpg';
+            $filename = 'book_' . time() . '_' . Str::random(8) . '.' . $ext;
             $image->storeAs('public/uploads/books', $filename);
             $data['cover_image'] = 'uploads/books/' . $filename;
         }
@@ -162,7 +163,8 @@ class BookController extends Controller
 
         if ($req->hasFile('cover_image')) {
             $image = $req->file('cover_image');
-            $filename = 'book_' . time() . '_' . Str::random(8) . '.' . $image->getClientOriginalExtension();
+            $ext = $image->extension() ?: 'jpg';
+            $filename = 'book_' . time() . '_' . Str::random(8) . '.' . $ext;
             $image->storeAs('public/uploads/books', $filename);
             $data['cover_image'] = 'uploads/books/' . $filename;
         }

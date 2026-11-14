@@ -299,6 +299,89 @@ class ParentAccountManagementTest extends TestCase
         $submitResponse->assertSessionHas('flash_danger');
     }
 
+    public function test_parent_creation_stores_hashed_token_and_activates_via_raw_token()
+    {
+        $unique = mt_rand(1000, 9999);
+        $phone = '9804' . $unique . '44';
+
+        $createRes = $this->actingAs($this->admin)->from(route('parents.index'))->post(route('parents.store'), [
+            'name' => 'Cryptographic Token Parent ' . $unique,
+            'phone' => $phone,
+            'email' => 'crypto_' . $unique . '@example.com',
+            'relationship' => 'Mother',
+            'address' => 'Biratnagar-3',
+        ]);
+
+        $createRes->assertRedirect(route('parents.index'));
+        $createRes->assertSessionHas('activation_url');
+
+        $activationUrl = session('activation_url');
+        $rawToken = basename(parse_url($activationUrl, PHP_URL_PATH));
+        $this->assertSame(64, strlen($rawToken));
+
+        $parent = User::where('phone', $phone)->firstOrFail();
+        // The token in DB must be the SHA-256 hash of rawToken, NOT rawToken itself
+        $this->assertSame(hash('sha256', $rawToken), $parent->activation_token);
+        $this->assertNotSame($rawToken, $parent->activation_token);
+
+        // Logout admin so activation is performed as a guest
+        auth()->logout();
+
+        // Activating using the raw token from the link must succeed
+        $activateRes = $this->post(route('parent.activate.submit', $rawToken), [
+            'password' => 'SecurePass2026!#',
+            'password_confirmation' => 'SecurePass2026!#',
+        ]);
+
+        $activateRes->assertRedirect(route('login'));
+        $activateRes->assertSessionHas('flash_success');
+
+        $parent->refresh();
+        $this->assertNull($parent->activation_token);
+        $this->assertTrue(Hash::check('SecurePass2026!#', $parent->password));
+    }
+
+    public function test_concurrent_parent_activation_race_condition_protection()
+    {
+        $rawToken = Str::random(64);
+        $tokenHash = hash('sha256', $rawToken);
+        $unique = mt_rand(1000, 9999);
+
+        $parent = User::create([
+            'name' => 'Race Condition Parent ' . $unique,
+            'username' => 'p_race_' . $unique,
+            'email' => 'race_' . $unique . '@example.com',
+            'phone' => '9805' . $unique . '55',
+            'user_type' => 'parent',
+            'password' => Hash::make(Str::random(32)),
+            'code' => strtoupper(Str::random(10)),
+            'activation_token' => $tokenHash,
+            'activation_token_expires_at' => now()->addDays(2),
+            'is_active' => true,
+        ]);
+
+        // First activation request
+        $res1 = $this->post(route('parent.activate.submit', $rawToken), [
+            'password' => 'FirstPassWinner1!',
+            'password_confirmation' => 'FirstPassWinner1!',
+        ]);
+        $res1->assertRedirect(route('login'));
+        $res1->assertSessionHas('flash_success');
+
+        // Immediate concurrent attempt with the same token
+        $res2 = $this->post(route('parent.activate.submit', $rawToken), [
+            'password' => 'SecondPassLoser2@',
+            'password_confirmation' => 'SecondPassLoser2@',
+        ]);
+        $res2->assertRedirect(route('login'));
+        $res2->assertSessionHas('flash_danger');
+
+        // Verify winner's password was set and loser's password was rejected
+        $parent->refresh();
+        $this->assertTrue(Hash::check('FirstPassWinner1!', $parent->password));
+        $this->assertFalse(Hash::check('SecondPassLoser2@', $parent->password));
+    }
+
     public function test_parent_can_login_using_phone_email_or_username()
     {
         $unique = mt_rand(1000, 9999);

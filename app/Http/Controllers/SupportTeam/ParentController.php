@@ -74,6 +74,7 @@ class ParentController extends Controller
 
         $tempPassword = Str::random(32);
         $activationToken = Str::random(64);
+        $activationTokenHash = hash('sha256', $activationToken);
         $baseUsername = $normPhone ? 'p_' . $normPhone : 'p_' . Str::slug($request->name, '_');
         $username = $baseUsername;
         $counter = 1;
@@ -81,7 +82,7 @@ class ParentController extends Controller
             $username = $baseUsername . '_' . $counter++;
         }
 
-        $parent = DB::transaction(function () use ($request, $normPhone, $username, $tempPassword, $activationToken) {
+        $parent = DB::transaction(function () use ($request, $normPhone, $username, $tempPassword, $activationTokenHash) {
             $p = User::create([
                 'name' => ucwords(trim($request->name)),
                 'phone' => $normPhone,
@@ -92,7 +93,7 @@ class ParentController extends Controller
                 'code' => strtoupper(Str::random(10)),
                 'photo' => Qs::getDefaultUserImage(),
                 'address' => $request->address,
-                'activation_token' => $activationToken,
+                'activation_token' => $activationTokenHash,
                 'activation_token_expires_at' => now()->addDays(7),
                 'is_active' => true,
             ]);
@@ -265,8 +266,9 @@ class ParentController extends Controller
         $parent = User::where('id', $id)->where('user_type', 'parent')->firstOrFail();
 
         $newToken = Str::random(64);
+        $newTokenHash = hash('sha256', $newToken);
         $parent->update([
-            'activation_token' => $newToken,
+            'activation_token' => $newTokenHash,
             'activation_token_expires_at' => now()->addDays(7),
         ]);
 

@@ -41,6 +41,8 @@ class AuditLogService
         'current_password',
         'old_password',
         'remember_token',
+        'activation_token',
+        'temp_password',
         '_token',
         'token',
         'secret',
