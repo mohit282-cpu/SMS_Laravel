@@ -117,7 +117,20 @@ class StudentRecordController extends Controller
         session()->flash('temp_password', $tempPassword);
         $data['photo'] = Qs::getDefaultUserImage();
         $adm_no = $req->adm_no;
-        $data['username'] = strtoupper(Qs::getAppCode().'/'.$ct.'/'.$sr['year_admitted'].'/'.($adm_no ?: mt_rand(1000, 99999)));
+        $appCode = Qs::getAppCode();
+
+        if ($adm_no) {
+            $candidateUsername = strtoupper($appCode . '/' . $ct . '/' . $sr['year_admitted'] . '/' . $adm_no);
+            if (User::where('username', $candidateUsername)->exists() || StudentRecord::where('adm_no', $candidateUsername)->exists() || StudentRecord::where('adm_no', $adm_no)->exists()) {
+                return response()->json(['msg' => __('The specified admission number or generated student ID is already in use.')], 422);
+            }
+            $data['username'] = $candidateUsername;
+        } else {
+            do {
+                $candidateUsername = strtoupper($appCode . '/' . $ct . '/' . $sr['year_admitted'] . '/' . mt_rand(10000, 99999));
+            } while (User::where('username', $candidateUsername)->exists() || StudentRecord::where('adm_no', $candidateUsername)->exists());
+            $data['username'] = $candidateUsername;
+        }
 
         if($req->hasFile('photo')) {
             $photo = $req->file('photo');
