@@ -53,3 +53,4 @@ The repository is hardened, validated, and ready for end-to-end execution on a s
 1. Complete a test deployment run via `.github/workflows/cd.yml` targeting the staging environment.
 2. Verify live SSL/TLS termination, Nginx configuration, and background cron schedules.
 3. Perform a rehearsal of database snapshot restoration on the staging host.
+

@@ -55,3 +55,4 @@ Before activating production traffic, the system administrator must verify:
 4. **CI/CD Integration:**
    - [ ] GitHub Environment `production` configured with secrets (`DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_SSH_KNOWN_HOSTS`, `HEALTH_CHECK_SECRET`).
    - [ ] GitHub branch protection rules enforced on `main` requiring `CI Integration Gate`.
+
