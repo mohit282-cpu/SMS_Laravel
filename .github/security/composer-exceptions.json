@@ -74,6 +74,20 @@
             "expires": "2026-12-31"
         },
         {
+            "package": "laravel/framework",
+            "advisoryIds": [
+                "PKSA-yxbx-3c9s-cjt9",
+                "CVE-2026-128083",
+                "GHSA-63hm-g96r-2m2q"
+            ],
+            "severity": "low",
+            "scope": "runtime",
+            "reason": "Task output injection in Concurrency Process. Laravel 8 does not ship or expose the Concurrency facade or concurrent process task runner; the feature exists only in Laravel 11+. No Laravel 8.x patch is available.",
+            "compensatingControl": "The application runs on Laravel 8.83.29 and contains no usage of Concurrency::run() or Process::concurrently(). All scheduled artisan tasks and console commands run sequentially under isolated CLI processes without unescaped subprocess output piping.",
+            "owner": "Repository owner (mohit282-cpu)",
+            "expires": "2026-12-31"
+        },
+        {
             "package": "dompdf/dompdf",
             "advisoryIds": [
                 "PKSA-cv56-2228-pzr6",
