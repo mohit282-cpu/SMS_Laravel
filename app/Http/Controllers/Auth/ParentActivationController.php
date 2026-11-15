@@ -95,19 +95,26 @@ class ParentActivationController extends Controller
         }
 
         // Atomically set password, activate account, and consume token to prevent race conditions / replay
-        $updated = User::where('id', $parent->id)
-            ->where('user_type', 'parent')
-            ->where(function ($q) use ($cleanToken, $tokenHash) {
-                $q->where('activation_token', $tokenHash)
-                  ->orWhere('activation_token', $cleanToken);
-            })
-            ->update([
-                'password' => Hash::make($request->password),
-                'activation_token' => null,
-                'activation_token_expires_at' => null,
-                'is_active' => true,
-                'email_verified_at' => $parent->email_verified_at ?: now(),
-            ]);
+        // Strictly includes user_type, token match, and unexpired token condition in the atomic update query
+        $updated = \Illuminate\Support\Facades\DB::transaction(function () use ($parent, $cleanToken, $tokenHash, $request) {
+            return User::where('id', $parent->id)
+                ->where('user_type', 'parent')
+                ->where(function ($q) use ($cleanToken, $tokenHash) {
+                    $q->where('activation_token', $tokenHash)
+                      ->orWhere('activation_token', $cleanToken);
+                })
+                ->where(function ($q) {
+                    $q->whereNull('activation_token_expires_at')
+                      ->orWhere('activation_token_expires_at', '>=', now());
+                })
+                ->update([
+                    'password' => Hash::make($request->password),
+                    'activation_token' => null,
+                    'activation_token_expires_at' => null,
+                    'is_active' => true,
+                    'email_verified_at' => $parent->email_verified_at ?: now(),
+                ]);
+        });
 
         if (!$updated) {
             return redirect()->route('login')->with('flash_danger', __('The activation token is invalid or has already been consumed.'));
