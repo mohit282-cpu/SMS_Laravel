@@ -52,10 +52,8 @@ class PaymentController extends Controller
 
     public function index()
     {
-        $d['selected'] = false;
-        $d['years'] = $this->pay->getPaymentYears();
-
-        return view('pages.support_team.payments.index', $d);
+        $year = $this->getYear();
+        return $this->show($year);
     }
 
     public function show($year)
@@ -398,13 +396,12 @@ class PaymentController extends Controller
         $d['my_classes'] = $this->my_class->all();
         $d['selected'] = false;
 
-        if($class_id){
-            $d['students'] = $st = $this->student->getRecord(['my_class_id' => $class_id])->get()->sortBy('user.name');
-            if($st->count() < 1){
-                return Qs::goWithDanger('payments.manage');
-            }
+        $targetClassId = $class_id ?: optional($d['my_classes']->first())->id;
+
+        if ($targetClassId) {
+            $d['students'] = $this->student->getRecord(['my_class_id' => $targetClassId])->get()->sortBy('user.name');
             $d['selected'] = true;
-            $d['my_class_id'] = $class_id;
+            $d['my_class_id'] = $targetClassId;
         }
 
         return view('pages.support_team.payments.manage', $d);

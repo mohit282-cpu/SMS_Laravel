@@ -1,23 +1,38 @@
 @extends('layouts.master')
-@section('page_title', 'Monthly Fee Billing (Bikram Sambat 12-Month)')
+@section('page_title', __('Monthly Fee Billing (Bikram Sambat 12-Month)'))
 @section('content')
+
+    {{-- Executive Header with Dual Date & Academic Session --}}
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-3 border-bottom">
+        <div>
+            <div class="d-flex flex-wrap align-items-center mb-1 gap-2">
+                <span class="badge badge-primary mr-2">
+                    <i class="icon-calendar52 mr-1" aria-hidden="true"></i> {{ __('Nepali 12-Month Billing Cycle') }}
+                </span>
+                <span class="badge badge-light border text-dark mr-2">
+                    <i class="icon-calendar22 mr-1 text-primary" aria-hidden="true"></i> {{ \App\Helpers\NepaliHelper::formatDualDate(date('Y-m-d')) }}
+                </span>
+                <span class="badge badge-light border text-muted">
+                    <i class="icon-graduation2 mr-1 text-secondary" aria-hidden="true"></i> {{ __('BS Year') }}: <strong>{{ $bs_year }} BS</strong>
+                </span>
+            </div>
+            <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.35rem;">{{ __('Nepali 12-Month Billing Cycle (Baisakh — Chaitra)') }}</h2>
+        </div>
+        <div class="d-flex align-items-center flex-wrap mt-3 mt-md-0" style="gap: 0.5rem;">
+            <button type="button" class="btn btn-sm text-white font-weight-semibold" style="background: #FF5700; border-radius: 8px;" data-toggle="modal" data-target="#generateInvoicesModal">
+                <i class="icon-plus-circle2 mr-1" aria-hidden="true"></i> {{ __('Generate Monthly Invoices') }}
+            </button>
+            <a href="{{ route('payments.reports', ['bs_year' => $bs_year]) }}" class="btn btn-outline-primary btn-sm font-weight-semibold">
+                <i class="icon-file-stats mr-1" aria-hidden="true"></i> {{ __('Annual BS Reports') }}
+            </a>
+            <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary btn-sm font-weight-semibold">
+                <i class="icon-coins mr-1" aria-hidden="true"></i> {{ __('Fee Structures') }}
+            </a>
+        </div>
+    </div>
 
     {{-- Filter & Period Selector Card --}}
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white header-elements-inline border-bottom">
-            <h2 class="card-title font-weight-bold mb-0 text-primary" style="font-size: 1.15rem;">
-                <i class="icon-calendar52 mr-2 text-danger"></i> {{ __('Nepali 12-Month Billing Cycle (Baisakh — Chaitra)') }}
-            </h2>
-            <div class="header-elements">
-                <button type="button" class="btn btn-success btn-sm font-weight-semibold" data-toggle="modal" data-target="#generateInvoicesModal">
-                    <i class="icon-plus-circle2 mr-1"></i> {{ __('Generate Invoices') }}
-                </button>
-                <a href="{{ route('payments.reports', ['bs_year' => $bs_year]) }}" class="btn btn-outline-primary btn-sm ml-2 font-weight-semibold">
-                    <i class="icon-file-stats mr-1"></i> {{ __('Annual BS Reports') }}
-                </a>
-            </div>
-        </div>
-
         <div class="card-body">
             <form method="get" action="{{ route('payments.monthly_billing') }}" class="mb-3">
                 <div class="row align-items-end">
@@ -35,7 +50,7 @@
                         <select id="bs_month" name="bs_month" class="form-control select font-weight-semibold">
                             @foreach($months as $mId => $m)
                                 <option value="{{ $mId }}" {{ $bs_month == $mId ? 'selected' : '' }}>
-                                    Month {{ $mId }}: {{ $m['en'] }} ({{ $m['ne'] }})
+                                    {{ __('Month :m', ['m' => $mId]) }}: {{ $m['en'] }} ({{ $m['ne'] }})
                                 </option>
                             @endforeach
                         </select>
@@ -53,7 +68,7 @@
 
                     <div class="col-md-2">
                         <button type="submit" class="btn btn-primary btn-block font-weight-semibold">
-                            <i class="icon-filter3 mr-1"></i> {{ __('View Period') }}
+                            <i class="icon-filter3 mr-1" aria-hidden="true"></i> {{ __('View Period') }}
                         </button>
                     </div>
                 </div>
@@ -74,13 +89,13 @@
                 </div>
             </div>
 
-            <div class="mt-3 p-2 bg-light rounded text-muted small d-flex justify-content-between align-items-center">
+            <div class="mt-3 p-2 bg-light rounded text-muted small d-flex flex-wrap justify-content-between align-items-center">
                 <span>
-                    <i class="icon-info22 text-info mr-1"></i>
+                    <i class="icon-info22 text-info mr-1" aria-hidden="true"></i>
                     <strong>{{ $periodRange['month_name_en'] }} ({{ $periodRange['month_name_ne'] }}) {{ $bs_year }} BS:</strong>
-                    {{ $periodRange['days'] }} days (AD: {{ $periodRange['start_ad'] }} to {{ $periodRange['end_ad'] }})
+                    {{ $periodRange['days'] }} {{ __('days') }} ({{ __('Gregorian Period') }}: {{ $periodRange['start_ad'] }} &rarr; {{ $periodRange['end_ad'] }})
                 </span>
-                <span class="badge badge-info font-weight-semibold px-2 py-1">
+                <span class="badge badge-info font-weight-semibold px-2 py-1 mt-1 mt-md-0">
                     {{ __('Canonical Storage: Gregorian (AD)') }}
                 </span>
             </div>
@@ -88,75 +103,61 @@
     </div>
 
     {{-- Financial Statistics Cards --}}
-    <div class="row mb-4">
+    <div class="row">
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-indigo-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($totalBilled) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Total Invoiced') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-calculator2 icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($totalBilled) }}</div>
+                    <div class="stat-label">{{ __('Total Invoiced') }}</div>
+                    <div class="text-muted font-size-xs mt-1">{{ $records->count() }} {{ __('invoices generated') }}</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ $records->count() }} {{ __('invoice(s) generated') }}
+                <div class="stat-icon-wrapper stat-icon-navy">
+                    <i class="icon-calculator2" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-success-600 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($totalCollected) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Cash Collected') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-cash3 icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($totalCollected) }}</div>
+                    <div class="stat-label">{{ __('Cash Collected') }}</div>
+                    <div class="text-success font-size-xs mt-1">{{ $clearedCount }} {{ __('settled invoices') }}</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ $clearedCount }} {{ __('fully settled invoices') }}
+                <div class="stat-icon-wrapper stat-icon-emerald">
+                    <i class="icon-cash3" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-danger-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($totalBalance) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Outstanding Balance') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-warning icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number text-danger" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($totalBalance) }}</div>
+                    <div class="stat-label">{{ __('Outstanding Balance') }}</div>
+                    <div class="text-danger font-size-xs mt-1">{{ $unclearedCount }} {{ __('due / partial invoices') }}</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ $unclearedCount }} {{ __('unpaid / partial invoices') }}
+                <div class="stat-icon-wrapper stat-icon-rose">
+                    <i class="icon-warning" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-teal-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ $eligibleStudentsCount }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Eligible Students') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-users4 icon-3x opacity-75"></i>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number">{{ $eligibleStudentsCount }}</div>
+                    <div class="stat-label">{{ __('Eligible Students') }}</div>
+                    <div class="text-muted font-size-xs mt-1">
+                        @if($eligibleStudentsCount > 0)
+                            {{ round(($records->pluck('student_id')->unique()->count() / $eligibleStudentsCount) * 100, 1) }}% {{ __('students billed') }}
+                        @else
+                            0% {{ __('students billed') }}
+                        @endif
                     </div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    @if($eligibleStudentsCount > 0)
-                        {{ round(($records->pluck('student_id')->unique()->count() / $eligibleStudentsCount) * 100, 1) }}% {{ __('students billed') }}
-                    @else
-                        0% {{ __('students billed') }}
-                    @endif
+                <div class="stat-icon-wrapper stat-icon-blue">
+                    <i class="icon-users4" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -164,24 +165,22 @@
 
     {{-- Monthly Invoices Table --}}
     <div class="card shadow-sm border-0">
-        <div class="card-header bg-white header-elements-inline border-bottom">
-            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
-                <i class="icon-file-text2 mr-2 text-primary"></i>
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between">
+            <h5 class="font-weight-bold mb-0 text-dark">
+                <i class="icon-file-text2 mr-2 text-primary" aria-hidden="true"></i>
                 {{ __('Invoices for') }} {{ $periodRange['month_name_en'] }} ({{ $periodRange['month_name_ne'] }}) {{ $bs_year }} BS
-            </h2>
-            <div class="header-elements">
-                <span class="badge badge-primary font-weight-semibold px-2 py-1 mr-2">{{ $records->count() }} {{ __('Total') }}</span>
-            </div>
+            </h5>
+            <span class="badge badge-primary font-weight-semibold px-2 py-1">{{ $records->count() }} {{ __('Total') }}</span>
         </div>
 
         <div class="card-body p-0">
             @if($records->isEmpty())
                 <div class="text-center py-5">
-                    <i class="icon-file-empty icon-4x text-muted mb-3 d-block"></i>
+                    <i class="icon-file-empty icon-4x text-muted mb-3 d-block" aria-hidden="true"></i>
                     <h5 class="text-muted font-weight-semibold">{{ __('No invoices generated for this Nepali billing period yet.') }}</h5>
                     <p class="text-muted small mb-3">{{ __('Click "Generate Invoices" to create recurring bills for eligible enrolled students.') }}</p>
                     <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#generateInvoicesModal">
-                        <i class="icon-plus-circle2 mr-1"></i> {{ __('Generate Monthly Invoices Now') }}
+                        <i class="icon-plus-circle2 mr-1" aria-hidden="true"></i> {{ __('Generate Monthly Invoices Now') }}
                     </button>
                 </div>
             @else
@@ -213,7 +212,7 @@
                                     </td>
                                     <td>{{ $r->student->student_record->my_class->name ?? 'N/A' }}</td>
                                     <td>
-                                        <span class="font-weight-semibold">{{ $r->payment->title ?? 'Monthly Fee' }}</span>
+                                        <span class="font-weight-semibold">{{ $r->payment->title ?? __('Monthly Fee') }}</span>
                                         <div class="small text-muted">{{ ucfirst($r->payment->fee_category ?? 'tuition') }}</div>
                                     </td>
                                     <td>
@@ -236,29 +235,29 @@
                                     </td>
                                     <td>
                                         @if($r->paid)
-                                            <span class="badge badge-success px-2 py-1"><i class="icon-checkmark2 mr-1"></i> {{ __('Paid') }}</span>
+                                            <span class="badge badge-success px-2 py-1"><i class="icon-checkmark2 mr-1" aria-hidden="true"></i> {{ __('Paid') }}</span>
                                         @elseif($r->amt_paid > 0)
-                                            <span class="badge badge-warning px-2 py-1"><i class="icon-hour-glass2 mr-1"></i> {{ __('Partial') }}</span>
+                                            <span class="badge badge-warning px-2 py-1"><i class="icon-hour-glass2 mr-1" aria-hidden="true"></i> {{ __('Partial') }}</span>
                                         @else
-                                            <span class="badge badge-danger px-2 py-1"><i class="icon-cross2 mr-1"></i> {{ __('Unpaid') }}</span>
+                                            <span class="badge badge-danger px-2 py-1"><i class="icon-cross2 mr-1" aria-hidden="true"></i> {{ __('Unpaid') }}</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
                                         <div class="list-icons">
                                             <div class="dropdown">
-                                                <a href="#" class="list-icons-item" data-toggle="dropdown"><i class="icon-menu9"></i></a>
+                                                <a href="#" class="list-icons-item" data-toggle="dropdown" aria-label="{{ __('Options') }}"><i class="icon-menu9"></i></a>
                                                 <div class="dropdown-menu dropdown-menu-right">
                                                     <a href="{{ route('payments.invoice', [Qs::hash($r->student_id), $r->year]) }}" class="dropdown-item">
-                                                        <i class="icon-file-text2 mr-2"></i> {{ __('Student Invoice') }}
+                                                        <i class="icon-file-text2 mr-2 text-primary" aria-hidden="true"></i> {{ __('Student Invoice') }}
                                                     </a>
                                                     @if($r->receipt->count() > 0)
                                                         <a target="_blank" href="{{ route('payments.receipts', Qs::hash($r->id)) }}" class="dropdown-item">
-                                                            <i class="icon-printer mr-2"></i> {{ __('Print Receipt') }}
+                                                            <i class="icon-printer mr-2 text-secondary" aria-hidden="true"></i> {{ __('Print Receipt') }}
                                                         </a>
                                                     @endif
                                                     @if(!$r->paid && Qs::userIsTeamAccount())
                                                         <a href="{{ route('payments.invoice', [Qs::hash($r->student_id), $r->year]) }}" class="dropdown-item text-primary font-weight-semibold">
-                                                            <i class="icon-cash mr-2"></i> {{ __('Collect Payment') }}
+                                                            <i class="icon-cash mr-2" aria-hidden="true"></i> {{ __('Collect Payment') }}
                                                         </a>
                                                     @endif
                                                 </div>
@@ -282,7 +281,7 @@
                     @csrf
                     <div class="modal-header bg-primary text-white">
                         <h5 class="modal-title font-weight-bold" id="generateModalLabel">
-                            <i class="icon-calendar52 mr-2"></i> {{ __('Generate Monthly Fee Invoices') }}
+                            <i class="icon-calendar52 mr-2" aria-hidden="true"></i> {{ __('Generate Monthly Fee Invoices') }}
                         </h5>
                         <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
@@ -291,7 +290,7 @@
 
                     <div class="modal-body">
                         <div class="alert alert-info border-0 alert-dismissible mb-3">
-                            <i class="icon-info22 mr-2"></i>
+                            <i class="icon-info22 mr-2" aria-hidden="true"></i>
                             {{ __('Invoice generation is strictly idempotent. Re-running for an existing month will not create duplicate charges.') }}
                         </div>
 
@@ -363,7 +362,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">{{ __('Cancel') }}</button>
                         <button type="submit" class="btn btn-primary font-weight-semibold">
-                            <i class="icon-checkmark3 mr-1"></i> {{ __('Generate Invoices Now') }}
+                            <i class="icon-checkmark3 mr-1" aria-hidden="true"></i> {{ __('Generate Invoices Now') }}
                         </button>
                     </div>
                 </form>

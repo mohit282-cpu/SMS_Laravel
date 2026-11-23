@@ -1,21 +1,36 @@
 @extends('layouts.master')
-@section('page_title', 'BS 12-Month Fee Collection Reports')
+@section('page_title', __('BS 12-Month Fee Collection Reports'))
 @section('content')
+
+    {{-- Executive Header with Dual Date & Academic Session --}}
+    <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between mb-4 pb-3 border-bottom">
+        <div>
+            <div class="d-flex flex-wrap align-items-center mb-1 gap-2">
+                <span class="badge badge-primary mr-2">
+                    <i class="icon-file-stats mr-1" aria-hidden="true"></i> {{ __('Annual Financial Analytics') }}
+                </span>
+                <span class="badge badge-light border text-dark mr-2">
+                    <i class="icon-calendar22 mr-1 text-primary" aria-hidden="true"></i> {{ \App\Helpers\NepaliHelper::formatDualDate(date('Y-m-d')) }}
+                </span>
+                <span class="badge badge-light border text-muted">
+                    <i class="icon-graduation2 mr-1 text-secondary" aria-hidden="true"></i> {{ __('BS Fiscal Year') }}: <strong>{{ $bs_year }} BS</strong>
+                </span>
+            </div>
+            <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.35rem;">{{ __('Annual Nepali Calendar Fee Collection Reports') }}</h2>
+        </div>
+        <div class="d-flex align-items-center flex-wrap mt-3 mt-md-0" style="gap: 0.5rem;">
+            <a href="{{ route('payments.monthly_billing', ['bs_year' => $bs_year]) }}" class="btn btn-outline-primary btn-sm font-weight-semibold">
+                <i class="icon-calendar52 mr-1" aria-hidden="true"></i> {{ __('Monthly Invoicing Dashboard') }}
+            </a>
+            <a href="{{ route('payments.index') }}" class="btn btn-outline-secondary btn-sm font-weight-semibold">
+                <i class="icon-coins mr-1" aria-hidden="true"></i> {{ __('Fee Structures') }}
+            </a>
+        </div>
+    </div>
 
     {{-- Filter Card --}}
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white header-elements-inline border-bottom">
-            <h2 class="card-title font-weight-bold mb-0 text-primary" style="font-size: 1.15rem;">
-                <i class="icon-file-stats mr-2 text-danger"></i> {{ __('Annual Nepali Calendar Fee Collection Reports') }}
-            </h2>
-            <div class="header-elements">
-                <a href="{{ route('payments.monthly_billing', ['bs_year' => $bs_year]) }}" class="btn btn-outline-primary btn-sm font-weight-semibold">
-                    <i class="icon-calendar52 mr-1"></i> {{ __('Monthly Invoicing Dashboard') }}
-                </a>
-            </div>
-        </div>
-
-        <div class="card-body">
+        <div class="card-body p-3">
             <form method="get" action="{{ route('payments.reports') }}">
                 <div class="row align-items-end">
                     <div class="col-md-4">
@@ -30,7 +45,7 @@
                     <div class="col-md-5">
                         <label for="my_class_id" class="font-weight-bold text-muted small text-uppercase">{{ __('Filter by Class') }}</label>
                         <select id="my_class_id" name="my_class_id" class="form-control select">
-                            <option value="">{{ __('All Classes') }}</option>
+                            <option value="">{{ __('All Classes (Consolidated Overview)') }}</option>
                             @foreach($my_classes as $c)
                                 <option value="{{ $c->id }}" {{ $my_class_id == $c->id ? 'selected' : '' }}>{{ $c->name }}</option>
                             @endforeach
@@ -39,7 +54,7 @@
 
                     <div class="col-md-3">
                         <button type="submit" class="btn btn-primary btn-block font-weight-semibold">
-                            <i class="icon-filter3 mr-1"></i> {{ __('Generate Report') }}
+                            <i class="icon-filter3 mr-1" aria-hidden="true"></i> {{ __('Generate Report') }}
                         </button>
                     </div>
                 </div>
@@ -47,72 +62,56 @@
         </div>
     </div>
 
-    {{-- Grand Totals Cards --}}
-    <div class="row mb-4">
+    {{-- Grand Totals Stat Cards --}}
+    <div class="row">
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-indigo-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalBilled) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Annual Billed Total') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-calculator2 icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalBilled) }}</div>
+                    <div class="stat-label">{{ __('Annual Billed Total') }}</div>
+                    <div class="text-muted font-size-xs mt-1">{{ __('Baisakh — Chaitra') }} {{ $bs_year }} BS</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ __('Baisakh to Chaitra') }} {{ $bs_year }} BS
+                <div class="stat-icon-wrapper stat-icon-navy">
+                    <i class="icon-calculator2" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-success-600 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalCollected) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Annual Cash Collected') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-cash3 icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalCollected) }}</div>
+                    <div class="stat-label">{{ __('Annual Cash Collected') }}</div>
+                    <div class="text-success font-size-xs mt-1">{{ __('Settlement Rate:') }} <strong>{{ $overallRate }}%</strong></div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ __('Overall Settlement Rate:') }} {{ $overallRate }}%
+                <div class="stat-icon-wrapper stat-icon-emerald">
+                    <i class="icon-cash3" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-danger-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalBalance) }}</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Outstanding Receivables') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-warning icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number text-danger" style="font-size: 1.55rem;">{{ \App\Helpers\NepaliHelper::formatNpr($grandTotalBalance) }}</div>
+                    <div class="stat-label">{{ __('Outstanding Receivables') }}</div>
+                    <div class="text-danger font-size-xs mt-1">{{ __('Uncollected balance') }}</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ __('Uncollected fee balance') }}
+                <div class="stat-icon-wrapper stat-icon-rose">
+                    <i class="icon-warning" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
 
         <div class="col-sm-6 col-xl-3">
-            <div class="card card-body bg-purple-400 text-white has-bg-image shadow-sm mb-3 mb-xl-0">
-                <div class="media">
-                    <div class="media-body">
-                        <h3 class="mb-0 font-weight-bold">{{ $overallRate }}%</h3>
-                        <span class="text-uppercase font-size-xs font-weight-semibold opacity-75">{{ __('Collection Efficiency') }}</span>
-                    </div>
-                    <div class="ml-3 align-self-center">
-                        <i class="icon-pie-chart5 icon-3x opacity-75"></i>
-                    </div>
+            <div class="sms-stat-card">
+                <div>
+                    <div class="stat-number">{{ $overallRate }}%</div>
+                    <div class="stat-label">{{ __('Collection Efficiency') }}</div>
+                    <div class="text-muted font-size-xs mt-1">{{ __('Across all 12 BS months') }}</div>
                 </div>
-                <div class="mt-2 text-white-50 small">
-                    {{ __('Across all 12 BS billing months') }}
+                <div class="stat-icon-wrapper stat-icon-blue">
+                    <i class="icon-pie-chart5" aria-hidden="true"></i>
                 </div>
             </div>
         </div>
@@ -120,19 +119,20 @@
 
     {{-- 12-Month Collection Matrix Table --}}
     <div class="card shadow-sm border-0 mb-4">
-        <div class="card-header bg-white header-elements-inline border-bottom">
-            <h2 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem;">
-                <i class="icon-table2 mr-2 text-primary"></i>
+        <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between">
+            <h5 class="font-weight-bold mb-0 text-dark">
+                <i class="icon-table2 mr-2 text-primary" aria-hidden="true"></i>
                 {{ __('12-Month Bikram Sambat Collection Breakdown — Year') }} {{ $bs_year }} BS
-            </h2>
+            </h5>
+            <span class="badge badge-light border text-muted">{{ __('12 Months (Baisakh to Chaitra)') }}</span>
         </div>
 
         <div class="card-body p-0">
             <div class="table-responsive">
-                <table class="table table-striped table-hover">
+                <table class="table table-striped table-hover mb-0">
                     <thead class="bg-light">
                         <tr>
-                            <th>{{ __('Month No') }}</th>
+                            <th style="width: 60px;">#</th>
                             <th>{{ __('Nepali Month') }}</th>
                             <th>{{ __('Gregorian Period (AD)') }}</th>
                             <th>{{ __('Invoices') }}</th>
@@ -168,10 +168,10 @@
                                         <span class="text-muted">{{ \App\Helpers\NepaliHelper::formatNpr(0) }}</span>
                                     @endif
                                 </td>
-                                <td style="min-width: 130px;">
+                                <td style="min-width: 140px;">
                                     <div class="d-flex align-items-center">
                                         <div class="progress flex-grow-1 mr-2" style="height: 6px;">
-                                            <div class="progress-bar bg-success" style="width: {{ min(100, $ms['rate']) }}%"></div>
+                                            <div class="progress-bar bg-success" role="progressbar" style="width: {{ min(100, $ms['rate']) }}%"></div>
                                         </div>
                                         <span class="small font-weight-bold">{{ $ms['rate'] }}%</span>
                                     </div>
@@ -179,7 +179,7 @@
                                 <td class="text-center">
                                     <a href="{{ route('payments.monthly_billing', ['bs_year' => $bs_year, 'bs_month' => $mNum, 'my_class_id' => $my_class_id]) }}"
                                        class="btn btn-outline-primary btn-sm px-2 py-1 font-weight-semibold">
-                                        <i class="icon-eye mr-1"></i> {{ __('Details') }}
+                                        <i class="icon-eye mr-1" aria-hidden="true"></i> {{ __('View Invoices') }}
                                     </a>
                                 </td>
                             </tr>
@@ -205,15 +205,15 @@
     {{-- Class Breakdown Table --}}
     @if(count($classBreakdown) > 0)
         <div class="card shadow-sm border-0">
-            <div class="card-header bg-white header-elements-inline border-bottom">
-                <h2 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.1rem;">
-                    <i class="icon-windows2 mr-2 text-primary"></i>
+            <div class="card-header bg-white py-3 border-bottom d-flex flex-wrap align-items-center justify-content-between">
+                <h5 class="font-weight-bold mb-0 text-dark">
+                    <i class="icon-windows2 mr-2 text-primary" aria-hidden="true"></i>
                     {{ __('Class-Wise Fee Collection Summary — Year') }} {{ $bs_year }} BS
-                </h2>
+                </h5>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
-                    <table class="table table-striped table-hover">
+                    <table class="table table-striped table-hover mb-0">
                         <thead class="bg-light">
                             <tr>
                                 <th>{{ __('Class') }}</th>
@@ -241,10 +241,10 @@
                                             <span class="text-muted">{{ \App\Helpers\NepaliHelper::formatNpr(0) }}</span>
                                         @endif
                                     </td>
-                                    <td style="min-width: 130px;">
+                                    <td style="min-width: 140px;">
                                         <div class="d-flex align-items-center">
                                             <div class="progress flex-grow-1 mr-2" style="height: 6px;">
-                                                <div class="progress-bar bg-primary" style="width: {{ min(100, $cbRate) }}%"></div>
+                                                <div class="progress-bar bg-primary" role="progressbar" style="width: {{ min(100, $cbRate) }}%"></div>
                                             </div>
                                             <span class="small font-weight-bold">{{ $cbRate }}%</span>
                                         </div>
