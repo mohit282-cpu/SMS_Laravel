@@ -97,8 +97,15 @@ class StudentRecordController extends Controller
 
     public function store(StudentRecordCreate $req)
     {
-       $data =  $req->only(Qs::getUserRecord());
-       $sr =  $req->only(Qs::getStudentData());
+        $data = $req->only(Qs::getUserRecord());
+        $sr = $req->only(Qs::getStudentData());
+
+        if (!empty($data['lga_id']) && !\Illuminate\Support\Facades\DB::table('lgas')->where('id', $data['lga_id'])->exists()) {
+            $data['lga_id'] = null;
+        }
+        if (!empty($data['state_id']) && !\Illuminate\Support\Facades\DB::table('states')->where('id', $data['state_id'])->exists()) {
+            $data['state_id'] = null;
+        }
 
         if ($req->section_id && $req->my_class_id) {
             $validSection = \App\Models\Section::where('id', $req->section_id)->where('my_class_id', $req->my_class_id)->exists();
