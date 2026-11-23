@@ -5,7 +5,6 @@ Route::group(['middleware' => 'no_store'], function () {
     Route::post('/parent/activate/{token}', 'Auth\ParentActivationController@activate')->name('parent.activate.submit')->middleware('throttle:6,1');
 });
 
-//Route::get('/test', 'TestController@index')->name('test');
 Route::get('/privacy-policy', 'HomeController@privacy_policy')->name('privacy_policy');
 Route::get('/terms-of-use', 'HomeController@terms_of_use')->name('terms_of_use');
 Route::get('/locale/{lang}', 'HomeController@set_locale')->name('set_locale');

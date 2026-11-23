@@ -114,3 +114,4 @@ php artisan up
 curl -s http://127.0.0.1:8000/health/readiness
 ```
 Expected output: `{"status":"ready", ...}` with HTTP 200.
+

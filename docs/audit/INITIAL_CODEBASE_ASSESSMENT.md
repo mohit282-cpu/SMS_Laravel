@@ -112,3 +112,4 @@ The repository is organized into distinct logical tiers:
 3. **Phase 8–12 (Module Hardening & PWA):** Verify library, attendance, and PWA push subscription lifecycles with offline resilience.
 4. **Phase 13–16 (Performance & CI/CD):** Enforce zero-downtime atomic symlink switching, fail-closed security gates, and eager loading on rosters.
 5. **Phase 17–22 (Disaster Recovery & Readiness):** Execute backup restoration verification, final OWASP checklist, and formal release certification.
+
