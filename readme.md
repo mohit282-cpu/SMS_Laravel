@@ -11,6 +11,7 @@
 [![RBAC Security](https://img.shields.io/badge/RBAC-7%20User%20Roles-0D9488?style=for-the-badge)](https://en.wikipedia.org/wiki/Role-based_access_control)
 [![Build Status](https://img.shields.io/badge/CI%2FCD-Passing-16A34A?style=for-the-badge&logo=github-actions&logoColor=white)](https://github.com/mohit282-cpu/SMS_Laravel/actions)
 [![License](https://img.shields.io/badge/License-MIT-3B82F6?style=for-the-badge)](LICENSE)
+[![Security Policy](https://img.shields.io/badge/Security-Policy%20%26%20CVD-E11D48?style=for-the-badge&logo=shield&logoColor=white)](SECURITY.md)
 
 <br/>
 
@@ -593,10 +594,17 @@ For in-depth operational and architectural documentation, refer to the [`docs/`]
 - 📱 [**Responsive UI & Touch Target Report**](docs/RESPONSIVE_FIX_REPORT.md) — Mobile viewport audit, WCAG touch target compliance, and scroll guards.
 - 🇳🇵 [**Nepal Administrative & Location System**](docs/NEPAL_LOCATION_SYSTEM.md) — Technical details of the 7-province / 753-palika cascade.
 - 🔒 [**System Security Architecture**](docs/handover/SECURITY_AND_PRIVACY_GUIDE.md) — Threat models, session protection, and data privacy safeguards.
+- 🛡️ [**Vulnerability Disclosure Policy**](SECURITY.md) — Reporting guidelines, SLA response targets, and Coordinated Disclosure.
+
+---
+
+## 🛡️ Security Policy & Vulnerability Disclosure
+
+For vulnerability reporting, SLA response times, and Coordinated Disclosure policies, review our official [**SECURITY.md**](SECURITY.md). Security issues must be submitted directly to `security@smsacademy.edu.np`.
 
 ---
 
 ## 📄 License & Attribution
 
 This software is licensed under the [MIT License](LICENSE).  
-Copyright &copy; 2026 **SMS Academy** &bull; Engineered for Excellence in Education.
+Copyright &copy; 2021 **Chinedu Okemiri** &bull; Copyright &copy; 2026 **SMS Academy / Sovryx Tech Pvt. Ltd.** &bull; Engineered for Excellence in Education.
