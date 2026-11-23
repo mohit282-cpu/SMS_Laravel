@@ -20,7 +20,7 @@ class LocationRepo
 
     public function getAllNationals()
     {
-        return Nationality::orderBy('name', 'asc')->get();
+        return Nationality::orderBy('name', 'asc')->get()->unique('name');
     }
 
     public function getLGAs($state_id)

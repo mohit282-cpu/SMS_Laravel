@@ -33,7 +33,7 @@ class UserRepo {
 
     public function getAllTypes()
     {
-        return UserType::all();
+        return UserType::all()->unique('title')->sortBy('level');
     }
 
     public function findType($id)
@@ -70,6 +70,6 @@ class UserRepo {
     /********** BLOOD GROUPS ********/
     public function getBloodGroups()
     {
-        return BloodGroup::orderBy('name')->get();
+        return BloodGroup::orderBy('name')->get()->unique('name');
     }
 }
