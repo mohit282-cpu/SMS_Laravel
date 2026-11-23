@@ -73,6 +73,7 @@
 
                 @foreach($my_classes as $mc)
                     <div class="tab-pane fade {{ (!Qs::userIsTeamSA() && $loop->first) ? 'show active' : '' }}" id="ttr{{ $mc->id }}">
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
@@ -125,6 +126,7 @@
 
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 @endforeach
 

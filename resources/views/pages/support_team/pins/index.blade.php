@@ -56,6 +56,7 @@
 
                     <div class="row">
                         <div class="col-md-12">
+                            <div class="table-responsive">
                             <table class="table datatable-button-html5-columns">
                                 <thead>
                                 <tr>
@@ -86,6 +87,7 @@
                                 @endforeach
                                 </tbody>
                             </table>
+                            </div>
                         </div>
                     </div>
                 </div>

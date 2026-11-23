@@ -46,6 +46,7 @@
             <div class="tab-content">
                 {{-- Tab 1: Active Issued Books --}}
                 <div class="tab-pane fade show active" id="active-loans">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns table-striped table-hover">
                         <thead>
                         <tr>
@@ -112,10 +113,12 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 {{-- Tab 2: Overdue Loans --}}
                 <div class="tab-pane fade" id="overdue-loans">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns table-striped table-hover">
                         <thead>
                         <tr>
@@ -162,10 +165,12 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 {{-- Tab 3: Returned History --}}
                 <div class="tab-pane fade" id="returned-history">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns table-striped table-hover">
                         <thead>
                         <tr>
@@ -206,6 +211,7 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

@@ -23,6 +23,7 @@
 
             <div class="tab-content">
                 <div class="tab-pane fade show active" id="all-students">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns">
                         <thead>
                         <tr>
@@ -73,10 +74,13 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 @foreach($sections as $se)
-                    <div class="tab-pane fade" id="s{{$se->id}}">                         <table class="table datatable-button-html5-columns">
+                    <div class="tab-pane fade" id="s{{$se->id}}">
+                        <div class="table-responsive">
+                        <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
                                 <th>S/N</th>
@@ -126,6 +130,7 @@
 
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 @endforeach
 

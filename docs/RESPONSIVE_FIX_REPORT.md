@@ -21,6 +21,19 @@
 4. **Mobile Dock vs PWA Install Banner Collision ([`public/assets/css/pwa.css`](file:///z:/Xampp/htdocs/SMS_Laravel/public/assets/css/pwa.css#L119-L125)):**
    - Offset `#pwa-install-banner` to `bottom: calc(74px + env(safe-area-inset-bottom, 0px))` on `< 992px` so it never covers `.sms-mobile-dock`.
 5. **Responsive Table Wrappers & Activation Error View:**
-   - Wrapped DataTables in `<div class="table-responsive">` in `classes/index.blade.php`, `dorms/index.blade.php`, and `academic_years/index.blade.php`.
-   - Standardized [`resources/views/pages/parent/activate_error.blade.php`](file:///z:/Xampp/htdocs/SMS_Laravel/resources/views/pages/parent/activate_error.blade.php) onto `.sms-auth-page` / `.sms-auth-card`.
+   - Wrapped DataTables in `<div class="table-responsive">` across all system views including:
+     - `classes/index.blade.php`, `dorms/index.blade.php`, `academic_years/index.blade.php`
+     - `users/index.blade.php`, `users/show.blade.php`
+     - `students/list.blade.php`, `students/show.blade.php`, `students/graduated.blade.php`
+     - `students/promotion/promote.blade.php`, `students/promotion/reset.blade.php`
+     - `exams/index.blade.php`, `holidays/index.blade.php`
+     - `payments/index.blade.php`, `payments/manage.blade.php`
+     - `sections/index.blade.php`, `subjects/index.blade.php`, `grades/index.blade.php`
+     - `books/circulations.blade.php` (active, overdue, returned tabs)
+     - `books/requests.blade.php` (pending, approved, archived tabs)
+     - `pins/index.blade.php`, `timetables/index.blade.php`, `timetables/time_slots/manage.blade.php`
+     - `marks/bulk.blade.php`, `marks/random.blade.php`
+   - Added custom sleek scrollbars and momentum iOS scrolling (`-webkit-overflow-scrolling: touch`) in `sms-design-system.css`.
+   - Enforced 44px minimum touch targets on mobile dropdowns and action buttons.
+   - Standardized [`resources/views/pages/parent/activate_error.blade.php`](file:///z:/Xampp\htdocs\SMS_Laravel\resources\views\pages\parent\activate_error.blade.php) onto `.sms-auth-page` / `.sms-auth-card`.
 

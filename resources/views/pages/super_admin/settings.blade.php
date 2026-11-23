@@ -4,7 +4,7 @@
 
     <div class="card">
         <div class="card-header header-elements-inline">
-            <h6 class="card-title font-weight-semibold">Update System Settungs </h6>
+            <h6 class="card-title font-weight-semibold"><i class="icon-gear mr-2" style="color: var(--sms-primary);"></i>Update System Settings</h6>
             {!! Qs::getPanelOptions() !!}
         </div>
 
@@ -24,9 +24,18 @@
                             <div class="col-lg-9">
                                 <select data-placeholder="Choose..." required name="current_session" id="current_session" class="select-search form-control">
                                     <option value=""></option>
-                                    @for($y=date('Y', strtotime('- 3 years')); $y<=date('Y', strtotime('+ 1 years')); $y++)
-                                        <option {{ ($s['current_session'] == (($y-=1).'-'.($y+=1))) ? 'selected' : '' }}>{{ ($y-=1).'-'.($y+=1) }}</option>
-                                    @endfor
+                                    @php
+                                        $currentSessionVal = $s['current_session'] ?? '2083/84 BS';
+                                        $academicYearsList = class_exists(\App\Models\AcademicYear::class) ? \App\Models\AcademicYear::orderBy('year_bs', 'desc')->pluck('name')->toArray() : [];
+                                        $presetSessions = array_unique(array_merge(
+                                            $academicYearsList,
+                                            ['2083/84 BS', '2082/83 BS', '2081/82 BS', '2080/81 BS'],
+                                            [$currentSessionVal]
+                                        ));
+                                    @endphp
+                                    @foreach($presetSessions as $sess)
+                                        <option value="{{ $sess }}" {{ $currentSessionVal == $sess ? 'selected' : '' }}>{{ $sess }}</option>
+                                    @endforeach
                                 </select>
                             </div>
                         </div>
@@ -129,7 +138,7 @@
                 <hr class="divider">
 
                 <div class="text-right">
-                    <button type="submit" class="btn btn-danger">Submit form <i class="icon-paperplane ml-2"></i></button>
+                    <button type="submit" class="btn btn-primary font-weight-semibold px-4 py-2">Save Settings <i class="icon-checkmark4 ml-2"></i></button>
                 </div>
             </form>
         </div>

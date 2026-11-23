@@ -16,6 +16,7 @@
 
             <div class="tab-content">
                     <div class="tab-pane fade show active" id="all-grades">
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
@@ -61,6 +62,7 @@
                             @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                 <div class="tab-pane fade" id="new-grade">

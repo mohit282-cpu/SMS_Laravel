@@ -154,7 +154,7 @@ class FreshInstallationCommandTest extends TestCase
 
         $settingsResponse = $this->get('/super_admin/settings');
         $settingsResponse->assertStatus(200);
-        $settingsResponse->assertSee('Update System Settungs');
+        $settingsResponse->assertSee('Update System Settings');
     }
 
     /** @test */

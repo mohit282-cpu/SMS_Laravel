@@ -728,6 +728,33 @@ a:hover {
 /* ==========================================================================
    8. Tables, DataTables & Pagination
    ========================================================================== */
+.table-responsive {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border: 0;
+  margin-bottom: 0;
+}
+
+.table-responsive::-webkit-scrollbar {
+  height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+  background: var(--sms-surface-subtle);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+  background: var(--sms-border-strong);
+  border-radius: 4px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+  background: var(--sms-text-secondary);
+}
+
 .table {
   color: var(--sms-text-primary);
   margin-bottom: 0;
@@ -941,6 +968,17 @@ a:hover {
   }
   .sms-footer {
     padding-bottom: 5rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .dropdown-item {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+  .table td, .table th {
+    padding: 0.6rem 0.75rem;
   }
 }
 

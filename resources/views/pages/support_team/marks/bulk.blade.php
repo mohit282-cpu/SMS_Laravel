@@ -60,6 +60,7 @@
     @if($selected)
     <div class="card">
         <div class="card-body">
+            <div class="table-responsive">
             <table class="table datatable-button-html5-columns">
                 <thead>
                 <tr>
@@ -83,6 +84,7 @@
                 @endforeach
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
     @endif

@@ -23,6 +23,7 @@
                 <div class="tab-content">
                     {{--Basic Info--}}
                     <div class="tab-pane fade show active" id="basic-info">
+                        <div class="table-responsive">
                         <table class="table table-bordered">
                             <tbody>
                             <tr>
@@ -128,6 +129,7 @@
 
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                 </div>

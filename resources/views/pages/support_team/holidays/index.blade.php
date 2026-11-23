@@ -31,6 +31,7 @@
 
                 {{--Table Tab--}}
                 <div class="tab-pane fade" id="all-holidays">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns">
                         <thead>
                         <tr>
@@ -83,6 +84,7 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
 
                 {{--Add Holiday Tab--}}

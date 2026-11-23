@@ -5,6 +5,7 @@
     </div>
 
     <div class="card-body collapse">
+        <div class="table-responsive">
         <table id="time_slots_table" class="table datatable-button-html5-columns">
             <thead>
             <tr>
@@ -46,6 +47,7 @@
 
             </tbody>
         </table>
+        </div>
     </div>
 
 </div>

@@ -1,5 +1,6 @@
 <form method="post" action="{{ route('students.promote', [$fc, $fs, $tc, $ts]) }}">
     @csrf
+    <div class="table-responsive">
     <table class="table table-striped">
         <thead>
         <tr>
@@ -28,6 +29,7 @@
         @endforeach
         </tbody>
     </table>
+    </div>
     <div class="text-center mt-3">
         <button class="btn btn-success"><i class="icon-stairs-up mr-2"></i> {{ __('Promote Students') }}</button>
     </div>

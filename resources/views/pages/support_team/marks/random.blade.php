@@ -1,5 +1,6 @@
 <form class="ajax-update" action="{{ route('marks.update', [$exam_id, $my_class_id, $section_id, $subject_id]) }}" method="post">
     @csrf @method('put')
+    <div class="table-responsive">
     <table class="table table-striped">
         <thead>
         <tr>
@@ -66,6 +67,7 @@
         @endforeach
         </tbody>
     </table>
+    </div>
 
     <div class="text-center mt-2">
         <button type="submit" class="btn btn-primary">Update Marks <i class="icon-paperplane ml-2"></i></button>

@@ -162,7 +162,9 @@
                 </div>
 
                 @foreach($user_types as $ut)
-                    <div class="tab-pane fade" id="ut-{{Qs::hash($ut->id)}}">                         <table class="table datatable-button-html5-columns">
+                    <div class="tab-pane fade" id="ut-{{Qs::hash($ut->id)}}">
+                        <div class="table-responsive">
+                            <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
                                 <th>S/N</th>
@@ -212,6 +214,7 @@
                             @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
                 @endforeach
 

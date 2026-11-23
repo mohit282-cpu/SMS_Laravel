@@ -78,6 +78,7 @@
                 {{-- Tab 1: Pending Requests --}}
                 <div class="tab-pane fade show active" id="pending-req">
                     @if(count($pending_requests) > 0)
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns table-striped table-hover">
                             <thead>
                             <tr>
@@ -137,6 +138,7 @@
                             @endforeach
                             </tbody>
                         </table>
+                        </div>
                     @else
                         <div class="text-center text-muted py-4">
                             <i class="icon-checkmark-circle icon-2x mb-2 text-success"></i>
@@ -148,6 +150,7 @@
                 {{-- Tab 2: Approved Requests --}}
                 <div class="tab-pane fade" id="approved-req">
                     @if(count($approved_requests) > 0)
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns table-striped table-hover">
                             <thead>
                             <tr>
@@ -183,6 +186,7 @@
                             @endforeach
                             </tbody>
                         </table>
+                        </div>
                     @else
                         <div class="text-center text-muted py-4">
                             <p class="mb-0">{{ __('No approved requests waiting for collection.') }}</p>
@@ -192,6 +196,7 @@
 
                 {{-- Tab 3: Archived / Rejected --}}
                 <div class="tab-pane fade" id="past-req">
+                    <div class="table-responsive">
                     <table class="table datatable-button-html5-columns table-striped table-hover">
                         <thead>
                         <tr>
@@ -222,6 +227,7 @@
                         @endforeach
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </div>

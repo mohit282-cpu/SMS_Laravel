@@ -61,6 +61,7 @@
 
             <div class="tab-content">
                     <div class="tab-pane fade show active" id="all-payments">
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
@@ -106,10 +107,12 @@
                             @endforeach
                             </tbody>
                         </table>
+                        </div>
                     </div>
 
                 @foreach($my_classes as $mc)
                     <div class="tab-pane fade" id="pc-{{ $mc->id }}">
+                        <div class="table-responsive">
                         <table class="table datatable-button-html5-columns">
                             <thead>
                             <tr>
@@ -155,7 +158,7 @@
                             @endforeach
                             </tbody>
                         </table>
-
+                        </div>
                     </div>
                     @endforeach
             </div>
