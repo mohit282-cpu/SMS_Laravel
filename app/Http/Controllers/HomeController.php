@@ -42,8 +42,11 @@ class HomeController extends Controller
 
         if (Qs::userIsTeamSA()) {
             $d['users'] = $this->user->getAll();
+            $d['total_students'] = \App\Models\StudentRecord::where('grad', 0)->count();
             $d['total_classes'] = \App\Models\MyClass::count();
             $d['total_sections'] = \App\Models\Section::count();
+            $d['total_books'] = \App\Models\Book::count();
+            $d['total_exams'] = \App\Models\Exam::count();
         } elseif (Qs::userIsTeacher()) {
             $d['my_sections'] = \App\Models\Section::where('teacher_id', $user->id)->with('my_class')->get();
             $d['my_subjects'] = \App\Models\Subject::where('teacher_id', $user->id)->with('my_class')->get();
@@ -96,8 +99,10 @@ class HomeController extends Controller
             }
 
             $d['children'] = $children;
-            $d['recent_notices'] = \App\Models\Notice::visibleTo(auth()->user())->orderBy('notice_date', 'desc')->take(5)->get();
         }
+
+        $d['recent_notices'] = \App\Models\Notice::visibleTo($user)->orderBy('notice_date', 'desc')->take(5)->get();
+        $d['upcoming_events'] = \App\Models\Event::visibleTo($user)->where('end_date', '>=', now()->toDateString())->orderBy('start_date', 'asc')->take(5)->get();
 
         return view('pages.support_team.dashboard', $d);
     }

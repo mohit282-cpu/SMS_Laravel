@@ -32,7 +32,7 @@
 <script src="{{ asset('global_assets/js/plugins/ui/fullcalendar/fullcalendar.min.js') }}"></script>
 
 
-<script src=" {{ asset('assets/js/app.js') }} "></script>
+<script src="{{ asset('assets/js/app.js') }}"></script>
 <script src="{{ asset('global_assets/js/demo_pages/form_wizard.js') }}"></script>
 <script src="{{ asset('global_assets/js/demo_pages/form_select2.js') }}"></script>
 <script src="{{ asset('global_assets/js/demo_pages/datatables_extension_buttons_html5.js') }}"></script>
@@ -41,9 +41,9 @@
 
 <!-- /theme JS files -->
 
-<script src=" {{ asset('assets/js/custom.js') }} "></script>
-<script src=" {{ asset('assets/js/nepali_datepicker.js') }} "></script>
-<script src=" {{ asset('assets/js/nepali_bs_calendar.js') }} "></script>
+<script src="{{ asset('assets/js/custom.js') }}"></script>
+<script src="{{ asset('assets/js/nepali_datepicker.js') }}"></script>
+<script src="{{ asset('assets/js/nepali_bs_calendar.js') }}"></script>
 
 {{-- PWA Scripts and Configuration --}}
 <script>
