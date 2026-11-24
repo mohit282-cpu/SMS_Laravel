@@ -2,36 +2,139 @@
 @section('page_title', __('School Events & Calendar (BS)'))
 @section('content')
 
-    <div class="card shadow-sm">
-        <div class="card-header d-flex align-items-center justify-content-between">
-            <h2 class="card-title font-weight-bold mb-0" style="font-size: 1.1rem;">
-                <i class="icon-calendar3 mr-2" style="color: #FF5700;"></i>{{ __('School Calendar & Event Management (Bikram Sambat BS)') }}
-            </h2>
+    {{-- Executive Header --}}
+    <div class="card sms-card mb-4">
+        <div class="card-body p-3 p-md-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                <div class="d-flex align-items-center">
+                    <div class="d-inline-flex align-items-center justify-content-center mr-3" style="width: 50px; height: 50px; border-radius: 14px; background: rgba(255, 87, 0, 0.12);">
+                        <i class="icon-calendar3 icon-2x" style="color: #FF5700;"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-weight-bold mb-1 text-dark" style="font-size: 1.35rem; letter-spacing: -0.01em;">
+                            {{ __('School Events & Calendar (BS)') }}
+                        </h3>
+                        <p class="text-muted mb-0 font-size-sm">
+                            {{ __('Bikram Sambat interactive academic calendar, school events, closures & scheduled activities') }}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+                    <span class="badge badge-light border px-3 py-2 text-dark font-size-sm shadow-sm" style="border-radius: 8px;">
+                        <i class="icon-calendar22 mr-1 text-primary"></i> {{ \App\Helpers\NepaliHelper::formatDualDate(date('Y-m-d')) }}
+                    </span>
+                    <span class="badge badge-primary px-3 py-2 font-size-sm shadow-sm" style="border-radius: 8px;">
+                        <i class="icon-graduation mr-1"></i> {{ __('Session') }}: {{ $active_year ? $active_year->code : Qs::getSetting('current_session') }}
+                    </span>
+                    @if($isAdmin)
+                        <a href="{{ route('events.create') }}" class="btn text-white btn-sm font-weight-semibold shadow-sm ml-md-2" style="background: #FF5700; border-radius: 8px;">
+                            <i class="icon-plus2 mr-1"></i>{{ __('Create Event') }}
+                        </a>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- 4 Metric KPI Stat Cards --}}
+    <div class="row mb-4">
+        <div class="col-sm-6 col-xl-3 mb-3 mb-xl-0">
+            <div class="card sms-stat-card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #4f46e5 !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted font-size-xs text-uppercase font-weight-bold tracking-wider">{{ __('Total Events') }}</span>
+                            <h3 class="font-weight-bold text-dark mb-0 mt-1">{{ number_format($total_events ?? 0) }}</h3>
+                            <span class="font-size-xs text-muted">{{ __('All registered calendar items') }}</span>
+                        </div>
+                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(79, 70, 229, 0.1);">
+                            <i class="icon-calendar3 icon-2x" style="color: #4f46e5;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3 mb-3 mb-xl-0">
+            <div class="card sms-stat-card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #f59e0b !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted font-size-xs text-uppercase font-weight-bold tracking-wider">{{ __('Academic Holidays') }}</span>
+                            <h3 class="font-weight-bold text-dark mb-0 mt-1">{{ number_format($holiday_count ?? 0) }}</h3>
+                            <span class="font-size-xs text-muted">{{ __('Official closures & breaks') }}</span>
+                        </div>
+                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(245, 158, 11, 0.1);">
+                            <i class="icon-bed2 icon-2x" style="color: #f59e0b;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3 mb-3 mb-xl-0">
+            <div class="card sms-stat-card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #10b981 !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted font-size-xs text-uppercase font-weight-bold tracking-wider">{{ __('Upcoming Events') }}</span>
+                            <h3 class="font-weight-bold text-dark mb-0 mt-1">{{ number_format($upcoming_count ?? 0) }}</h3>
+                            <span class="font-size-xs text-muted">{{ __('Ongoing and future schedules') }}</span>
+                        </div>
+                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(16, 185, 129, 0.1);">
+                            <i class="icon-alarm-check icon-2x" style="color: #10b981;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-sm-6 col-xl-3 mb-3 mb-xl-0">
+            <div class="card sms-stat-card border-0 shadow-sm h-100" style="border-radius: 12px; border-left: 4px solid #06b6d4 !important;">
+                <div class="card-body p-3">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted font-size-xs text-uppercase font-weight-bold tracking-wider">{{ __('Published Notices') }}</span>
+                            <h3 class="font-weight-bold text-dark mb-0 mt-1">{{ number_format($published_count ?? 0) }}</h3>
+                            <span class="font-size-xs text-muted">{{ __('Visible to staff & students') }}</span>
+                        </div>
+                        <div class="d-inline-flex align-items-center justify-content-center" style="width: 48px; height: 48px; border-radius: 12px; background: rgba(6, 182, 212, 0.1);">
+                            <i class="icon-megaphone icon-2x" style="color: #06b6d4;"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- Main Module Card --}}
+    <div class="card shadow-sm border-0" style="border-radius: 14px;">
+        <div class="card-header d-flex align-items-center justify-content-between bg-white border-bottom py-3">
+            <h5 class="card-title font-weight-bold mb-0 text-dark" style="font-size: 1.05rem;">
+                <i class="icon-calendar52 mr-2" style="color: #FF5700;"></i>{{ __('Calendar & Event Operations') }}
+            </h5>
             <div class="d-flex align-items-center">
-                @if($isAdmin)
-                    <a href="{{ route('events.create') }}" class="btn btn-sm text-white mr-2" style="background: #FF5700; border-radius: 8px;">
-                        <i class="icon-plus2 mr-1"></i>{{ __('Create Event') }}
-                    </a>
-                @endif
                 {!! Qs::getPanelOptions() !!}
             </div>
         </div>
 
-        <div class="card-body">
-            <ul class="nav nav-tabs nav-tabs-highlight mb-3">
+        <div class="card-body p-3 p-md-4">
+            <ul class="nav nav-tabs nav-tabs-highlight mb-4">
                 <li class="nav-item">
-                    <a href="#calendar-tab" class="nav-link active" data-toggle="tab">
+                    <a href="#calendar-tab" class="nav-link active font-weight-semibold" data-toggle="tab">
                         <i class="icon-calendar mr-1"></i> {{ __('Bikram Sambat Calendar') }}
                     </a>
                 </li>
                 <li class="nav-item">
-                    <a href="#events-list-tab" class="nav-link" data-toggle="tab">
+                    <a href="#events-list-tab" class="nav-link font-weight-semibold" data-toggle="tab">
                         <i class="icon-list mr-1"></i> {{ __('All Events List') }}
+                        <span class="badge badge-secondary ml-1 font-size-xs">{{ $events->total() }}</span>
                     </a>
                 </li>
                 @if($isAdmin)
                     <li class="nav-item">
-                        <a href="#new-event-tab" class="nav-link" data-toggle="tab">
+                        <a href="#new-event-tab" class="nav-link font-weight-semibold" data-toggle="tab">
                             <i class="icon-plus2 mr-1"></i> {{ __('Quick Add Event') }}
                         </a>
                     </li>
@@ -42,6 +145,19 @@
                 {{-- Calendar View Tab --}}
                 <div class="tab-pane fade show active" id="calendar-tab">
                     <div id="events-bs-calendar"></div>
+
+                    {{-- Category Legend Bar --}}
+                    <div class="mt-4 pt-3 border-top">
+                        <div class="d-flex flex-wrap align-items-center gap-3">
+                            <span class="font-size-xs font-weight-bold text-uppercase text-muted mr-2">{{ __('Event Categories') }}:</span>
+                            @foreach($categories as $key => $c)
+                                <span class="d-inline-flex align-items-center mr-3 mb-1 font-size-xs">
+                                    <span class="mr-1 d-inline-block rounded-circle" style="width: 10px; height: 10px; background-color: {{ $c['color'] }};"></span>
+                                    <span class="text-dark font-weight-medium">{{ (app()->getLocale() === 'ne') ? $c['name_ne'] : $c['name_en'] }}</span>
+                                </span>
+                            @endforeach
+                        </div>
+                    </div>
                 </div>
 
                 {{-- Events List Table Tab --}}
@@ -90,7 +206,7 @@
                                 <input type="text" name="date_to_bs" value="{{ request('date_to_bs') }}" class="form-control form-control-sm nepali-date" placeholder="YYYY-MM-DD">
                             </div>
                             <div class="col-md-1 mb-2">
-                                <button type="submit" class="btn btn-primary btn-sm btn-block">
+                                <button type="submit" class="btn btn-primary btn-sm btn-block shadow-sm">
                                     <i class="icon-search4"></i>
                                 </button>
                             </div>
@@ -101,7 +217,7 @@
                         <table class="table table-hover table-striped">
                             <thead class="bg-light">
                             <tr>
-                                <th>#</th>
+                                <th style="width: 50px;">#</th>
                                 <th>{{ __('Event Title') }}</th>
                                 <th>{{ __('Category') }}</th>
                                 <th>{{ __('BS Date Range') }}</th>
@@ -109,7 +225,7 @@
                                 <th>{{ __('Audience') }}</th>
                                 <th>{{ __('Status') }}</th>
                                 @if($isAdmin)
-                                    <th class="text-center">{{ __('Actions') }}</th>
+                                    <th class="text-center" style="width: 100px;">{{ __('Actions') }}</th>
                                 @endif
                             </tr>
                             </thead>
@@ -123,16 +239,16 @@
                                             <div class="text-muted font-size-xs">{{ $ev->title_ne }}</div>
                                         @endif
                                         @if($ev->location)
-                                            <div class="text-muted font-size-xs"><i class="icon-location4 mr-1"></i>{{ $ev->location }}</div>
+                                            <div class="text-muted font-size-xs"><i class="icon-location4 mr-1 text-primary"></i>{{ $ev->location }}</div>
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge" style="background: {{ $ev->category_color }}; color: #FFFFFF;">
+                                        <span class="badge" style="background: {{ $ev->category_color }}; color: #FFFFFF; font-weight: 500; border-radius: 6px; padding: 4px 8px;">
                                             {{ $ev->category_name }}
                                         </span>
                                     </td>
                                     <td>
-                                        <span class="font-weight-semibold">{{ $ev->start_date_bs }}</span>
+                                        <span class="font-weight-semibold text-dark">{{ $ev->start_date_bs }}</span>
                                         @if($ev->end_date_bs && $ev->end_date_bs !== $ev->start_date_bs)
                                             <span class="text-muted font-size-xs d-block">to {{ $ev->end_date_bs }}</span>
                                         @endif
@@ -142,7 +258,7 @@
                                         @if($ev->is_all_day)
                                             <span class="badge badge-light border">{{ __('All Day') }}</span>
                                         @elseif($ev->start_time)
-                                            <span class="font-size-sm">{{ $ev->start_time }} {{ $ev->end_time ? '- ' . $ev->end_time : '' }}</span>
+                                            <span class="font-size-sm font-weight-medium">{{ $ev->start_time }} {{ $ev->end_time ? '- ' . $ev->end_time : '' }}</span>
                                         @else
                                             <span class="text-muted">-</span>
                                         @endif
@@ -210,9 +326,9 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="{{ $isAdmin ? 8 : 7 }}" class="text-center py-4 text-muted">
-                                        <i class="icon-calendar-cross icon-2x mb-2 d-block"></i>
-                                        {{ __('No school events found matching the criteria.') }}
+                                    <td colspan="{{ $isAdmin ? 8 : 7 }}" class="text-center py-5 text-muted">
+                                        <i class="icon-calendar-cross icon-2x mb-2 d-block text-muted"></i>
+                                        <span class="font-weight-medium">{{ __('No school events found matching the criteria.') }}</span>
                                     </td>
                                 </tr>
                             @endforelse
@@ -220,8 +336,17 @@
                         </table>
                     </div>
 
-                    <div class="mt-3 d-flex justify-content-end">
-                        {{ $events->links() }}
+                    <div class="mt-3 d-flex justify-content-between align-items-center">
+                        <div class="text-muted font-size-sm">
+                            {{ __('Showing :from to :to of :total events', [
+                                'from' => $events->firstItem() ?? 0,
+                                'to' => $events->lastItem() ?? 0,
+                                'total' => $events->total()
+                            ]) }}
+                        </div>
+                        <div>
+                            {{ $events->links() }}
+                        </div>
                     </div>
                 </div>
 
@@ -347,7 +472,7 @@
                             </div>
 
                             <div class="text-right">
-                                <button type="submit" class="btn text-white px-4 font-weight-semibold" style="background: #FF5700; border-radius: 8px;">
+                                <button type="submit" class="btn text-white px-4 font-weight-semibold shadow-sm" style="background: #FF5700; border-radius: 8px;">
                                     <i class="icon-checkmark mr-1"></i> {{ __('Save & Publish Event') }}
                                 </button>
                             </div>
@@ -361,7 +486,7 @@
     {{-- Event Details Modal --}}
     <div class="modal fade" id="eventDetailsModal" tabindex="-1" role="dialog" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" role="document">
-            <div class="modal-content">
+            <div class="modal-content shadow" style="border-radius: 12px; overflow: hidden;">
                 <div class="modal-header d-flex align-items-center justify-content-between" style="background: #111827; color: #FFFFFF; border-bottom: 1px solid rgba(255,255,255,0.08);">
                     <h6 class="modal-title font-weight-bold mb-0 text-white" id="eventModalTitle">{{ __('Event Details') }}</h6>
                     <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close" style="opacity: 0.8;">
@@ -370,14 +495,14 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3 d-flex align-items-center">
-                        <span class="badge" id="eventModalType" style="background: #FF5700; color: #fff;">EVENT</span>
+                        <span class="badge" id="eventModalType" style="background: #FF5700; color: #fff; padding: 4px 8px; border-radius: 6px;">EVENT</span>
                         <span class="text-muted font-size-sm ml-2 font-weight-medium" id="eventModalDate"></span>
                     </div>
                     <p class="text-dark mb-0" id="eventModalDesc" style="white-space: pre-wrap; font-size: 0.95rem; line-height: 1.6;"></p>
                 </div>
                 <div class="modal-footer bg-light p-3">
-                    <a href="#" id="eventModalLink" class="btn btn-outline-primary btn-sm font-weight-semibold" style="display: none;">{{ __('View Full Details') }}</a>
-                    <button type="button" class="btn btn-secondary btn-sm font-weight-semibold" data-dismiss="modal">{{ __('Close') }}</button>
+                    <a href="#" id="eventModalLink" class="btn btn-outline-primary btn-sm font-weight-semibold" style="display: none; border-radius: 6px;">{{ __('View Full Details') }}</a>
+                    <button type="button" class="btn btn-secondary btn-sm font-weight-semibold" data-dismiss="modal" style="border-radius: 6px;">{{ __('Close') }}</button>
                 </div>
             </div>
         </div>
@@ -391,7 +516,7 @@
         if ($('#events-bs-calendar').length) {
             new NepaliBsCalendar('#events-bs-calendar', {
                 feedUrl: '{{ route("calendar.events") }}',
-                createEventUrl: '{{ route("events.create") }}',
+                createEventUrl: @json($isAdmin ? route("events.create") : null),
                 canCreateEvent: {{ $isAdmin ? 'true' : 'false' }},
                 initialView: 'month'
             });

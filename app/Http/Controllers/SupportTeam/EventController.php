@@ -98,6 +98,13 @@ class EventController extends Controller
 
         $events = $query->orderBy('start_date', 'desc')->paginate(20)->appends($request->query());
 
+        $todayAd = now()->format('Y-m-d');
+        $baseVisible = Event::visibleTo($user);
+        $totalEvents = (clone $baseVisible)->count();
+        $holidayCount = (clone $baseVisible)->where('category', 'holiday')->count();
+        $upcomingCount = (clone $baseVisible)->where('end_date', '>=', $todayAd)->count();
+        $publishedCount = (clone $baseVisible)->where('is_published', true)->count();
+
         $data = [
             'events' => $events,
             'categories' => Event::CATEGORIES,
@@ -107,6 +114,10 @@ class EventController extends Controller
             'sections' => Section::orderBy('name')->get(),
             'today_bs' => $this->bsService->today(),
             'isAdmin' => $isAdmin,
+            'total_events' => $totalEvents,
+            'holiday_count' => $holidayCount,
+            'upcoming_count' => $upcomingCount,
+            'published_count' => $publishedCount,
         ];
 
         return view('pages.support_team.events.index', $data);

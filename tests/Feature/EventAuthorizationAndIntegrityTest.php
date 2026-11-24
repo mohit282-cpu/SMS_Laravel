@@ -551,13 +551,26 @@ class EventAuthorizationAndIntegrityTest extends TestCase
         $this->createdTtrIds[] = $ttr->id;
 
         $sub = Subject::where('my_class_id', $this->testClass->id)->first();
-        $ts = TimeSlot::first();
+        $ts = TimeSlot::where('ttr_id', $ttr->id)->first() ?: TimeSlot::create([
+            'ttr_id' => $ttr->id,
+            'time_from' => '9:00',
+            'time_to' => '10:00',
+            'hour_from' => 9,
+            'min_from' => 0,
+            'meridian_from' => 'AM',
+            'hour_to' => 10,
+            'min_to' => 0,
+            'meridian_to' => 'AM',
+            'full' => '9:00 AM - 10:00 AM',
+            'timestamp_from' => 1792984500,
+            'timestamp_to' => 1792988100,
+        ]);
 
         $tt = TimeTable::create([
             'ttr_id' => $ttr->id,
-            'ts_id' => $ts ? $ts->id : 1,
-            'timestamp_from' => $ts ? $ts->timestamp_from : '1792984500',
-            'timestamp_to' => $ts ? $ts->timestamp_to : '1792988100',
+            'ts_id' => $ts->id,
+            'timestamp_from' => $ts->timestamp_from ?: '1792984500',
+            'timestamp_to' => $ts->timestamp_to ?: '1792988100',
             'subject_id' => $sub->id,
             'exam_date' => '2026-11-25',
             'day' => 'Wednesday',
@@ -622,13 +635,26 @@ class EventAuthorizationAndIntegrityTest extends TestCase
         $this->createdTtrIds[] = $ttr->id;
 
         $sub = Subject::where('my_class_id', $this->testClass->id)->first();
-        $ts = TimeSlot::first();
+        $ts = TimeSlot::where('ttr_id', $ttr->id)->first() ?: TimeSlot::create([
+            'ttr_id' => $ttr->id,
+            'time_from' => '9:00',
+            'time_to' => '10:00',
+            'hour_from' => 9,
+            'min_from' => 0,
+            'meridian_from' => 'AM',
+            'hour_to' => 10,
+            'min_to' => 0,
+            'meridian_to' => 'AM',
+            'full' => '9:00 AM - 10:00 AM',
+            'timestamp_from' => 1792984500,
+            'timestamp_to' => 1792988100,
+        ]);
 
         $tt = TimeTable::create([
             'ttr_id' => $ttr->id,
-            'ts_id' => $ts ? $ts->id : 1,
-            'timestamp_from' => $ts ? $ts->timestamp_from : '1792984500',
-            'timestamp_to' => $ts ? $ts->timestamp_to : '1792988100',
+            'ts_id' => $ts->id,
+            'timestamp_from' => $ts->timestamp_from ?: '1792984500',
+            'timestamp_to' => $ts->timestamp_to ?: '1792988100',
             'subject_id' => $sub->id,
             'exam_date' => '2026-11-28',
             'day' => 'Saturday',
