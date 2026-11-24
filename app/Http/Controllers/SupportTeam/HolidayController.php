@@ -22,7 +22,18 @@ class HolidayController extends Controller
 
     public function index()
     {
-        $data['holidays'] = Holiday::orderBy('start_date', 'asc')->get();
+        $holidays = Holiday::with('creator')->orderBy('start_date', 'asc')->get();
+        $todayAd = now()->format('Y-m-d');
+
+        $data = [
+            'holidays' => $holidays,
+            'total_holidays' => $holidays->count(),
+            'closure_count' => $holidays->where('is_closure', true)->count(),
+            'public_holiday_count' => $holidays->where('type', 'public_holiday')->count(),
+            'upcoming_count' => $holidays->filter(fn($h) => $h->end_date && $h->end_date->format('Y-m-d') >= $todayAd)->count(),
+            'today_bs' => $this->bsService->today(),
+        ];
+
         return view('pages.support_team.holidays.index', $data);
     }
 

@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AcademicYear;
 use App\Models\Event;
 use App\Models\Exam;
+use App\Models\Holiday;
 use App\Models\MyClass;
 use App\Models\Notice;
 use App\Models\Section;
@@ -519,6 +520,59 @@ class EventController extends Controller
                     'can_delete' => false,
                 ];
             }
+        }
+
+        // Include configured school holidays
+        $holidaysQuery = Holiday::query();
+        if (!empty($adStart) && !empty($adEnd)) {
+            $holidaysQuery->where(function ($q) use ($adStart, $adEnd) {
+                $q->where('start_date', '<=', $adEnd)
+                  ->where('end_date', '>=', $adStart);
+            });
+        }
+
+        $holidayRecords = $holidaysQuery->get();
+        foreach ($holidayRecords as $h) {
+            $color = '#ef4444';
+            if ($h->type === 'exam_period') {
+                $color = '#f59e0b';
+            } elseif ($h->type === 'academic_event') {
+                $color = '#3b82f6';
+            } elseif ($h->type === 'custom_working_day') {
+                $color = '#10b981';
+            }
+
+            $hTitle = ($isNe && $h->title_ne) ? $h->title_ne : $h->title;
+
+            $items[] = [
+                'id' => 'holiday_' . $h->id,
+                'event_id' => null,
+                'holiday_id' => $h->id,
+                'title' => $hTitle,
+                'title_ne' => $h->title_ne,
+                'category' => 'holiday',
+                'category_name' => __('Holiday / Closure'),
+                'color' => $color,
+                'start' => $h->start_date ? $h->start_date->format('Y-m-d') : null,
+                'end' => $h->end_date ? $h->end_date->copy()->addDay()->format('Y-m-d') : null,
+                'raw_end' => $h->end_date ? $h->end_date->format('Y-m-d') : null,
+                'start_date_bs' => $h->start_date_bs,
+                'end_date_bs' => $h->end_date_bs ?: $h->start_date_bs,
+                'start_time' => null,
+                'end_time' => null,
+                'is_all_day' => true,
+                'is_published' => true,
+                'is_closure' => (bool) $h->is_closure,
+                'target_audience' => 'all',
+                'class_name' => null,
+                'section_name' => null,
+                'location' => null,
+                'description' => $h->description ?: ($h->is_closure ? __('Official School Closure') : __('School Event')),
+                'instructions' => null,
+                'type' => 'holiday',
+                'can_edit' => false,
+                'can_delete' => $isAdmin,
+            ];
         }
 
         // Include individual subject examination timetables
