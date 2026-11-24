@@ -22,7 +22,15 @@ class DormController extends Controller
 
     public function index()
     {
-        $d['dorms'] = $this->dorm->getAll();
+        $dorms = $this->dorm->getAll();
+        $dorms->loadCount('students');
+
+        $d['dorms'] = $dorms;
+        $d['total_dorms'] = \App\Models\Dorm::count();
+        $d['total_boarders'] = \App\Models\StudentRecord::whereNotNull('dorm_id')->count();
+        $d['total_day_scholars'] = \App\Models\StudentRecord::whereNull('dorm_id')->count();
+        $d['total_students'] = \App\Models\StudentRecord::count();
+
         return view('pages.support_team.dorms.index', $d);
     }
 

@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Dorm;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class DormUpdate extends FormRequest
 {
@@ -15,8 +16,9 @@ class DormUpdate extends FormRequest
 
     public function rules()
     {
+        $dormId = $this->dorm ?: $this->route('dorm');
         return [
-            'name' => 'required|string|unique:dorms,id,name',
+            'name' => ['required', 'string', Rule::unique('dorms', 'name')->ignore($dormId)],
         ];
     }
 
