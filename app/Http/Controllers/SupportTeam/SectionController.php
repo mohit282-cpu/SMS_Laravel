@@ -25,8 +25,15 @@ class SectionController extends Controller
     public function index()
     {
         $d['my_classes'] = $this->my_class->all();
-        $d['sections'] = $this->my_class->getAllSections();
+        $sections = $this->my_class->getAllSections();
+        $sections->loadCount('student_record');
+
+        $d['sections'] = $sections;
         $d['teachers'] = $this->user->getUserByType('teacher');
+        $d['total_sections'] = \App\Models\Section::count();
+        $d['total_classes'] = \App\Models\MyClass::count();
+        $d['assigned_teachers'] = \App\Models\Section::whereNotNull('teacher_id')->count();
+        $d['total_students'] = \App\Models\StudentRecord::count();
 
         return view('pages.support_team.sections.index', $d);
     }

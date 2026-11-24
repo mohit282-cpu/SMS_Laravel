@@ -27,6 +27,10 @@ class SubjectController extends Controller
         $d['my_classes'] = $this->my_class->all();
         $d['teachers'] = $this->user->getUserByType('teacher');
         $d['subjects'] = $this->my_class->getAllSubjects();
+        $d['total_subjects'] = \App\Models\Subject::count();
+        $d['total_classes'] = \App\Models\MyClass::count();
+        $d['assigned_teachers'] = \App\Models\Subject::whereNotNull('teacher_id')->distinct('teacher_id')->count('teacher_id');
+        $d['practical_subjects'] = \App\Models\Subject::where('has_practical', true)->count();
 
         return view('pages.support_team.subjects.index', $d);
     }

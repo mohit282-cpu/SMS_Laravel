@@ -22,6 +22,11 @@ class ExamController extends Controller
     public function index()
     {
         $d['exams'] = $this->exam->all();
+        $d['total_exams'] = \App\Models\Exam::count();
+        $d['published_exams'] = \App\Models\Exam::where('status', 'published')->count();
+        $d['ongoing_exams'] = \App\Models\Exam::whereIn('status', ['ongoing', 'scheduled'])->count();
+        $d['session_exams'] = \App\Models\Exam::where('year', Qs::getCurrentSession())->count();
+
         return view('pages.support_team.exams.index', $d);
     }
 

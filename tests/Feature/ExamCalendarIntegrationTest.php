@@ -303,12 +303,25 @@ class ExamCalendarIntegrationTest extends TestCase
         ]);
 
         $sub = Subject::where('my_class_id', $classA->id)->first() ?? Subject::first();
-        $ts = TimeSlot::first();
+        $ts = TimeSlot::where('ttr_id', $ttrA->id)->first() ?: TimeSlot::create([
+            'ttr_id' => $ttrA->id,
+            'time_from' => '9:00',
+            'time_to' => '10:00',
+            'hour_from' => 9,
+            'min_from' => 0,
+            'meridian_from' => 'AM',
+            'hour_to' => 10,
+            'min_to' => 0,
+            'meridian_to' => 'AM',
+            'timestamp_from' => 1792984500,
+            'timestamp_to' => 1792988100,
+            'full' => '9:00 AM - 10:00 AM',
+        ]);
         $ttA = TimeTable::create([
             'ttr_id' => $ttrA->id,
-            'ts_id' => $ts ? $ts->id : 1,
-            'timestamp_from' => $ts ? $ts->timestamp_from : '1792984500',
-            'timestamp_to' => $ts ? $ts->timestamp_to : '1792988100',
+            'ts_id' => $ts->id,
+            'timestamp_from' => $ts->timestamp_from,
+            'timestamp_to' => $ts->timestamp_to,
             'subject_id' => $sub->id,
             'exam_date' => '2026-11-25',
             'day' => 'Wednesday',
