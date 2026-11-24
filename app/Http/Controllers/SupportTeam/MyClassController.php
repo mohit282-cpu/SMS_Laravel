@@ -24,8 +24,12 @@ class MyClassController extends Controller
 
     public function index()
     {
-        $d['my_classes'] = $this->my_class->all();
+        $d['my_classes'] = $this->my_class->all()->loadMissing(['class_type', 'sections'])->loadCount(['sections', 'student_record']);
         $d['class_types'] = $this->my_class->getTypes();
+        $d['total_classes'] = \App\Models\MyClass::count();
+        $d['total_sections'] = \App\Models\Section::count();
+        $d['total_students'] = \App\Models\StudentRecord::count();
+        $d['total_class_types'] = \App\Models\ClassType::count();
 
         return view('pages.support_team.classes.index', $d);
     }
