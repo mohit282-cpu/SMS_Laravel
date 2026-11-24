@@ -26,8 +26,9 @@ class NepalLocationAdminController extends Controller
         $levelType = $request->query('level_type');
         $q = trim((string) $request->query('q', ''));
 
-        $provinces = NepalProvince::orderBy('id')->get();
+        $provinces = NepalProvince::withCount('districts')->orderBy('id')->get();
         $districts = NepalDistrict::with('province')
+            ->withCount('localLevels')
             ->when($provinceId, fn ($query) => $query->where('province_id', (int) $provinceId))
             ->orderBy('name')
             ->get();
