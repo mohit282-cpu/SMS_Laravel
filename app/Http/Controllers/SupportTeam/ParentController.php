@@ -41,7 +41,11 @@ class ParentController extends Controller
         }
 
         $data['parents'] = $query->orderBy('name')->paginate(25);
-        $data['unlinked_students'] = StudentRecord::whereNull('my_parent_id')->with(['user', 'my_class'])->take(50)->get();
+        $data['total_parents'] = User::where('user_type', 'parent')->count();
+        $data['active_parents'] = User::where('user_type', 'parent')->where('is_active', true)->count();
+        $data['pending_activation'] = User::where('user_type', 'parent')->whereNotNull('activation_token')->count();
+        $data['total_unlinked'] = StudentRecord::whereNull('my_parent_id')->count();
+        $data['unlinked_students'] = StudentRecord::whereNull('my_parent_id')->with(['user', 'my_class', 'section'])->take(100)->get();
 
         return view('pages.support_team.parents.index', $data);
     }
