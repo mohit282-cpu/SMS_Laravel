@@ -23,6 +23,10 @@ class AcademicYearController extends Controller
     {
         $data['academic_years'] = AcademicYear::orderBy('year_bs', 'desc')->get();
         $data['current_session'] = AcademicYear::current();
+        $data['total_sessions'] = AcademicYear::count();
+        $data['open_sessions'] = AcademicYear::where('is_closed', false)->count();
+        $data['closed_sessions'] = AcademicYear::where('is_closed', true)->count();
+
         return view('pages.support_team.academic_years.index', $data);
     }
 
