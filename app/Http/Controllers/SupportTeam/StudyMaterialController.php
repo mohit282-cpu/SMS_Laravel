@@ -31,25 +31,51 @@ class StudyMaterialController extends Controller
             ->with(['teacher', 'my_class', 'section', 'subject'])
             ->orderBy('created_at', 'desc');
 
-        if ($request->has('class_id') && $request->class_id) {
+        if ($request->filled('q')) {
+            $q = trim((string) $request->query('q'));
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'like', "%{$q}%")
+                    ->orWhere('description', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('class_id')) {
             $query->where('my_class_id', $request->class_id);
         }
 
-        if ($request->has('subject_id') && $request->subject_id) {
+        if ($request->filled('subject_id')) {
             $query->where('subject_id', $request->subject_id);
         }
 
-        $materials = $query->paginate(15);
+        $materials = $query->paginate(15)->appends($request->query());
         $classes = $this->my_class->all();
 
         $subjects = collect();
+        $sections = collect();
         if ($user->user_type === 'teacher') {
-            $subjects = Subject::where('teacher_id', $user->id)->get();
+            $subjects = Subject::with('my_class')->where('teacher_id', $user->id)->get();
+            $sections = Section::with('my_class')->where('teacher_id', $user->id)->get();
         } elseif (in_array($user->user_type, ['super_admin', 'admin'])) {
-            $subjects = Subject::all();
+            $subjects = Subject::with('my_class')->get();
+            $sections = Section::with('my_class')->orderBy('name')->get();
         }
 
-        return view('pages.support_team.study_materials.index', compact('materials', 'classes', 'subjects'));
+        $baseVisible = StudyMaterial::visibleTo($user);
+        $total_materials = (clone $baseVisible)->count();
+        $total_classes_covered = (clone $baseVisible)->distinct('my_class_id')->count('my_class_id');
+        $total_subjects_covered = (clone $baseVisible)->whereNotNull('subject_id')->distinct('subject_id')->count('subject_id');
+        $total_size_mb = round(((clone $baseVisible)->sum('file_size')) / 1048576, 2);
+
+        return view('pages.support_team.study_materials.index', compact(
+            'materials',
+            'classes',
+            'subjects',
+            'sections',
+            'total_materials',
+            'total_classes_covered',
+            'total_subjects_covered',
+            'total_size_mb'
+        ));
     }
 
     public function store(Request $request)
