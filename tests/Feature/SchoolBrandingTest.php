@@ -21,9 +21,9 @@ class SchoolBrandingTest extends TestCase
      */
     public function test_qs_helpers_return_updated_branding()
     {
-        $this->assertEquals('School Management System Academy', Qs::getSystemName());
-        $this->assertEquals('SMS Academy', Qs::getSystemTitle());
-        $this->assertEquals('SMS Academy', Qs::getAppCode());
+        $this->assertEquals('Apex Model Secondary School', Qs::getSystemName());
+        $this->assertEquals('Apex School', Qs::getSystemTitle());
+        $this->assertEquals('Apex School', Qs::getAppCode());
     }
 
     /**
@@ -34,8 +34,8 @@ class SchoolBrandingTest extends TestCase
         $response = $this->get('/login');
         $response->assertStatus(200);
 
-        $response->assertSee('School Management System Academy');
-        $response->assertSee('SMS Academy');
+        $response->assertSee('Apex Model Secondary School');
+        $response->assertSee('Apex School');
         $response->assertDontSee('CJ INSPIRED ACADEMY');
         $response->assertDontSee('CJ Inspired');
     }
@@ -51,7 +51,7 @@ class SchoolBrandingTest extends TestCase
         $response = $this->actingAs($admin)->get(route('dashboard'));
         $response->assertStatus(200);
 
-        $response->assertSee('School Management System Academy');
+        $response->assertSee('Apex Model Secondary School');
         $response->assertDontSee('CJ INSPIRED ACADEMY');
     }
 
@@ -64,8 +64,8 @@ class SchoolBrandingTest extends TestCase
         $response->assertStatus(200);
 
         $data = $response->json();
-        $this->assertEquals('School Management System Academy', $data['name']);
-        $this->assertEquals('SMS Academy', $data['short_name']);
+        $this->assertEquals('Apex Model Secondary School', $data['name']);
+        $this->assertEquals('Apex School', $data['short_name']);
 
         $this->assertNotEquals('CJ Inspired Academy', $data['name']);
         $this->assertNotEquals('SMS Nepal', $data['short_name']);
@@ -95,7 +95,7 @@ class SchoolBrandingTest extends TestCase
         $response = $this->get(route('pwa.offline'));
         $response->assertStatus(200);
 
-        $response->assertSee('School Management System Academy');
+        $response->assertSee('Apex Model Secondary School');
         $response->assertDontSee('CJ INSPIRED ACADEMY');
         $response->assertDontSee('CJ Inspired');
     }
@@ -111,8 +111,8 @@ class SchoolBrandingTest extends TestCase
         $response = $this->actingAs($sa)->get(route('settings'));
         $response->assertStatus(200);
 
-        $response->assertSee('School Management System Academy');
-        $response->assertSee('SMS Academy');
+        $response->assertSee('Apex Model Secondary School');
+        $response->assertSee('Apex School');
         $response->assertDontSee('CJ INSPIRED ACADEMY');
     }
 

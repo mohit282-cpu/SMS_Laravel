@@ -130,7 +130,7 @@ class UiShellAndNavigationTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('sms-card', false);
-        $response->assertSee('sms-info-callout', false);
+        $response->assertSee('btn-next-step', false);
         $response->assertSee('for="student_name"', false);
         $response->assertSee('for="nepal_addr_main_province"', false);
         $response->assertSee('for="nepal_addr_main_district"', false);

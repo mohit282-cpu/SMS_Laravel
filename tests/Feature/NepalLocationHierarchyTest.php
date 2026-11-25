@@ -121,8 +121,28 @@ class NepalLocationHierarchyTest extends TestCase
         $this->assertNotNull($service->validateHierarchy($bagmati->id, $kathmandu->id, $kmc->id, 99));
     }
 
+    protected function clearLocationTablesWithinTransaction(): void
+    {
+        \App\Models\StudentRecord::query()->update([
+            'province_id' => null,
+            'district_id' => null,
+            'local_level_id' => null,
+        ]);
+        User::query()->update([
+            'province_id' => null,
+            'district_id' => null,
+            'local_level_id' => null,
+        ]);
+        NepalSettlement::query()->delete();
+        NepalWard::query()->delete();
+        NepalLocalLevel::query()->delete();
+        NepalDistrict::query()->delete();
+        NepalProvince::query()->delete();
+    }
+
     public function test_import_command_rejects_incomplete_dataset_under_strict_official_counts()
     {
+        $this->clearLocationTablesWithinTransaction();
         $tmpPath = storage_path('app/test_incomplete_nepal_locations.json');
 
         try {
@@ -210,6 +230,7 @@ class NepalLocationHierarchyTest extends TestCase
 
     public function test_importer_dry_run_makes_no_changes_and_rejects_fake_ward_counts()
     {
+        $this->clearLocationTablesWithinTransaction();
         $this->artisan('nepal:import-locations', [
             'file' => database_path('data/nepal_locations.json'),
             '--dry-run' => true,
