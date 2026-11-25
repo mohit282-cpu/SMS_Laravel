@@ -24,18 +24,56 @@ class NoticeController extends Controller
         $this->my_class = $my_class;
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
-        $notices = Notice::visibleTo($user)
-            ->with(['creator', 'my_class', 'section'])
-            ->orderBy('notice_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->paginate(15);
+        $isAdmin = Qs::userIsTeamSA();
 
+        $query = Notice::visibleTo($user)
+            ->with(['creator', 'my_class', 'section']);
+
+        if ($request->filled('q')) {
+            $q = trim((string) $request->query('q'));
+            $query->where(function ($sub) use ($q) {
+                $sub->where('title', 'like', "%{$q}%")
+                    ->orWhere('content', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('role_visibility')) {
+            $query->where('role_visibility', $request->query('role_visibility'));
+        }
+
+        if ($isAdmin && $request->filled('is_published')) {
+            $query->where('is_published', (bool) $request->query('is_published'));
+        }
+
+        $notices = $query->orderBy('notice_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(15)
+            ->appends($request->query());
+
+        $todayAd = now()->toDateString();
+        $baseVisible = Notice::visibleTo($user);
+        $total_notices = (clone $baseVisible)->count();
+        $published_count = (clone $baseVisible)->where('is_published', true)->count();
+        $draft_count = $isAdmin ? (clone $baseVisible)->where('is_published', false)->count() : 0;
+        $active_count = (clone $baseVisible)->where(function ($q) use ($todayAd) {
+            $q->whereNull('expiry_date')->orWhere('expiry_date', '>=', $todayAd);
+        })->count();
+
+        $today_bs = NepaliHelper::adToBs($todayAd);
         $my_classes = $this->my_class->all();
 
-        return view('pages.support_team.notices.index', compact('notices', 'my_classes'));
+        return view('pages.support_team.notices.index', compact(
+            'notices',
+            'my_classes',
+            'total_notices',
+            'published_count',
+            'draft_count',
+            'active_count',
+            'today_bs'
+        ));
     }
 
     public function create()
