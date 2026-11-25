@@ -148,13 +148,21 @@ class LandingSettingsController extends Controller
             $results = new \Illuminate\Pagination\LengthAwarePaginator([], 0, 25);
             $batches = collect();
             $classes = collect();
+            $total_candidates = 0;
+            $passed_count = 0;
+            $batches_count = 0;
+            $classes_count = 0;
             return view('pages.support_team.landing_settings.entrance_results', compact(
                 'results',
                 'batches',
                 'classes',
                 'batch',
                 'class',
-                'search'
+                'search',
+                'total_candidates',
+                'passed_count',
+                'batches_count',
+                'classes_count'
             ));
         }
 
@@ -177,6 +185,10 @@ class LandingSettingsController extends Controller
 
         $batches = EntranceResult::select('batch_year')->distinct()->orderBy('batch_year', 'desc')->pluck('batch_year');
         $classes = EntranceResult::select('class_name')->distinct()->orderBy('class_name', 'asc')->pluck('class_name');
+        $total_candidates = EntranceResult::count();
+        $passed_count = EntranceResult::where('gpa', '>=', 1.6)->count();
+        $batches_count = $batches->count();
+        $classes_count = $classes->count();
 
         return view('pages.support_team.landing_settings.entrance_results', compact(
             'results',
@@ -184,7 +196,11 @@ class LandingSettingsController extends Controller
             'classes',
             'batch',
             'class',
-            'search'
+            'search',
+            'total_candidates',
+            'passed_count',
+            'batches_count',
+            'classes_count'
         ));
     }
 

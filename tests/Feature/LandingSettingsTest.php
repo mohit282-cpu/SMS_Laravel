@@ -28,6 +28,10 @@ class LandingSettingsTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Landing Page & Admissions');
+        $response->assertSee(__('Pending Inquiries'));
+        $response->assertSee(__('Total Inquiries'));
+        $response->assertSee(__('Entrance Results'));
+        $response->assertSee(__('Admissions Status'));
     }
 
     public function test_super_admin_can_access_inquiries_page()
@@ -46,6 +50,11 @@ class LandingSettingsTest extends TestCase
         $response = $this->actingAs($admin)->get(route('landing_settings.entrance_results'));
 
         $response->assertStatus(200);
+        $response->assertSee(__('Entrance Exam Results Management'));
+        $response->assertSee(__('Total Candidates'));
+        $response->assertSee(__('Published Batches'));
+        $response->assertSee(__('Grade Levels'));
+        $response->assertSee('uploadCsvModal');
     }
 
     public function test_non_super_admin_cannot_access_landing_settings()
