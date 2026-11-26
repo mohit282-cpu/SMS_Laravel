@@ -1082,6 +1082,499 @@ a:hover {
 }
 
 /* ==========================================================================
+   11c. Liquid Glass Design System & 19 Kinetic UX Principles (Desktop + Mobile)
+   ========================================================================== */
+:root {
+  /* Liquid Glass Tokens */
+  --sms-glass-surface: rgba(255, 255, 255, 0.80);
+  --sms-glass-surface-strong: rgba(255, 255, 255, 0.92);
+  --sms-glass-dark: rgba(17, 24, 39, 0.84);
+  --sms-glass-border: rgba(255, 255, 255, 0.65);
+  --sms-glass-border-dark: rgba(255, 255, 255, 0.12);
+  --sms-glass-blur: saturate(150%) blur(12px);
+  --sms-glass-specular: inset 0 1px 0 rgba(255, 255, 255, 0.85), inset 0 -1px 0 rgba(15, 23, 42, 0.04);
+
+  /* Motion Physics (Slow-in/Slow-out, Spring Follow-Through, Snappy Timing) */
+  --sms-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --sms-ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --sms-ease-arc: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --sms-dur-fast: 110ms;
+  --sms-dur-med: 180ms;
+  --sms-dur-slow: 240ms;
+}
+
+/* Lightweight ambient depth on workspace canvas (no fixed attachment repaints) */
+body,
+.sms-auth-page,
+.sms-error-page {
+  background-color: #EEF2F7;
+  background-image:
+    radial-gradient(at 8% 6%, rgba(255, 87, 0, 0.11) 0px, transparent 42%),
+    radial-gradient(at 92% 12%, rgba(59, 130, 246, 0.11) 0px, transparent 45%);
+  overscroll-behavior-y: auto;
+}
+
+.content-wrapper {
+  background: transparent !important;
+}
+
+/* Sticky Liquid Glass Top Navbar */
+.sms-navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1035;
+  background-color: var(--sms-navy);
+  transition: box-shadow var(--sms-dur-med) var(--sms-ease-out), background-color var(--sms-dur-med) var(--sms-ease-out);
+}
+
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  /* Apply real backdrop blur only to floating/overlay chrome to keep scrolling 60fps */
+  .sms-navbar {
+    background-color: rgba(15, 23, 42, 0.86);
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
+    backdrop-filter: saturate(150%) blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 6px 22px rgba(15, 23, 42, 0.16);
+  }
+  .sms-navbar.sms-navbar-scrolled {
+    background-color: rgba(15, 23, 42, 0.94);
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.10), 0 12px 30px rgba(15, 23, 42, 0.24);
+  }
+  .sms-sidebar,
+  .sidebar-dark.sidebar-main {
+    background-color: rgba(15, 23, 42, 0.95) !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.10);
+  }
+  .sms-page-header,
+  .sms-footer {
+    background-color: rgba(255, 255, 255, 0.88) !important;
+    border-color: rgba(255, 255, 255, 0.82) !important;
+  }
+  .card,
+  .sms-card,
+  .sms-stat-card {
+    background-color: rgba(255, 255, 255, 0.90) !important;
+    border: 1px solid rgba(255, 255, 255, 0.92) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 6px 22px rgba(15, 23, 42, 0.055), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  }
+  .sms-auth-card,
+  .sms-error-card {
+    background-color: rgba(255, 255, 255, 0.84) !important;
+    -webkit-backdrop-filter: saturate(150%) blur(12px);
+    backdrop-filter: saturate(150%) blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.92) !important;
+    border-radius: 18px !important;
+    box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+  }
+  .card > .card-header,
+  .card > .card-header.bg-white {
+    background-color: rgba(248, 250, 252, 0.72) !important;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.06) !important;
+    border-top-left-radius: 18px !important;
+    border-top-right-radius: 18px !important;
+  }
+  .card .bg-light,
+  .card .bg-white {
+    background-color: rgba(255, 255, 255, 0.72) !important;
+  }
+  .modal-content,
+  .dropdown-menu {
+    background-color: rgba(255, 255, 255, 0.90) !important;
+    -webkit-backdrop-filter: saturate(155%) blur(14px);
+    backdrop-filter: saturate(155%) blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.92) !important;
+    border-radius: 16px !important;
+  }
+}
+
+/* Liquid Glass Segmented Pill Tabs across all modules */
+.nav-tabs-highlight {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  background-color: rgba(15, 23, 42, 0.055);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+  border-radius: 14px;
+  padding: 0.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.75) !important;
+}
+
+.nav-tabs-highlight .nav-item {
+  margin-bottom: 0;
+}
+
+.nav-tabs-highlight .nav-link {
+  border: 0 !important;
+  border-radius: 10px !important;
+  padding: 0.5rem 0.95rem;
+  color: var(--sms-text-secondary);
+  font-weight: 600;
+  background: transparent;
+}
+
+.nav-tabs-highlight .nav-link:hover {
+  color: var(--sms-text-primary);
+  background-color: rgba(255, 255, 255, 0.5);
+}
+
+.nav-tabs-highlight .nav-link.active {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: var(--sms-primary) !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.08), inset 0 1px 0 #FFFFFF;
+}
+
+.nav-tabs-highlight .nav-link.active:before {
+  display: none !important;
+}
+
+/* Frosted Glass Inputs & Table Headers */
+.form-control {
+  background-color: rgba(255, 255, 255, 0.82);
+  border-radius: 10px;
+}
+
+.table thead th {
+  background-color: rgba(241, 245, 249, 0.72);
+}
+
+.table-hover tbody tr:hover {
+  background-color: rgba(255, 87, 0, 0.045);
+}
+
+/* Interactive Squash & Stretch (#4) + Exaggeration (#1) + Anticipation (#7) + Interruptible Motion (#15) */
+.btn,
+.sms-nav-pill,
+.sms-dock-item,
+.nav-tabs .nav-link,
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link {
+  transition:
+    transform var(--sms-dur-fast) var(--sms-ease-spring),
+    background-color var(--sms-dur-fast) var(--sms-ease-out),
+    border-color var(--sms-dur-fast) var(--sms-ease-out),
+    color var(--sms-dur-fast) var(--sms-ease-out),
+    box-shadow var(--sms-dur-med) var(--sms-ease-out);
+}
+
+.btn:hover:not(:disabled):not(.disabled),
+.sms-nav-pill:hover {
+  transform: translateY(-2px) scale(1.015);
+}
+
+.btn:active:not(:disabled):not(.disabled),
+.sms-nav-pill:active,
+.sms-dock-item:active {
+  transform: translateY(1px) scale(0.94, 0.91);
+  transition-duration: 70ms;
+}
+
+/* Exaggeration (#1) + Arcs (#12) on Stat Card Icons */
+.sms-stat-card .stat-icon-wrapper,
+.sms-stat-card .d-inline-flex {
+  transition: transform var(--sms-dur-med) var(--sms-ease-spring), box-shadow var(--sms-dur-med) var(--sms-ease-out);
+}
+
+.sms-stat-card:hover .stat-icon-wrapper,
+.sms-stat-card:hover .d-inline-flex {
+  transform: translateY(-2px) scale(1.12) rotate(-4deg);
+}
+
+/* Von Restorff Effect (#13) on Primary Brand CTA & Notification Beacons */
+.btn-primary {
+  box-shadow: 0 3px 10px rgba(255, 87, 0, 0.24);
+}
+
+.btn-primary:hover:not(:disabled):not(.disabled),
+.btn-primary:focus {
+  box-shadow: 0 7px 20px rgba(255, 87, 0, 0.36);
+}
+
+@keyframes smsBeaconPulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.78;
+  }
+}
+
+.dock-badge-dot,
+.mobile-notification-dot {
+  animation: smsBeaconPulse 2.2s var(--sms-ease-out) infinite;
+}
+
+/* Solid Drawing (#17) & Anticipation (#7) Lift on Cards */
+.sms-stat-card {
+  transition:
+    transform var(--sms-dur-med) var(--sms-ease-spring),
+    box-shadow var(--sms-dur-med) var(--sms-ease-out),
+    border-color var(--sms-dur-fast) var(--sms-ease-out);
+}
+
+.sms-stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.09), var(--sms-glass-specular) !important;
+}
+
+/* Staggered Entrance Animations (#3) */
+@keyframes smsGlassRise {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.975);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.row > [class*="col-"] .sms-stat-card {
+  animation: smsGlassRise var(--sms-dur-slow) var(--sms-ease-spring) both;
+}
+
+.row > [class*="col-"]:nth-child(1) .sms-stat-card { animation-delay: 0ms; }
+.row > [class*="col-"]:nth-child(2) .sms-stat-card { animation-delay: 50ms; }
+.row > [class*="col-"]:nth-child(3) .sms-stat-card { animation-delay: 100ms; }
+.row > [class*="col-"]:nth-child(4) .sms-stat-card { animation-delay: 150ms; }
+.row > [class*="col-"]:nth-child(5) .sms-stat-card { animation-delay: 200ms; }
+.row > [class*="col-"]:nth-child(6) .sms-stat-card { animation-delay: 250ms; }
+
+@keyframes smsRowReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.table tbody tr:nth-child(-n+8) {
+  animation: smsRowReveal 160ms var(--sms-ease-out) both;
+}
+
+.table tbody tr:nth-child(1) { animation-delay: 10ms; }
+.table tbody tr:nth-child(2) { animation-delay: 25ms; }
+.table tbody tr:nth-child(3) { animation-delay: 40ms; }
+.table tbody tr:nth-child(4) { animation-delay: 55ms; }
+.table tbody tr:nth-child(5) { animation-delay: 70ms; }
+.table tbody tr:nth-child(6) { animation-delay: 85ms; }
+.table tbody tr:nth-child(7) { animation-delay: 100ms; }
+.table tbody tr:nth-child(8) { animation-delay: 115ms; }
+
+/* Follow-Through (#11) & Arcs (#12) on Tabs & Sidebar */
+@keyframes smsTabPillSettle {
+  0% {
+    transform: scale(0.94);
+  }
+  65% {
+    transform: scale(1.03);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.nav-tabs-highlight .nav-link.active {
+  animation: smsTabPillSettle var(--sms-dur-med) var(--sms-ease-spring) both;
+}
+
+@keyframes smsTabContentArc {
+  0% {
+    opacity: 0;
+    transform: translate3d(4px, 8px, 0);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.tab-content > .tab-pane.active {
+  animation: smsTabContentArc var(--sms-dur-med) var(--sms-ease-out) both;
+}
+
+/* Origin-Aware Dropdowns & Modals (#2) */
+@keyframes smsOriginPop {
+  0% {
+    opacity: 0;
+    transform: scale(0.90) translateY(-6px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.dropdown-menu {
+  transform-origin: top left;
+}
+
+.dropdown-menu-right {
+  transform-origin: top right;
+}
+
+.dropdown-menu.show {
+  animation: smsOriginPop var(--sms-dur-fast) var(--sms-ease-spring) both;
+}
+
+.modal.fade .modal-dialog {
+  transform-origin: var(--sms-modal-origin-x, 50%) var(--sms-modal-origin-y, 50%);
+  transition: transform var(--sms-dur-med) var(--sms-ease-spring), opacity var(--sms-dur-fast) var(--sms-ease-out);
+  transform: scale(0.90) translateY(16px);
+}
+
+.modal.show .modal-dialog {
+  transform: scale(1) translateY(0);
+}
+
+/* Sidebar Hover Arc & Follow-Through */
+@keyframes smsSubmenuSlide {
+  0% {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.sidebar-dark .nav-sidebar .nav-item-open > .nav-group-sub {
+  animation: smsSubmenuSlide 220ms var(--sms-ease-out) both;
+}
+
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link:hover {
+  transform: translateX(4px);
+}
+
+.sidebar-dark .nav-sidebar > .nav-item > .nav-link.active {
+  box-shadow: 0 4px 14px rgba(255, 87, 0, 0.32);
+}
+
+/* Peak-End Rule (#19): Spring Flash Alerts & Checkmark Pop */
+@keyframes smsAlertSpring {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes smsCheckPop {
+  0% {
+    transform: scale(0.5) rotate(-15deg);
+  }
+  65% {
+    transform: scale(1.22) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.alert {
+  animation: smsAlertSpring var(--sms-dur-med) var(--sms-ease-spring) both;
+  box-shadow: var(--sms-shadow-sm);
+}
+
+.alert-success i {
+  display: inline-block;
+  animation: smsCheckPop 420ms var(--sms-ease-spring) 80ms both;
+}
+
+/* Doherty Threshold (#6): GPU-Composited Top Progress Bar & Instant Loading State */
+#sms-doherty-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #FF5700, #FB923C);
+  z-index: 2050;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 200ms var(--sms-ease-out), opacity 150ms ease;
+}
+
+#sms-doherty-bar.active {
+  opacity: 1;
+  transform: scaleX(0.75);
+}
+
+.btn.sms-btn-loading {
+  opacity: 0.85;
+  pointer-events: none;
+  transform: scale(0.98);
+}
+
+/* Rubber Banding (#5) & Floating Liquid Glass Mobile Dock */
+@keyframes smsRubberBand {
+  0% { transform: scale3d(1, 1, 1); }
+  30% { transform: scale3d(1.12, 0.88, 1); }
+  50% { transform: scale3d(0.94, 1.06, 1); }
+  75% { transform: scale3d(1.03, 0.97, 1); }
+  100% { transform: scale3d(1, 1, 1); }
+}
+
+.sms-rubber-bounce {
+  animation: smsRubberBand 420ms var(--sms-ease-out);
+}
+
+/* Floating Liquid Glass Mobile Dock (GlassEffectContainer Pattern) */
+@media (max-width: 991.98px) {
+  .sms-mobile-dock {
+    left: 0.65rem;
+    right: 0.65rem;
+    bottom: calc(0.55rem + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
+    border-radius: 22px;
+    border: 1px solid var(--sms-border);
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14), var(--sms-glass-specular);
+  }
+
+  @supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .sms-mobile-dock {
+      background-color: var(--sms-glass-surface);
+      -webkit-backdrop-filter: saturate(150%) blur(12px);
+      backdrop-filter: saturate(150%) blur(12px);
+      border-color: var(--sms-glass-border);
+    }
+  }
+
+  .sms-mobile-dock-inner {
+    padding: 0.25rem 0.35rem;
+    gap: 0.15rem;
+  }
+
+  .sms-dock-item {
+    border-radius: 16px;
+    min-height: 50px;
+  }
+
+  .sms-dock-item i {
+    transition: transform var(--sms-dur-fast) var(--sms-ease-spring);
+  }
+
+  .sms-dock-item.active {
+    background-color: rgba(255, 87, 0, 0.12);
+    color: var(--sms-primary);
+  }
+
+  .sms-dock-item.active i {
+    transform: translateY(-2px) scale(1.12);
+  }
+}
+
+/* ==========================================================================
    12. Reduced Motion & Print Safety
    ========================================================================== */
 @media (prefers-reduced-motion: reduce) {

@@ -41,7 +41,7 @@
 
 <!-- /theme JS files -->
 
-<script src="{{ asset('assets/js/custom.js') }}"></script>
+<script src="{{ asset('assets/js/custom.js') }}?v={{ @filemtime(public_path('assets/js/custom.js')) }}"></script>
 <script src="{{ asset('assets/js/nepali_datepicker.js') }}"></script>
 <script src="{{ asset('assets/js/nepali_bs_calendar.js') }}"></script>
 

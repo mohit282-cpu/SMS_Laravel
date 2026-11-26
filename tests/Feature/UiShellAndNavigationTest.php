@@ -113,6 +113,20 @@ class UiShellAndNavigationTest extends TestCase
         $this->assertStringContainsString('min-height: 100dvh;', $designCss);
         $this->assertStringContainsString('.dataTables_wrapper', $designCss);
         $this->assertStringContainsString('min-height: 44px;', $designCss);
+        $this->assertStringContainsString('backdrop-filter:', $designCss);
+        $this->assertStringContainsString('--sms-ease-spring:', $designCss);
+        $this->assertStringContainsString('@keyframes smsGlassRise', $designCss);
+        $this->assertStringContainsString('@keyframes smsRowReveal', $designCss);
+        $this->assertStringContainsString('@keyframes smsOriginPop', $designCss);
+        $this->assertStringContainsString('@keyframes smsRubberBand', $designCss);
+        $this->assertStringContainsString('@keyframes smsCheckPop', $designCss);
+        $this->assertStringContainsString('@keyframes smsBeaconPulse', $designCss);
+        $this->assertStringContainsString('#sms-doherty-bar', $designCss);
+        $this->assertStringContainsString('@media (prefers-reduced-motion: reduce)', $designCss);
+
+        $customJs = file_get_contents(public_path('assets/js/custom.js'));
+        $this->assertStringContainsString('--sms-modal-origin-x', $customJs);
+        $this->assertStringContainsString('sms-rubber-bounce', $customJs);
 
         $calendarCss = file_get_contents(public_path('assets/css/nepali_bs_calendar.css'));
         $this->assertStringNotContainsString('min-width: 320px;', $calendarCss);

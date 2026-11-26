@@ -1701,3 +1701,28 @@ input:checked + .slider-round:before {
     }
 }
 
+/* ==========================================================================
+   Liquid Glass & Kinetic Motion Layer (Public Portal)
+   ========================================================================== */
+@supports ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .site-header {
+        background: rgba(255, 255, 255, 0.84) !important;
+        -webkit-backdrop-filter: saturate(150%) blur(12px);
+        backdrop-filter: saturate(150%) blur(12px);
+        border: 1px solid rgba(255, 255, 255, 0.85);
+        box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
+}
+
+.main-nav-link,
+.btn,
+.cta-btn {
+    transition: transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1), background-color 160ms ease, box-shadow 220ms ease;
+}
+
+.main-nav-link:active,
+.btn:active,
+.cta-btn:active {
+    transform: scale(0.96, 0.94);
+}
+
