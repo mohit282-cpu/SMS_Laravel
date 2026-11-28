@@ -17,6 +17,12 @@
                 </span>
             </div>
             <h2 class="font-weight-bold text-dark mb-0" style="font-size: 1.35rem;">{{ __('Welcome back') }}, {{ Auth::user()->name }}</h2>
+            @if(!empty($today_birthdays) && $today_birthdays->isNotEmpty())
+                <div class="mt-2 font-size-xs text-primary font-weight-semibold">
+                    <i class="icon-gift mr-1"></i>{{ __("Today's Birthdays:") }}
+                    @foreach($today_birthdays as $bd){{ $bd->name }}{{ !$loop->last ? ', ' : '' }}@endforeach
+                </div>
+            @endif
         </div>
         <div class="d-flex align-items-center mt-3 mt-md-0" style="gap: 0.5rem;">
             <a href="{{ route('notices.index') }}" class="btn btn-light border"><i class="icon-bell2 mr-1 text-primary" aria-hidden="true"></i> {{ __('Notices') }}</a>
@@ -192,6 +198,56 @@
                         </a>
                     </div>
                 </div>
+                <div class="row row-cols-2 row-cols-sm-4 row-cols-lg-8 text-center mt-2" style="gap: 0.5rem 0;">
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('homework.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-notebook icon-2x text-orange mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Homework') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('leaves.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-calendar5 icon-2x text-info mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Leaves') }} ({{ $pending_leaves_count ?? 0 }})</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('certificates.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-certificate icon-2x text-success mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Certificates') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('accounting.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-coins icon-2x text-emerald mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Accounting') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('payroll.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-cash3 icon-2x text-primary mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Payroll') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('inventory.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-box icon-2x text-purple mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Inventory') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('transport.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-bus icon-2x text-warning mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Transport') }}</span>
+                        </a>
+                    </div>
+                    <div class="col-6 col-sm-3 col-md-3 col-lg mb-2">
+                        <a href="{{ route('messages.index') }}" class="btn btn-light border w-100 py-2 d-flex flex-column align-items-center justify-content-center h-100">
+                            <i class="icon-bubbles4 icon-2x text-info mb-1" aria-hidden="true"></i>
+                            <span class="font-size-xs font-weight-semibold text-dark">{{ __('Messages') }} ({{ $unread_messages_count ?? 0 }})</span>
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
     @endif
@@ -250,8 +306,20 @@
             <a href="{{ route('tt.index') }}" class="btn btn-outline-info btn-sm mr-2 mb-2">
                 <i class="icon-alarm mr-1" aria-hidden="true"></i>{{ __('Class Timetable') }}
             </a>
-            <a href="{{ route('marks.index') }}" class="btn btn-outline-secondary btn-sm mb-2">
+            <a href="{{ route('marks.index') }}" class="btn btn-outline-secondary btn-sm mr-2 mb-2">
                 <i class="icon-check mr-1" aria-hidden="true"></i>{{ __('Enter Marks') }}
+            </a>
+            <a href="{{ route('homework.index') }}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                <i class="icon-notebook mr-1" aria-hidden="true"></i>{{ __('Homework & Diary') }}
+            </a>
+            <a href="{{ route('lesson_plans.index') }}" class="btn btn-outline-info btn-sm mr-2 mb-2">
+                <i class="icon-book3 mr-1" aria-hidden="true"></i>{{ __('Lesson Plans') }}
+            </a>
+            <a href="{{ route('elearning.classes') }}" class="btn btn-outline-success btn-sm mr-2 mb-2">
+                <i class="icon-video-camera mr-1" aria-hidden="true"></i>{{ __('Online Classes') }}
+            </a>
+            <a href="{{ route('leaves.index') }}" class="btn btn-outline-warning btn-sm mb-2">
+                <i class="icon-calendar5 mr-1" aria-hidden="true"></i>{{ __('Leave Notes') }}
             </a>
         </div>
     @endif
@@ -315,8 +383,14 @@
             <a href="{{ route('payments.index') }}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
                 <i class="icon-coins mr-1" aria-hidden="true"></i>{{ __('Manage Fee Structures') }}
             </a>
-            <a href="{{ route('payments.manage') }}" class="btn btn-outline-success btn-sm mb-2">
+            <a href="{{ route('payments.manage') }}" class="btn btn-outline-success btn-sm mr-2 mb-2">
                 <i class="icon-wallet mr-1" aria-hidden="true"></i>{{ __('Collect Student Fees') }}
+            </a>
+            <a href="{{ route('accounting.index') }}" class="btn btn-outline-info btn-sm mr-2 mb-2">
+                <i class="icon-coins mr-1" aria-hidden="true"></i>{{ __('Accounting Ledger') }}
+            </a>
+            <a href="{{ route('payroll.index') }}" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="icon-cash3 mr-1" aria-hidden="true"></i>{{ __('Payroll') }}
             </a>
         </div>
     @endif
@@ -451,8 +525,20 @@
             <a href="{{ route('attendance.student_history', Auth::user()->id) }}" class="btn btn-outline-warning btn-sm mr-2 mb-2">
                 <i class="icon-alarm mr-1" aria-hidden="true"></i>{{ __('My Attendance') }}
             </a>
-            <a href="{{ route('marks.year_selector', Qs::hash(Auth::user()->id)) }}" class="btn btn-outline-success btn-sm mb-2">
+            <a href="{{ route('marks.year_selector', Qs::hash(Auth::user()->id)) }}" class="btn btn-outline-success btn-sm mr-2 mb-2">
                 <i class="icon-file-text mr-1" aria-hidden="true"></i>{{ __('View Marksheets') }}
+            </a>
+            <a href="{{ route('homework.index') }}" class="btn btn-outline-primary btn-sm mr-2 mb-2">
+                <i class="icon-notebook mr-1" aria-hidden="true"></i>{{ __('Homework') }}
+            </a>
+            <a href="{{ route('elearning.classes') }}" class="btn btn-outline-info btn-sm mr-2 mb-2">
+                <i class="icon-video-camera mr-1" aria-hidden="true"></i>{{ __('Online Classes') }}
+            </a>
+            <a href="{{ route('elearning.quizzes') }}" class="btn btn-outline-warning btn-sm mr-2 mb-2">
+                <i class="icon-question4 mr-1" aria-hidden="true"></i>{{ __('Quizzes') }}
+            </a>
+            <a href="{{ route('leaves.index') }}" class="btn btn-outline-secondary btn-sm mb-2">
+                <i class="icon-calendar5 mr-1" aria-hidden="true"></i>{{ __('Leave Notes') }}
             </a>
         </div>
     @endif

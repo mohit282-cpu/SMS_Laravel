@@ -256,6 +256,108 @@ Route::group(['middleware' => ['auth', 'no_store']], function () {
         Route::match(['post', 'put'], 'book_requests/{id}/issue_from_request', 'BookRequestController@issueFromRequest');
         Route::match(['post', 'put'], 'book_requests/{id}/issue_request', 'BookRequestController@issueFromRequest')->name('book_requests.issue');
 
+        /*************** Digital Nepal & Veda ERP Extension Modules *****************/
+        /* Homework, Daily Diary & Lesson Plans */
+        Route::get('homework', 'HomeworkController@index')->name('homework.index');
+        Route::post('homework', 'HomeworkController@store')->name('homework.store');
+        Route::get('homework/{id}', 'HomeworkController@show')->name('homework.show');
+        Route::post('homework/{id}/submit', 'HomeworkController@submit')->name('homework.submit');
+        Route::post('homework/submissions/{submissionId}/evaluate', 'HomeworkController@evaluate')->name('homework.evaluate');
+        Route::get('homework/{id}/download', 'HomeworkController@download')->name('homework.download');
+        Route::delete('homework/{id}', 'HomeworkController@destroy')->name('homework.destroy');
+
+        Route::get('lesson-plans', 'LessonPlanController@index')->name('lesson_plans.index');
+        Route::post('lesson-plans', 'LessonPlanController@store')->name('lesson_plans.store');
+        Route::post('lesson-plans/{id}/status', 'LessonPlanController@updateStatus')->name('lesson_plans.status');
+        Route::delete('lesson-plans/{id}', 'LessonPlanController@destroy')->name('lesson_plans.destroy');
+
+        /* E-Learning: Online Classes, Quizzes & Discussion Forum */
+        Route::get('elearning/classes', 'OnlineLearningController@classesIndex')->name('elearning.classes');
+        Route::post('elearning/classes', 'OnlineLearningController@storeClass')->name('elearning.classes.store');
+        Route::post('elearning/classes/{id}/status', 'OnlineLearningController@updateClassStatus')->name('elearning.classes.status');
+
+        Route::get('elearning/quizzes', 'OnlineLearningController@quizzesIndex')->name('elearning.quizzes');
+        Route::post('elearning/quizzes', 'OnlineLearningController@storeQuiz')->name('elearning.quizzes.store');
+        Route::get('elearning/quizzes/{id}', 'OnlineLearningController@showQuiz')->name('elearning.quizzes.show');
+        Route::post('elearning/quizzes/{id}/questions', 'OnlineLearningController@addQuestion')->name('elearning.quizzes.questions.add');
+        Route::post('elearning/quizzes/{id}/toggle', 'OnlineLearningController@toggleQuizPublish')->name('elearning.quizzes.toggle');
+        Route::post('elearning/quizzes/{id}/attempt', 'OnlineLearningController@attemptQuiz')->name('elearning.quizzes.attempt');
+
+        Route::get('elearning/forum', 'OnlineLearningController@forumIndex')->name('elearning.forum');
+        Route::post('elearning/forum', 'OnlineLearningController@storeThread')->name('elearning.forum.store');
+        Route::post('elearning/forum/{id}/reply', 'OnlineLearningController@replyThread')->name('elearning.forum.reply');
+
+        /* Nepal IEMIS, Curriculum & SEE Management */
+        Route::get('nepal-emis', 'NepalEmisController@index')->name('nepal_emis.index');
+        Route::post('nepal-emis/profile', 'NepalEmisController@updateProfile')->name('nepal_emis.profile.update');
+        Route::post('nepal-emis/curriculum', 'NepalEmisController@storeCurriculum')->name('nepal_emis.curriculum.store');
+        Route::post('nepal-emis/see', 'NepalEmisController@storeSeeCandidate')->name('nepal_emis.see.store');
+        Route::get('nepal-emis/export-json', 'NepalEmisController@exportJson')->name('nepal_emis.export_json');
+
+        /* Leave Management, Student Wellness, ECA & Student Groups */
+        Route::get('leaves', 'LeaveRequestController@index')->name('leaves.index');
+        Route::post('leaves', 'LeaveRequestController@store')->name('leaves.store');
+        Route::post('leaves/{id}/review', 'LeaveRequestController@review')->name('leaves.review');
+
+        Route::get('wellness', 'StudentWellnessController@index')->name('wellness.index');
+        Route::post('wellness/logs', 'StudentWellnessController@storeLog')->name('wellness.logs.store');
+        Route::post('wellness/groups', 'StudentWellnessController@storeGroup')->name('wellness.groups.store');
+        Route::post('wellness/groups/{groupId}/members', 'StudentWellnessController@addGroupMember')->name('wellness.groups.add_member');
+
+        /* Certificates, Digital Vault, Smart ID Cards & Exam Admit Cards */
+        Route::get('certificates', 'CertificateDocumentController@index')->name('certificates.index');
+        Route::post('certificates', 'CertificateDocumentController@storeCertificate')->name('certificates.store');
+        Route::get('certificates/{id}/print', 'CertificateDocumentController@printCertificate')->name('certificates.print');
+        Route::post('certificates/documents', 'CertificateDocumentController@storeDocument')->name('certificates.documents.store');
+        Route::get('certificates/documents/{id}/download', 'CertificateDocumentController@downloadDocument')->name('certificates.documents.download');
+        Route::get('documents/id-cards', 'CertificateDocumentController@idCards')->name('documents.id_cards');
+        Route::get('documents/admit-cards', 'CertificateDocumentController@admitCards')->name('documents.admit_cards');
+
+        /* Accounting Ledger, Concessions, Payroll & Inventory */
+        Route::get('accounting', 'AccountingController@index')->name('accounting.index');
+        Route::post('accounting/ledger', 'AccountingController@storeLedger')->name('accounting.ledger.store');
+        Route::post('accounting/fiscal-years', 'AccountingController@storeFiscalYear')->name('accounting.fiscal_years.store');
+        Route::post('accounting/concessions', 'AccountingController@storeConcession')->name('accounting.concessions.store');
+
+        Route::get('payroll', 'PayrollController@index')->name('payroll.index');
+        Route::post('payroll', 'PayrollController@store')->name('payroll.store');
+        Route::post('payroll/{id}/mark-paid', 'PayrollController@markPaid')->name('payroll.mark_paid');
+        Route::get('payroll/{id}/payslip', 'PayrollController@payslip')->name('payroll.payslip');
+
+        Route::get('inventory', 'InventoryController@index')->name('inventory.index');
+        Route::post('inventory/categories', 'InventoryController@storeCategory')->name('inventory.categories.store');
+        Route::post('inventory/items', 'InventoryController@storeItem')->name('inventory.items.store');
+        Route::post('inventory/transactions', 'InventoryController@storeTransaction')->name('inventory.transactions.store');
+
+        /* Transport, Visitors, Feedback/Complaints & Hostel/Canteen */
+        Route::get('transport', 'TransportController@index')->name('transport.index');
+        Route::post('transport/routes', 'TransportController@storeRoute')->name('transport.routes.store');
+        Route::post('transport/assign', 'TransportController@assignStudent')->name('transport.assign.store');
+        Route::post('transport/attendance', 'TransportController@storeAttendance')->name('transport.attendance.store');
+
+        Route::get('visitors', 'CampusOperationsController@visitorsIndex')->name('visitors.index');
+        Route::post('visitors', 'CampusOperationsController@storeVisitor')->name('visitors.store');
+        Route::post('visitors/{id}/checkout', 'CampusOperationsController@checkoutVisitor')->name('visitors.checkout');
+
+        Route::get('feedback', 'CampusOperationsController@feedbackIndex')->name('feedback.index');
+        Route::post('feedback', 'CampusOperationsController@storeFeedback')->name('feedback.store');
+        Route::post('feedback/{id}/status', 'CampusOperationsController@updateFeedbackStatus')->name('feedback.status');
+
+        Route::get('hostel-canteen', 'CampusOperationsController@hostelCanteenIndex')->name('hostel_canteen.index');
+        Route::post('hostel-canteen/hostel', 'CampusOperationsController@storeHostelAllocation')->name('hostel_canteen.hostel.store');
+        Route::post('hostel-canteen/lunch', 'CampusOperationsController@storeLunchLog')->name('hostel_canteen.lunch.store');
+
+        /* Communication: Messages, Surveys & Smart Notification Logs */
+        Route::get('messages', 'CommunicationController@messagesIndex')->name('messages.index');
+        Route::post('messages', 'CommunicationController@sendMessage')->name('messages.send');
+
+        Route::get('surveys', 'CommunicationController@surveysIndex')->name('surveys.index');
+        Route::post('surveys', 'CommunicationController@storeSurvey')->name('surveys.store');
+        Route::post('surveys/{surveyId}/respond', 'CommunicationController@submitSurveyResponse')->name('surveys.respond');
+
+        Route::get('communications', 'CommunicationController@notificationsIndex')->name('communications.index');
+        Route::post('communications/broadcast', 'CommunicationController@dispatchBroadcast')->name('communications.broadcast');
+
     });
 
     /************************ AJAX ****************************/

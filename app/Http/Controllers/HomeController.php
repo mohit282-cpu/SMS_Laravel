@@ -104,6 +104,17 @@ class HomeController extends Controller
         $d['recent_notices'] = \App\Models\Notice::visibleTo($user)->orderBy('notice_date', 'desc')->take(5)->get();
         $d['upcoming_events'] = \App\Models\Event::visibleTo($user)->where('end_date', '>=', now()->toDateString())->orderBy('start_date', 'asc')->take(5)->get();
 
+        // Digital Nepal & Veda ERP live dashboard pulse counters
+        $d['unread_messages_count'] = \App\Models\PortalMessage::where('recipient_id', $user->id)->whereNull('read_at')->count();
+        $d['pending_leaves_count'] = Qs::userIsTeamSAT()
+            ? \App\Models\LeaveRequest::where('status', 'pending')->count()
+            : \App\Models\LeaveRequest::where('user_id', $user->id)->where('status', 'pending')->count();
+        $d['today_birthdays'] = \App\User::whereNotNull('dob')
+            ->where('dob', 'like', '%' . now()->format('-m-d'))
+            ->orderBy('name')
+            ->take(6)
+            ->get();
+
         return view('pages.support_team.dashboard', $d);
     }
 

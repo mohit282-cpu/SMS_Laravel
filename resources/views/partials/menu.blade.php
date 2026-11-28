@@ -53,6 +53,13 @@
 
                         {{--Timetables--}}
                             <li class="nav-item"><a href="{{ route('tt.index') }}" class="nav-link {{ in_array(Route::currentRouteName(), ['tt.index']) ? 'active' : '' }}">{{ __('Timetables') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('homework.index') }}" class="nav-link {{ Route::is('homework.*') ? 'active' : '' }}">{{ __('Homework & Daily Diary') }}</a></li>
+                            @if(Qs::userIsTeamSAT())
+                                <li class="nav-item"><a href="{{ route('lesson_plans.index') }}" class="nav-link {{ Route::is('lesson_plans.*') ? 'active' : '' }}">{{ __('Lesson Plans & Diary') }}</a></li>
+                            @endif
+                            <li class="nav-item"><a href="{{ route('elearning.classes') }}" class="nav-link {{ Route::is('elearning.classes*') ? 'active' : '' }}">{{ __('Online Classes') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('elearning.quizzes') }}" class="nav-link {{ Route::is('elearning.quizzes*') ? 'active' : '' }}">{{ __('Online Quizzes') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('elearning.forum') }}" class="nav-link {{ Route::is('elearning.forum*') ? 'active' : '' }}">{{ __('Discussion Forum') }}</a></li>
                         </ul>
                     </li>
                     @endif
@@ -301,6 +308,66 @@
                         <i class="icon-file-text2"></i> <span>{{ __('Study Materials') }}</span>
                     </a>
                 </li>
+
+                {{--Student Care & Leaves--}}
+                <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['leaves.index', 'wellness.index', 'certificates.index', 'documents.id_cards', 'documents.admit_cards']) ? 'nav-item-expanded nav-item-open' : '' }}">
+                    <a href="#" class="nav-link"><i class="icon-heart5"></i> <span>{{ __('Care & Documents') }}</span></a>
+                    <ul class="nav nav-group-sub" data-submenu-title="{{ __('Care & Documents') }}">
+                        <li class="nav-item"><a href="{{ route('leaves.index') }}" class="nav-link {{ Route::is('leaves.*') ? 'active' : '' }}">{{ __('Leave Applications') }}</a></li>
+                        <li class="nav-item"><a href="{{ route('wellness.index') }}" class="nav-link {{ Route::is('wellness.*') ? 'active' : '' }}">{{ __('Wellness, ECA & Merit') }}</a></li>
+                        <li class="nav-item"><a href="{{ route('certificates.index') }}" class="nav-link {{ Route::is('certificates.*') ? 'active' : '' }}">{{ __('Certificates & Vault') }}</a></li>
+                        @if(Qs::userIsTeamSA())
+                            <li class="nav-item"><a href="{{ route('documents.id_cards') }}" class="nav-link {{ Route::is('documents.id_cards') ? 'active' : '' }}">{{ __('Smart ID Cards') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('documents.admit_cards') }}" class="nav-link {{ Route::is('documents.admit_cards') ? 'active' : '' }}">{{ __('Exam Admit Cards') }}</a></li>
+                        @endif
+                    </ul>
+                </li>
+
+                @if(Qs::userIsTeamSA())
+                    {{--Finance, Inventory & Nepal EMIS--}}
+                    <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['accounting.index', 'payroll.index', 'inventory.index', 'nepal_emis.index']) ? 'nav-item-expanded nav-item-open' : '' }}">
+                        <a href="#" class="nav-link"><i class="icon-coins"></i> <span>{{ __('ERP Finance & EMIS') }}</span></a>
+                        <ul class="nav nav-group-sub" data-submenu-title="{{ __('ERP Finance & EMIS') }}">
+                            <li class="nav-item"><a href="{{ route('accounting.index') }}" class="nav-link {{ Route::is('accounting.*') ? 'active' : '' }}">{{ __('Accounting & Day Book') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('payroll.index') }}" class="nav-link {{ Route::is('payroll.*') ? 'active' : '' }}">{{ __('HR & Payroll') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('inventory.index') }}" class="nav-link {{ Route::is('inventory.*') ? 'active' : '' }}">{{ __('Inventory & Stock') }}</a></li>
+                            <li class="nav-item"><a href="{{ route('nepal_emis.index') }}" class="nav-link {{ Route::is('nepal_emis.*') ? 'active' : '' }}">{{ __('IEMIS, Curriculum & SEE') }}</a></li>
+                        </ul>
+                    </li>
+                @endif
+
+                {{--Campus Operations--}}
+                <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['transport.index', 'hostel_canteen.index', 'visitors.index', 'feedback.index']) ? 'nav-item-expanded nav-item-open' : '' }}">
+                    <a href="#" class="nav-link"><i class="icon-bus"></i> <span>{{ __('Campus Operations') }}</span></a>
+                    <ul class="nav nav-group-sub" data-submenu-title="{{ __('Campus Operations') }}">
+                        <li class="nav-item"><a href="{{ route('transport.index') }}" class="nav-link {{ Route::is('transport.*') ? 'active' : '' }}">{{ __('Transport & Bus') }}</a></li>
+                        <li class="nav-item"><a href="{{ route('hostel_canteen.index') }}" class="nav-link {{ Route::is('hostel_canteen.*') ? 'active' : '' }}">{{ __('Hostel & Lunch') }}</a></li>
+                        @if(Qs::userIsStaff())
+                            <li class="nav-item"><a href="{{ route('visitors.index') }}" class="nav-link {{ Route::is('visitors.*') ? 'active' : '' }}">{{ __('Visitor Register') }}</a></li>
+                        @endif
+                        <li class="nav-item"><a href="{{ route('feedback.index') }}" class="nav-link {{ Route::is('feedback.*') ? 'active' : '' }}">{{ __('Feedback & Complaints') }}</a></li>
+                    </ul>
+                </li>
+
+                {{--Communication & Surveys--}}
+                <li class="nav-item nav-item-submenu {{ in_array(Route::currentRouteName(), ['messages.index', 'surveys.index', 'communications.index']) ? 'nav-item-expanded nav-item-open' : '' }}">
+                    <a href="#" class="nav-link"><i class="icon-bubbles4"></i> <span>{{ __('Communication') }}</span></a>
+                    <ul class="nav nav-group-sub" data-submenu-title="{{ __('Communication') }}">
+                        <li class="nav-item"><a href="{{ route('messages.index') }}" class="nav-link {{ Route::is('messages.*') ? 'active' : '' }}">{{ __('Direct Messages') }}</a></li>
+                        <li class="nav-item"><a href="{{ route('surveys.index') }}" class="nav-link {{ Route::is('surveys.*') ? 'active' : '' }}">{{ __('Surveys & Polls') }}</a></li>
+                        @if(Qs::userIsTeamSA())
+                            <li class="nav-item"><a href="{{ route('communications.index') }}" class="nav-link {{ Route::is('communications.*') ? 'active' : '' }}">{{ __('Notification Hub & Birthdays') }}</a></li>
+                        @endif
+                    </ul>
+                </li>
+
+                @if(Qs::userIsStaff() && !Qs::userIsTeamSA())
+                    <li class="nav-item">
+                        <a href="{{ route('payroll.index') }}" class="nav-link {{ Route::is('payroll.*') ? 'active' : '' }}">
+                            <i class="icon-cash3"></i> <span>{{ __('My Payslips') }}</span>
+                        </a>
+                    </li>
+                @endif
 
                 @include('pages.'.Qs::getUserType().'.menu')
 
